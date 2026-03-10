@@ -20,7 +20,7 @@ type application struct {
 	cfg config.ServerConfig
 }
 
-func (app *application) mount(userHandler *handler.UserHandler) *gin.Engine {
+func (app *application) mount(userHandler *handler.UserHandler, articleHandler *handler.ArticleHandler) *gin.Engine {
 	// 根据环境设置 Gin 模式
 	if app.cfg.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -36,10 +36,17 @@ func (app *application) mount(userHandler *handler.UserHandler) *gin.Engine {
 		public.POST("/login", userHandler.Login)
 		public.POST("/register", userHandler.Register)
 		public.POST("/refresh", userHandler.Refresh)
+		public.GET("/articles", articleHandler.List)
+		public.GET("/articles/:id", articleHandler.Get)
 	}
 
 	private := r.Group("/api")
 	private.Use(middleware.JWTAuthMiddleware())
+	{
+		private.POST("/articles", articleHandler.Create)
+		private.PUT("/articles/:id", articleHandler.Update)
+		private.DELETE("/articles/:id", articleHandler.Delete)
+	}
 
 	return r
 }

@@ -13,3 +13,28 @@ type UserResp struct {
 	Role     string `json:"role"`
 	Avatar   string `json:"avatar"`
 }
+
+type CreateArticleReq struct {
+	Title      string  `json:"title" binding:"required,max=200"`
+	Summary    string  `json:"summary" binding:"max=500"`
+	Content    string  `json:"content" binding:"required"`
+	CategoryID int64   `json:"category_id"`
+	TagIDs     []int64 `json:"tag_ids"`
+	Status     string  `json:"status"` // draft | published
+}
+
+type UpdateArticleReq struct {
+	Title      string  `json:"title" binding:"required,max=200"`
+	Summary    string  `json:"summary" binding:"max=500"`
+	Content    string  `json:"content" binding:"required"`
+	CategoryID int64   `json:"category_id"`
+	TagIDs     []int64 `json:"tag_ids"`
+	Status     string  `json:"status"`
+}
+
+type ListArticlesReq struct {
+	Page       int   `form:"page"`
+	PageSize   int   `form:"page_size"`
+	CategoryID int64 `form:"category_id"`
+	TagID      int64 `form:"tag_id"`
+}

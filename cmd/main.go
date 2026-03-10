@@ -31,8 +31,13 @@ func main() {
 	tokenRepo := tokenredis.NewTokenRedisRepository(rdb)
 	userService := service.NewUserService(userRepo, tokenRepo)
 	userHandler := handler.NewUserHandler(userService)
+
+	articleRepo := mysql.NewArticleGormRepository(db)
+	articleService := service.NewArticleService(articleRepo)
+	articleHandler := handler.NewArticleHandler(articleService)
+
 	// 挂载路由
-	router := app.mount(userHandler)
+	router := app.mount(userHandler, articleHandler)
 
 	// 启动服务
 	log.Fatal(app.run(router))
