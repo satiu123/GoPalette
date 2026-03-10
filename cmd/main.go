@@ -24,7 +24,7 @@ func main() {
 		cfg: config.GlobalConfig.Server,
 	}
 
-	db := database.InitMySQL(&model.User{})
+	db := database.InitMySQL(&model.User{}, &model.Category{}, &model.Tag{}, &model.Article{}, &model.ArticleTag{}, &model.Comment{})
 	rdb := database.InitRedis()
 
 	userRepo := mysql.NewUserGormRepository(db, rdb)
