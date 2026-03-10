@@ -3,6 +3,14 @@ package main
 import (
 	"log"
 	"log/slog"
+
+	"github.com/satiu123/GoPalette/internal/handler"
+	"github.com/satiu123/GoPalette/internal/model"
+	"github.com/satiu123/GoPalette/internal/pkg/config"
+	"github.com/satiu123/GoPalette/internal/pkg/database"
+	"github.com/satiu123/GoPalette/internal/repository/mysql"
+	tokenredis "github.com/satiu123/GoPalette/internal/repository/redis"
+	"github.com/satiu123/GoPalette/internal/service"
 )
 
 func main() {
@@ -10,17 +18,21 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(log.Writer(), nil))
 	slog.SetDefault(logger)
 
-	cfg := config{
-		Addr: ":8080",
-		Env:  "development",
-	}
+	config.LoadConfig()
 
 	app := &application{
-		cfg: cfg,
+		cfg: config.GlobalConfig.Server,
 	}
 
+	db := database.InitMySQL(&model.User{})
+	rdb := database.InitRedis()
+
+	userRepo := mysql.NewUserGormRepository(db, rdb)
+	tokenRepo := tokenredis.NewTokenRedisRepository(rdb)
+	userService := service.NewUserService(userRepo, tokenRepo)
+	userHandler := handler.NewUserHandler(userService)
 	// 挂载路由
-	router := app.mount()
+	router := app.mount(userHandler)
 
 	// 启动服务
 	log.Fatal(app.run(router))

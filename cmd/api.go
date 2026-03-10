@@ -11,19 +11,16 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/satiu123/GoPalette/internal"
+	"github.com/satiu123/GoPalette/internal/handler"
+	"github.com/satiu123/GoPalette/internal/middleware"
+	"github.com/satiu123/GoPalette/internal/pkg/config"
 )
 
 type application struct {
-	cfg config
+	cfg config.ServerConfig
 }
 
-type config struct {
-	Addr string
-	Env  string
-}
-
-func (app *application) mount() *gin.Engine {
+func (app *application) mount(userHandler *handler.UserHandler) *gin.Engine {
 	// 根据环境设置 Gin 模式
 	if app.cfg.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -31,19 +28,20 @@ func (app *application) mount() *gin.Engine {
 		gin.SetMode(gin.DebugMode)
 	}
 
-	router := gin.Default()
+	r := gin.Default()
 
-	// 健康检查接口
-	router.GET("/health", internal.HealthCheckHandler)
-
-	// API v1 路由组
-	v1 := router.Group("/api/v1")
+	public := r.Group("/api")
 	{
-		v1.GET("/ping", internal.PingHandler)
-		v1.GET("/hello", internal.HelloHandler)
+		public.GET("/health", handler.HealthCheckHandler)
+		public.POST("/login", userHandler.Login)
+		public.POST("/register", userHandler.Register)
+		public.POST("/refresh", userHandler.Refresh)
 	}
 
-	return router
+	private := r.Group("/api")
+	private.Use(middleware.JWTAuthMiddleware())
+
+	return r
 }
 
 func (app *application) run(router *gin.Engine) error {

@@ -1,0 +1,14 @@
+services:
+  mariadb:
+    image: mariadb
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: GP123
+    ports:
+      - 3306:3306
+  redis:
+    image: redis:trixie
+    restart: always
+    command: redis-server --appendonly yes --requirepass 'GP123'    #开启持久化的支持并设置认证密码
+    ports:
+      - 6379:6379
