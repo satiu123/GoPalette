@@ -36,8 +36,16 @@ func main() {
 	articleService := service.NewArticleService(articleRepo)
 	articleHandler := handler.NewArticleHandler(articleService)
 
+	categoryRepo := mysql.NewCategoryGormRepository(db)
+	categoryService := service.NewCategoryService(categoryRepo)
+	categoryHandler := handler.NewCategoryHandler(categoryService)
+
+	tagRepo := mysql.NewTagGormRepository(db)
+	tagService := service.NewTagService(tagRepo)
+	tagHandler := handler.NewTagHandler(tagService)
+
 	// 挂载路由
-	router := app.mount(userHandler, articleHandler)
+	router := app.mount(userHandler, articleHandler, categoryHandler, tagHandler)
 
 	// 启动服务
 	log.Fatal(app.run(router))

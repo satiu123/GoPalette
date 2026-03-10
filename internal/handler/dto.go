@@ -1,12 +1,10 @@
 package handler
 
-// 专门用于接收前端请求的结构体
 type LoginReq struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
-// 专门用于返回给前端的结构体
 type UserResp struct {
 	ID       int64  `json:"id"`
 	Username string `json:"username"`
@@ -37,4 +35,12 @@ type ListArticlesReq struct {
 	PageSize   int   `form:"page_size"`
 	CategoryID int64 `form:"category_id"`
 	TagID      int64 `form:"tag_id"`
+}
+
+type CreateCategoryReq struct {
+	Name string `json:"name" binding:"required,max=50"`
+}
+
+type CreateTagReq struct {
+	Name string `json:"name" binding:"required,max=50"`
 }

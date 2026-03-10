@@ -20,7 +20,7 @@ type application struct {
 	cfg config.ServerConfig
 }
 
-func (app *application) mount(userHandler *handler.UserHandler, articleHandler *handler.ArticleHandler) *gin.Engine {
+func (app *application) mount(userHandler *handler.UserHandler, articleHandler *handler.ArticleHandler, categoryHandler *handler.CategoryHandler, tagHandler *handler.TagHandler) *gin.Engine {
 	// 根据环境设置 Gin 模式
 	if app.cfg.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -38,6 +38,8 @@ func (app *application) mount(userHandler *handler.UserHandler, articleHandler *
 		public.POST("/refresh", userHandler.Refresh)
 		public.GET("/articles", articleHandler.List)
 		public.GET("/articles/:id", articleHandler.Get)
+		public.GET("/categories", categoryHandler.List)
+		public.GET("/tags", tagHandler.List)
 	}
 
 	private := r.Group("/api")
@@ -46,6 +48,10 @@ func (app *application) mount(userHandler *handler.UserHandler, articleHandler *
 		private.POST("/articles", articleHandler.Create)
 		private.PUT("/articles/:id", articleHandler.Update)
 		private.DELETE("/articles/:id", articleHandler.Delete)
+		private.POST("/categories", categoryHandler.Create)
+		private.DELETE("/categories/:id", categoryHandler.Delete)
+		private.POST("/tags", tagHandler.Create)
+		private.DELETE("/tags/:id", tagHandler.Delete)
 	}
 
 	return r
