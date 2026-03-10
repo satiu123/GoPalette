@@ -45,7 +45,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 		response.Error(c, 400, "请求参数错误")
 		return
 	}
-	if err := h.UserService.Register(c, user.Username, user.Password); err != nil {
+	if err := h.UserService.Register(c, user.Username, user.Password, user.Role); err != nil {
 		slog.Error("注册失败", "username", user.Username, "error", err)
 		response.Error(c, 500, "注册失败")
 		return

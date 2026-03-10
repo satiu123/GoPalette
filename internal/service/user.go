@@ -44,7 +44,7 @@ func (s *UserService) Login(ctx context.Context, username, password string) (acc
 	return accessToken, refreshToken, nil
 }
 
-func (s *UserService) Register(ctx context.Context, username, password string) error {
+func (s *UserService) Register(ctx context.Context, username, password, role string) error {
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -52,6 +52,7 @@ func (s *UserService) Register(ctx context.Context, username, password string) e
 	user := &model.User{
 		Username: username,
 		Password: string(hashed),
+		Role:     role,
 	}
 	return s.userRepo.Create(ctx, user)
 }
