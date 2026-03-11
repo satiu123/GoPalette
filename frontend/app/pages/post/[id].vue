@@ -1,12 +1,13 @@
 <script setup lang="ts">
 const route = useRoute()
-const { getPostById } = useBlogData()
 
-const post = computed(() => getPostById(route.params.id as string))
+const { data, error } = await useArticle(route.params.id as string)
 
-if (!post.value) {
+if (error.value || !data.value?.data) {
   await navigateTo('/')
 }
+
+const post = computed(() => data.value?.data ?? null)
 </script>
 
 <template>
