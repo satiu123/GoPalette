@@ -5,11 +5,25 @@ type LoginReq struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type RegisterReq struct {
+	Username string `json:"username" binding:"required,min=3,max=50"`
+	Password string `json:"password" binding:"required,min=6"`
+	Role     string `json:"role"` // 可选，默认 user
+}
+
+type RefreshReq struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+type TokenResp struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
 type UserResp struct {
 	ID       int64  `json:"id"`
 	Username string `json:"username"`
 	Role     string `json:"role"`
-	Avatar   string `json:"avatar"`
 }
 
 type CreateArticleReq struct {
