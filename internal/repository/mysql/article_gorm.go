@@ -88,3 +88,27 @@ func (r *articleGormRepository) IncrReadCount(ctx context.Context, id int64) err
 		Where("id = ?", id).
 		UpdateColumn("read_count", gorm.Expr("read_count + 1")).Error
 }
+
+// Search 使用 MySQL FULLTEXT 索引实现全文搜索
+func (r *articleGormRepository) Search(ctx context.Context, keyword string, page, pageSize int) ([]model.Article, int64, error) {
+	var articles []model.Article
+	var total int64
+
+	query := r.db.WithContext(ctx).Model(&model.Article{}).
+		Where("status = ? AND MATCH(title, content) AGAINST(? IN BOOLEAN MODE)", "published", keyword+"*")
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * pageSize
+	err := query.
+		Preload("Author").
+		Preload("Category").
+		Preload("Tags").
+		Order("read_count DESC").
+		Offset(offset).Limit(pageSize).
+		Find(&articles).Error
+
+	return articles, total, err
+}

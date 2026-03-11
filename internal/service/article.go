@@ -127,3 +127,13 @@ func (s *ArticleService) DeleteArticle(ctx context.Context, id, requesterID int6
 	}
 	return s.articleRepo.Delete(ctx, id)
 }
+
+func (s *ArticleService) SearchArticles(ctx context.Context, keyword string, page, pageSize int) ([]model.Article, int64, error) {
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 || pageSize > 50 {
+		pageSize = 10
+	}
+	return s.articleRepo.Search(ctx, keyword, page, pageSize)
+}

@@ -44,8 +44,14 @@ func main() {
 	tagService := service.NewTagService(tagRepo)
 	tagHandler := handler.NewTagHandler(tagService)
 
+	commentRepo := mysql.NewCommentGormRepository(db)
+	commentService := service.NewCommentService(commentRepo)
+	commentHandler := handler.NewCommentHandler(commentService)
+
+	searchHandler := handler.NewSearchHandler(articleService)
+
 	// 挂载路由
-	router := app.mount(userHandler, articleHandler, categoryHandler, tagHandler)
+	router := app.mount(userHandler, articleHandler, categoryHandler, tagHandler, commentHandler, searchHandler)
 
 	// 启动服务
 	log.Fatal(app.run(router))

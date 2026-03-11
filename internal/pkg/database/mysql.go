@@ -16,5 +16,11 @@ func InitMySQL(models ...any) *gorm.DB {
 			panic("failed to auto migrate: " + err.Error())
 		}
 	}
+	// 为文章表的 title+content 创建 FULLTEXT 索引（体现倒排索引原理）
+	// HasIndex 返回 false 时才执行，保证幂等
+	if !db.Migrator().HasIndex(&struct{ Title, Content string }{}, "idx_fulltext_title_content") {
+		db.Exec("ALTER TABLE articles ADD FULLTEXT INDEX idx_fulltext_title_content (title, content)")
+	}
 	return db
 }
+
