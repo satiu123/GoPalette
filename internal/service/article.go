@@ -4,9 +4,13 @@ import (
 	"context"
 	"errors"
 
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/satiu123/GoPalette/internal/model"
 	"github.com/satiu123/GoPalette/internal/repository"
 )
+
+// ugcPolicy 允许富文本常见 HTML 标签，阻止 XSS 注入
+var ugcPolicy = bluemonday.UGCPolicy()
 
 type ArticleService struct {
 	articleRepo repository.ArticleRepository
@@ -48,7 +52,7 @@ func (s *ArticleService) CreateArticle(ctx context.Context, authorID int64, inpu
 	article := &model.Article{
 		Title:      input.Title,
 		Summary:    input.Summary,
-		Content:    input.Content,
+		Content:    ugcPolicy.Sanitize(input.Content), // XSS 过滤
 		AuthorID:   authorID,
 		CategoryID: input.CategoryID,
 		Status:     status,
@@ -98,7 +102,7 @@ func (s *ArticleService) UpdateArticle(ctx context.Context, id, requesterID int6
 
 	article.Title = input.Title
 	article.Summary = input.Summary
-	article.Content = input.Content
+	article.Content = ugcPolicy.Sanitize(input.Content) // XSS 过滤
 	article.CategoryID = input.CategoryID
 	article.Status = input.Status
 
