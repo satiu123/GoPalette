@@ -23,6 +23,7 @@ func (r *commentGormRepository) Create(ctx context.Context, comment *model.Comme
 func (r *commentGormRepository) FindByArticleID(ctx context.Context, articleID int64) ([]model.Comment, error) {
 	var comments []model.Comment
 	err := r.db.WithContext(ctx).
+		Preload("User").
 		Where("article_id = ?", articleID).
 		Order("created_at ASC").
 		Find(&comments).Error
