@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+
+  --color-m3-sys-light-primary: #6750A4;
+  --color-m3-sys-light-on-primary: #FFFFFF;
+  --color-m3-sys-light-primary-container: #EADDFF;
+  --color-m3-sys-light-on-primary-container: #21005D;
+  
+  --color-m3-sys-light-secondary: #625B71;
+  --color-m3-sys-light-on-secondary: #FFFFFF;
+  --color-m3-sys-light-secondary-container: #E8DEF8;
+  --color-m3-sys-light-on-secondary-container: #1D192B;
+  
+  --color-m3-sys-light-tertiary: #7D5260;
+  --color-m3-sys-light-on-tertiary: #FFFFFF;
+  --color-m3-sys-light-tertiary-container: #FFD8E4;
+  --color-m3-sys-light-on-tertiary-container: #31111D;
+  
+  --color-m3-sys-light-background: #FFFBFE;
+  --color-m3-sys-light-on-background: #1C1B1F;
+  
+  --color-m3-sys-light-surface: #FFFBFE;
+  --color-m3-sys-light-on-surface: #1C1B1F;
+  --color-m3-sys-light-surface-variant: #E7E0EC;
+  --color-m3-sys-light-on-surface-variant: #49454F;
+  
+  --color-m3-sys-light-outline: #79747E;
+  
+  --radius-m3-xs: 4px;
+  --radius-m3-sm: 8px;
+  --radius-m3-md: 12px;
+  --radius-m3-lg: 16px;
+  --radius-m3-xl: 28px;
+  --radius-m3-full: 9999px;
+}
+
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+body {
+  background-color: var(--color-m3-sys-light-background);
+  color: var(--color-m3-sys-light-on-background);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
+
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(16px);
+}
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-16px);
+}
