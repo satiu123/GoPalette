@@ -8,5 +8,13 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   vite: {
     plugins: [tailwindcss()]
+  },
+  runtimeConfig: {
+    public: {
+      apiBase: '/api'
+    }
+  },
+  routeRules: {
+    '/api/**': { proxy: 'http://localhost:8080/api/**' }
   }
 })
