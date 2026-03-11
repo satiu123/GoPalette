@@ -1,12 +1,66 @@
 <script setup lang="ts">
-import { ArrowLeft, Image as ImageIcon, Send } from 'lucide-vue-next'
+import { ArrowLeft, Send } from 'lucide-vue-next'
+import type { ApiResponse, Article } from '~/composables/useBlogData'
 
 const router = useRouter()
-const title = ref('')
-const content = ref('')
-const category = ref('Design')
+const { isLoggedIn, authFetch } = useAuth()
 
-const categories = ['Design', 'Development', 'UX', 'Typography', 'Psychology']
+// 未登录跳到登录页
+onMounted(() => {
+  if (!isLoggedIn.value) router.push('/login')
+})
+
+const title   = ref('')
+const content = ref('')
+const summary = ref('')
+const status  = ref<'draft' | 'published'>('draft')
+const selectedCategoryId = ref<number | null>(null)
+const selectedTagIds     = ref<number[]>([])
+const submitting = ref(false)
+const error      = ref('')
+
+// 拉取真实分类 & 标签
+const { data: catData }  = await useCategories()
+const { data: tagData }  = await useTags()
+const categories = computed(() => catData.value?.data ?? [])
+const tags       = computed(() => tagData.value?.data  ?? [])
+
+function toggleTag(id: number) {
+  const idx = selectedTagIds.value.indexOf(id)
+  if (idx === -1) selectedTagIds.value.push(id)
+  else selectedTagIds.value.splice(idx, 1)
+}
+
+async function publish(draft = false) {
+  if (!title.value.trim() || !content.value.trim()) {
+    error.value = '标题和正文不能为空'
+    return
+  }
+  submitting.value = true
+  error.value = ''
+  try {
+    const res = await authFetch<ApiResponse<Article>>('/articles', {
+      method: 'POST',
+      body: {
+        title:       title.value.trim(),
+        summary:     summary.value.trim() || undefined,
+        content:     content.value.trim(),
+        category_id: selectedCategoryId.value ?? 0,
+        tag_ids:     selectedTagIds.value,
+        status:      draft ? 'draft' : 'published'
+      }
+    })
+    if (res.code === 200) {
+      router.push(`/post/${res.data.id}`)
+    } else {
+      error.value = res.msg
+    }
+  } catch (e: unknown) {
+    error.value = (e as Error)?.message ?? '发布失败，请重试'
+  } finally {
+    submitting.value = false
+  }
+}
 
 function goBack() {
   router.push('/')
@@ -29,64 +83,90 @@ function goBack() {
         Back
       </button>
 
-      <button class="flex items-center gap-2 px-6 py-3 bg-m3-sys-light-primary text-m3-sys-light-on-primary rounded-full font-bold hover:bg-m3-sys-light-on-primary-container transition-all shadow-lg shadow-m3-sys-light-primary/20">
-        Publish
-        <Send class="w-4 h-4" />
-      </button>
+      <div class="flex gap-3">
+        <button
+          @click="publish(true)"
+          :disabled="submitting"
+          class="px-5 py-2.5 rounded-full font-medium bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container transition-all disabled:opacity-50"
+        >
+          Save Draft
+        </button>
+        <button
+          @click="publish(false)"
+          :disabled="submitting"
+          class="flex items-center gap-2 px-6 py-3 bg-m3-sys-light-primary text-m3-sys-light-on-primary rounded-full font-bold hover:bg-m3-sys-light-on-primary-container transition-all shadow-lg shadow-m3-sys-light-primary/20 disabled:opacity-50"
+        >
+          Publish
+          <Send class="w-4 h-4" />
+        </button>
+      </div>
     </div>
 
+    <p v-if="error" class="mb-6 text-red-500 text-sm">{{ error }}</p>
+
     <div class="space-y-8">
-      <!-- Title Input -->
+      <!-- 标题 -->
       <textarea
         v-model="title"
-        placeholder="Article Title..."
+        placeholder="Article Title…"
         class="w-full bg-transparent text-5xl sm:text-6xl md:text-7xl font-black tracking-tighter leading-[1.1] text-m3-sys-light-on-surface placeholder:text-m3-sys-light-on-surface-variant/40 resize-none focus:outline-none"
         rows="2"
       />
 
-      <!-- Meta Data -->
-      <div class="flex flex-wrap items-center gap-4 py-6 border-y border-m3-sys-light-surface-variant">
-        <div class="flex items-center gap-3">
-          <img
-            src="https://picsum.photos/seed/currentuser/100/100"
-            alt="You"
-            class="w-10 h-10 rounded-full object-cover"
-            referrerpolicy="no-referrer"
-          />
-          <span class="font-bold text-m3-sys-light-on-surface">You</span>
+      <!-- 摘要 -->
+      <input
+        v-model="summary"
+        placeholder="Short summary (optional)…"
+        class="w-full bg-transparent text-lg text-m3-sys-light-on-surface-variant placeholder:text-m3-sys-light-on-surface-variant/40 focus:outline-none border-b border-m3-sys-light-surface-variant pb-2"
+      />
+
+      <!-- 分类 & 标签 -->
+      <div class="flex flex-wrap items-start gap-6 py-6 border-y border-m3-sys-light-surface-variant">
+        <!-- 分类 -->
+        <div>
+          <p class="text-xs font-bold uppercase tracking-wider text-m3-sys-light-on-surface-variant mb-2">Category</p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="cat in categories"
+              :key="cat.id"
+              @click="selectedCategoryId = selectedCategoryId === cat.id ? null : cat.id"
+              class="px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider whitespace-nowrap transition-colors"
+              :class="selectedCategoryId === cat.id
+                ? 'bg-m3-sys-light-secondary-container text-m3-sys-light-on-secondary-container'
+                : 'bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container/50'"
+            >
+              {{ cat.name }}
+            </button>
+          </div>
         </div>
 
-        <div class="h-6 w-px bg-m3-sys-light-surface-variant hidden sm:block"></div>
-
-        <div class="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
-          <button
-            v-for="cat in categories"
-            :key="cat"
-            @click="category = cat"
-            class="px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider whitespace-nowrap transition-colors"
-            :class="category === cat
-              ? 'bg-m3-sys-light-secondary-container text-m3-sys-light-on-secondary-container'
-              : 'bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container/50'"
-          >
-            {{ cat }}
-          </button>
+        <!-- 标签 -->
+        <div v-if="tags.length">
+          <p class="text-xs font-bold uppercase tracking-wider text-m3-sys-light-on-surface-variant mb-2">Tags</p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="tag in tags"
+              :key="tag.id"
+              @click="toggleTag(tag.id)"
+              class="px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
+              :class="selectedTagIds.includes(tag.id)
+                ? 'bg-m3-sys-light-tertiary-container text-m3-sys-light-on-tertiary-container'
+                : 'bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-tertiary-container/50'"
+            >
+              #{{ tag.name }}
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Cover Image Upload (Mock) -->
-      <button class="w-full h-48 sm:h-64 border-2 border-dashed border-m3-sys-light-outline/30 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-surface-variant/50 hover:border-m3-sys-light-primary/50 transition-all group">
-        <div class="p-4 bg-m3-sys-light-surface-variant rounded-full group-hover:bg-m3-sys-light-primary-container group-hover:text-m3-sys-light-on-primary-container transition-colors">
-          <ImageIcon class="w-8 h-8" />
-        </div>
-        <span class="font-medium">Add a cover image</span>
-      </button>
-
-      <!-- Content Input -->
+      <!-- 正文 -->
       <textarea
         v-model="content"
-        placeholder="Start writing your story..."
+        placeholder="Start writing your story…"
         class="w-full bg-transparent text-xl leading-relaxed text-m3-sys-light-on-surface placeholder:text-m3-sys-light-on-surface-variant/50 resize-none focus:outline-none min-h-[400px]"
       />
     </div>
   </div>
 </template>
+
+

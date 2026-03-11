@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ArrowRight } from 'lucide-vue-next'
-import type { BlogPost } from '~/composables/useBlogData'
+import type { Article } from '~/composables/useBlogData'
+import { articleImageUrl, userAvatarUrl, formatDate } from '~/composables/useBlogData'
 
 const props = defineProps<{
-  post: BlogPost
+  post: Article
 }>()
 
 const router = useRouter()
@@ -35,19 +36,19 @@ function goToPost() {
         </h1>
 
         <p class="text-xl text-m3-sys-light-on-surface-variant leading-relaxed max-w-xl">
-          {{ post.excerpt }}
+          {{ post.summary || post.content.replace(/<[^>]*>/g, '').substring(0, 160) + '…' }}
         </p>
 
         <div class="flex items-center gap-4 mt-4">
           <img
-            :src="post.author.avatar"
-            :alt="post.author.name"
+            :src="userAvatarUrl(post.author?.username ?? 'user')"
+            :alt="post.author?.username"
             class="w-12 h-12 rounded-full object-cover border-2 border-m3-sys-light-surface"
             referrerpolicy="no-referrer"
           />
           <div>
-            <p class="font-semibold text-m3-sys-light-on-surface">{{ post.author.name }}</p>
-            <p class="text-sm text-m3-sys-light-on-surface-variant">{{ post.date }} · {{ post.readTime }}</p>
+            <p class="font-semibold text-m3-sys-light-on-surface">{{ post.author?.username }}</p>
+            <p class="text-sm text-m3-sys-light-on-surface-variant">{{ formatDate(post.created_at) }} · {{ post.read_count }} views</p>
           </div>
         </div>
 
@@ -69,17 +70,18 @@ function goToPost() {
       >
         <div class="absolute inset-0 bg-m3-sys-light-secondary-container rounded-[3rem] transform rotate-3 scale-105 -z-10"></div>
         <img
-          :src="post.imageUrl"
+          :src="articleImageUrl(post)"
           :alt="post.title"
           class="w-full h-[500px] object-cover rounded-[2.5rem] shadow-2xl transition-transform duration-500 hover:scale-[1.02]"
           referrerpolicy="no-referrer"
         />
         <div class="absolute bottom-6 right-6 bg-m3-sys-light-surface/90 backdrop-blur-md px-6 py-3 rounded-full shadow-lg">
           <span class="font-medium text-m3-sys-light-primary tracking-wide uppercase text-sm">
-            {{ post.category }}
+            {{ post.category?.name ?? 'Article' }}
           </span>
         </div>
       </div>
     </div>
   </section>
 </template>
+
