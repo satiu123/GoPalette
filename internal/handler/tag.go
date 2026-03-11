@@ -17,7 +17,12 @@ func NewTagHandler(s *service.TagService) *TagHandler {
 	return &TagHandler{tagService: s}
 }
 
-// List GET /api/tags（公开）
+// List 标签列表
+// @Summary      获取所有标签
+// @Tags         tags
+// @Produce      json
+// @Success      200  {object}  response.Response
+// @Router       /tags [get]
 func (h *TagHandler) List(c *gin.Context) {
 	tags, err := h.tagService.ListTags(c.Request.Context())
 	if err != nil {
@@ -27,7 +32,16 @@ func (h *TagHandler) List(c *gin.Context) {
 	response.Success(c, tags)
 }
 
-// Create POST /api/tags（需要 JWT，admin）
+// Create 创建标签
+// @Summary      创建标签
+// @Tags         tags
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body body CreateTagReq true "标签名称"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Router       /tags [post]
 func (h *TagHandler) Create(c *gin.Context) {
 	var req CreateTagReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -42,7 +56,16 @@ func (h *TagHandler) Create(c *gin.Context) {
 	response.Success(c, tag)
 }
 
-// Delete DELETE /api/tags/:id（需要 JWT，admin）
+// Delete 删除标签
+// @Summary      删除标签
+// @Tags         tags
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  int  true  "标签 ID"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      404  {object}  response.Response
+// @Router       /tags/{id} [delete]
 func (h *TagHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

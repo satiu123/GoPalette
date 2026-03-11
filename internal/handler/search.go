@@ -16,7 +16,17 @@ func NewSearchHandler(s *service.ArticleService) *SearchHandler {
 	return &SearchHandler{articleService: s}
 }
 
-// Search GET /api/search?q=xxx&page=1&page_size=10（公开）
+// Search 全文搜索
+// @Summary      全文搜索
+// @Description  基于 MySQL FULLTEXT 索引（倒排索引原理）搜索文章标题和正文
+// @Tags         search
+// @Produce      json
+// @Param        q          query  string  true   "搜索关键词"
+// @Param        page       query  int     false  "页码"
+// @Param        page_size  query  int     false  "每页条数"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Router       /search [get]
 func (h *SearchHandler) Search(c *gin.Context) {
 	var req SearchReq
 	if err := c.ShouldBindQuery(&req); err != nil {

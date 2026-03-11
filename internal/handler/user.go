@@ -18,6 +18,17 @@ func NewUserHandler(s *service.UserService) *UserHandler {
 	}
 }
 
+// Login 登录
+// @Summary      用户登录
+// @Description  返回 Access Token 和 Refresh Token
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body body LoginReq true "登录信息"
+// @Success      200  {object}  response.Response{data=TokenResp}
+// @Failure      400  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Router       /login [post]
 func (h *UserHandler) Login(c *gin.Context) {
 	var req LoginReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -37,6 +48,17 @@ func (h *UserHandler) Login(c *gin.Context) {
 	})
 }
 
+// Register 注册
+// @Summary      用户注册
+// @Description  创建新用户账号
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body body RegisterReq true "注册信息"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Router       /register [post]
 func (h *UserHandler) Register(c *gin.Context) {
 	var req RegisterReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -52,6 +74,17 @@ func (h *UserHandler) Register(c *gin.Context) {
 	response.Success(c, gin.H{"message": "注册成功"})
 }
 
+// Refresh 刷新令牌
+// @Summary      刷新 Token
+// @Description  使用 Refresh Token 获取新的双令牌（运用轮转机制）
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body body RefreshReq true "Refresh Token"
+// @Success      200  {object}  response.Response{data=TokenResp}
+// @Failure      400  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Router       /refresh [post]
 func (h *UserHandler) Refresh(c *gin.Context) {
 	var req RefreshReq
 	if err := c.ShouldBindJSON(&req); err != nil {

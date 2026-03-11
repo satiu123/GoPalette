@@ -17,7 +17,12 @@ func NewCategoryHandler(s *service.CategoryService) *CategoryHandler {
 	return &CategoryHandler{categoryService: s}
 }
 
-// List GET /api/categories（公开）
+// List 分类列表
+// @Summary      获取所有分类
+// @Tags         categories
+// @Produce      json
+// @Success      200  {object}  response.Response
+// @Router       /categories [get]
 func (h *CategoryHandler) List(c *gin.Context) {
 	categories, err := h.categoryService.ListCategories(c.Request.Context())
 	if err != nil {
@@ -27,7 +32,16 @@ func (h *CategoryHandler) List(c *gin.Context) {
 	response.Success(c, categories)
 }
 
-// Create POST /api/categories（需要 JWT，admin）
+// Create 创建分类
+// @Summary      创建分类
+// @Tags         categories
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body body CreateCategoryReq true "分类名称"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Router       /categories [post]
 func (h *CategoryHandler) Create(c *gin.Context) {
 	var req CreateCategoryReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -42,7 +56,16 @@ func (h *CategoryHandler) Create(c *gin.Context) {
 	response.Success(c, category)
 }
 
-// Delete DELETE /api/categories/:id（需要 JWT，admin）
+// Delete 删除分类
+// @Summary      删除分类
+// @Tags         categories
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  int  true  "分类 ID"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      404  {object}  response.Response
+// @Router       /categories/{id} [delete]
 func (h *CategoryHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

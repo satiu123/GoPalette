@@ -11,9 +11,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/satiu123/GoPalette/docs"
 	"github.com/satiu123/GoPalette/internal/handler"
 	"github.com/satiu123/GoPalette/internal/middleware"
 	"github.com/satiu123/GoPalette/internal/pkg/config"
+	swaggerfiles "github.com/swaggo/files"
+	ginswagger "github.com/swaggo/gin-swagger"
 )
 
 type application struct {
@@ -29,12 +32,13 @@ func (app *application) mount(userHandler *handler.UserHandler, articleHandler *
 	}
 
 	r := gin.Default()
+	r.Use(middleware.CORSMiddleware()) // 全局 CORS
 
 	public := r.Group("/api")
 	{
 		public.GET("/health", handler.HealthCheckHandler)
-		public.POST("/login", userHandler.Login)
-		public.POST("/register", userHandler.Register)
+		public.POST("/login", middleware.RateLimitAuth(), userHandler.Login)
+		public.POST("/register", middleware.RateLimitAuth(), userHandler.Register)
 		public.POST("/refresh", userHandler.Refresh)
 		public.GET("/articles", articleHandler.List)
 		public.GET("/articles/:id", articleHandler.Get)
@@ -42,6 +46,8 @@ func (app *application) mount(userHandler *handler.UserHandler, articleHandler *
 		public.GET("/tags", tagHandler.List)
 		public.GET("/articles/:id/comments", commentHandler.List)
 		public.GET("/search", searchHandler.Search)
+		// Swagger UI
+		public.GET("/swagger/*any", ginswagger.WrapHandler(swaggerfiles.Handler))
 	}
 
 	private := r.Group("/api")

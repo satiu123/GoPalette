@@ -17,7 +17,15 @@ func NewCommentHandler(s *service.CommentService) *CommentHandler {
 	return &CommentHandler{commentService: s}
 }
 
-// List GET /api/articles/:id/comments（公开）
+// List 评论列表
+// @Summary      获取文章评论
+// @Description  按文章 ID 获取所有评论（支持嵌套回复）
+// @Tags         comments
+// @Produce      json
+// @Param        id  path  int  true  "文章 ID"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Router       /articles/{id}/comments [get]
 func (h *CommentHandler) List(c *gin.Context) {
 	articleID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -32,7 +40,19 @@ func (h *CommentHandler) List(c *gin.Context) {
 	response.Success(c, comments)
 }
 
-// Create POST /api/articles/:id/comments（需要 JWT）
+// Create 发表评论
+// @Summary      发表评论
+// @Description  登录用户对文章进行评论，支持嵌套回复（parent_id != 0）
+// @Tags         comments
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id    path  int            true  "文章 ID"
+// @Param        body  body  CreateCommentReq true  "评论内容"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Router       /articles/{id}/comments [post]
 func (h *CommentHandler) Create(c *gin.Context) {
 	articleID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -55,7 +75,18 @@ func (h *CommentHandler) Create(c *gin.Context) {
 	response.Success(c, comment)
 }
 
-// Delete DELETE /api/comments/:id（需要 JWT，仅本人或 admin）
+// Delete 删除评论
+// @Summary      删除评论
+// @Description  评论本人或 admin 可删除
+// @Tags         comments
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  int  true  "评论 ID"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      403  {object}  response.Response
+// @Failure      404  {object}  response.Response
+// @Router       /comments/{id} [delete]
 func (h *CommentHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

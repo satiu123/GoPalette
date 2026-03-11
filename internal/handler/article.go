@@ -18,7 +18,19 @@ func NewArticleHandler(s *service.ArticleService) *ArticleHandler {
 	return &ArticleHandler{articleService: s}
 }
 
-// Create POST /api/articles（需要 JWT）
+// Create 创建文章
+// @Summary      创建文章
+// @Description  登录用户发布文章（draft 或 published）
+// @Tags         articles
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body body CreateArticleReq true "文章内容"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Router       /articles [post]
 func (h *ArticleHandler) Create(c *gin.Context) {
 	var req CreateArticleReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -43,7 +55,16 @@ func (h *ArticleHandler) Create(c *gin.Context) {
 	response.Success(c, article)
 }
 
-// Get GET /api/articles/:id（公开）
+// Get 获取文章详情
+// @Summary      获取文章详情
+// @Description  按 ID 获取文章，同时自动自增阅读数
+// @Tags         articles
+// @Produce      json
+// @Param        id  path  int  true  "文章 ID"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      404  {object}  response.Response
+// @Router       /articles/{id} [get]
 func (h *ArticleHandler) Get(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -59,7 +80,18 @@ func (h *ArticleHandler) Get(c *gin.Context) {
 	response.Success(c, article)
 }
 
-// List GET /api/articles（公开，仅返回 published 状态）
+// List 文章列表
+// @Summary      文章分页列表
+// @Description  公开接口，支持按分类、标签过滤和分页
+// @Tags         articles
+// @Produce      json
+// @Param        page         query  int   false  "页码（默认 1）"
+// @Param        page_size    query  int   false  "每页条数（默认 10，最大 50）"
+// @Param        category_id  query  int   false  "分类 ID"
+// @Param        tag_id       query  int   false  "标签 ID"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Router       /articles [get]
 func (h *ArticleHandler) List(c *gin.Context) {
 	var req ListArticlesReq
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -83,7 +115,20 @@ func (h *ArticleHandler) List(c *gin.Context) {
 	})
 }
 
-// Update PUT /api/articles/:id（需要 JWT，仅作者或 admin 可操作）
+// Update 更新文章
+// @Summary      更新文章
+// @Description  仅作者或 admin 可操作
+// @Tags         articles
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path  int              true  "文章 ID"
+// @Param        body body  UpdateArticleReq true  "更新内容"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      403  {object}  response.Response
+// @Failure      404  {object}  response.Response
+// @Router       /articles/{id} [put]
 func (h *ArticleHandler) Update(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -123,7 +168,18 @@ func (h *ArticleHandler) Update(c *gin.Context) {
 	response.Success(c, article)
 }
 
-// Delete DELETE /api/articles/:id（需要 JWT，仅作者或 admin 可操作）
+// Delete 删除文章
+// @Summary      删除文章
+// @Description  仅作者或 admin 可操作
+// @Tags         articles
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  int  true  "文章 ID"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      403  {object}  response.Response
+// @Failure      404  {object}  response.Response
+// @Router       /articles/{id} [delete]
 func (h *ArticleHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

@@ -1,3 +1,21 @@
+// @title           GoPalette Blog API
+// @version         1.0
+// @description     个人博客平台后端 API，基于 Go + Gin + MySQL + Redis
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   satiu123
+// @contact.url    https://github.com/satiu123/GoPalette
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8080
+// @BasePath  /api
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description JWT Access Token
 package main
 
 import (
