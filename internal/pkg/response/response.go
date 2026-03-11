@@ -14,7 +14,11 @@ func Success(c *gin.Context, data any) {
 	c.JSON(200, Response{Code: 200, Msg: "success", Data: data})
 }
 
-// 错误返回
+// 错误返回：429 用真实 HTTP 状态码，其他业务错误统一用 200 + code 区分
 func Error(c *gin.Context, code int, msg string) {
-	c.JSON(200, Response{Code: code, Msg: msg}) // 注意：业务报错HTTP状态码也可统一用200，靠内部Code区分
+	httpStatus := 200
+	if code == 429 {
+		httpStatus = 429
+	}
+	c.JSON(httpStatus, Response{Code: code, Msg: msg})
 }
