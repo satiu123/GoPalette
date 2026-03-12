@@ -30,3 +30,6 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# 用户上传的静态文件（运行时生成，不纳入版本控制）
+static/uploads/
