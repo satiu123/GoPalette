@@ -8,7 +8,7 @@ type Article struct {
 	Summary    string    `json:"summary" gorm:"type:varchar(500)"`
 	Content    string    `json:"content" gorm:"type:longtext;not null"`
 	AuthorID   int64     `json:"author_id" gorm:"not null;index"`
-	CategoryID int64     `json:"category_id" gorm:"index"`
+	CategoryID *int64    `json:"category_id" gorm:"index"`
 	Status     string    `json:"status" gorm:"type:varchar(20);default:'draft'"` // draft | published
 	ReadCount  int64     `json:"read_count" gorm:"default:0"`
 	Author     User      `json:"author,omitempty" gorm:"foreignKey:AuthorID"`
