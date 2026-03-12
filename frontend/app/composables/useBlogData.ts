@@ -1,4 +1,4 @@
-// ── 数据类型（与后端 Go model 对应） ──────────────────────────────────────
+// 数据类型
 
 export interface ApiUser {
   id: number
@@ -54,7 +54,7 @@ export interface ArticleListData {
   articles: Article[]
 }
 
-// ── 工具函数 ───────────────────────────────────────────────────────────────
+// 工具函数
 
 /** 生成固定占位图（用文章 id 做 seed，保证同一文章图片不变） */
 export function articleImageUrl(article: Article): string {
@@ -81,7 +81,7 @@ export function readingTime(content: string): string {
   return `${minutes} min read`
 }
 
-// ── API Composables ───────────────────────────────────────────────────────
+// API Composables 
 
 /** 文章分页列表（支持按分类/标签过滤） */
 export function useArticleList(params?: Ref<{

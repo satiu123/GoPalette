@@ -11,7 +11,7 @@ onMounted(() => {
   if (!isLoggedIn.value) router.push('/login')
 })
 
-// ── 编辑模式（?edit=:id）vs 新建模式 ─────────────────────────────────────
+// 编辑模式（?edit=:id）vs 新建模式 
 const editId = computed(() =>
   route.query.edit ? Number(route.query.edit) : null
 )

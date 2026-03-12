@@ -8,17 +8,17 @@ definePageMeta({ ssr: false })
 const router = useRouter()
 const { user, authFetch, isLoggedIn } = useAuth()
 
-// ── 权限检查 ──────────────────────────────────────────────────────────────
+// 权限检查
 onMounted(async () => {
   if (!isLoggedIn.value) { router.push('/login'); return }
   await loadData()
   if (user.value?.role !== 'admin') router.push('/')
 })
 
-// ── 选项卡 ────────────────────────────────────────────────────────────────
+// 选项卡
 const tab = ref<'articles' | 'categories' | 'tags'>('articles')
 
-// ── 文章管理 ──────────────────────────────────────────────────────────────
+// 文章管理
 const articles = ref<Article[]>([])
 const totalArticles = ref(0)
 const articlePage = ref(1)
@@ -48,7 +48,7 @@ async function deleteArticle(id: number) {
 
 watch(articlePage, loadArticles)
 
-// ── 分类管理 ──────────────────────────────────────────────────────────────
+// 分类管理
 const categories = ref<ApiCategory[]>([])
 const newCategoryName = ref('')
 const catError = ref('')
@@ -76,7 +76,7 @@ async function deleteCategory(id: number) {
   await loadCategories()
 }
 
-// ── 标签管理 ──────────────────────────────────────────────────────────────
+// 标签管理
 const tags = ref<ApiTag[]>([])
 const newTagName = ref('')
 const tagError = ref('')
@@ -104,7 +104,7 @@ async function deleteTag(id: number) {
   await loadTags()
 }
 
-// ── 初始化 ────────────────────────────────────────────────────────────────
+// 初始化
 async function loadData() {
   await Promise.all([loadArticles(), loadCategories(), loadTags()])
 }
@@ -166,7 +166,7 @@ const stats = computed(() => [
       </button>
     </div>
 
-    <!-- ── 文章管理 ── -->
+    <!-- 文章管理 -->
     <div v-if="tab === 'articles'">
       <div class="flex items-center justify-between mb-4">
         <h2 class="font-bold text-m3-sys-light-on-surface">All Articles</h2>
@@ -243,7 +243,7 @@ const stats = computed(() => [
       </div>
     </div>
 
-    <!-- ── 分类管理 ── -->
+    <!-- 分类管理 -->
     <div v-if="tab === 'categories'" class="max-w-md">
       <h2 class="font-bold text-m3-sys-light-on-surface mb-4">Manage Categories</h2>
 
@@ -280,7 +280,7 @@ const stats = computed(() => [
       </ul>
     </div>
 
-    <!-- ── 标签管理 ── -->
+    <!-- 标签管理 -->
     <div v-if="tab === 'tags'" class="max-w-2xl">
       <h2 class="font-bold text-m3-sys-light-on-surface mb-4">Manage Tags</h2>
 
