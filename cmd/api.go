@@ -23,7 +23,7 @@ type application struct {
 	cfg config.ServerConfig
 }
 
-func (app *application) mount(userHandler *handler.UserHandler, articleHandler *handler.ArticleHandler, categoryHandler *handler.CategoryHandler, tagHandler *handler.TagHandler, commentHandler *handler.CommentHandler, searchHandler *handler.SearchHandler) *gin.Engine {
+func (app *application) mount(userHandler *handler.UserHandler, articleHandler *handler.ArticleHandler, categoryHandler *handler.CategoryHandler, tagHandler *handler.TagHandler, commentHandler *handler.CommentHandler, searchHandler *handler.SearchHandler, uploadHandler *handler.UploadHandler) *gin.Engine {
 	// 根据环境设置 Gin 模式
 	if app.cfg.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -33,6 +33,8 @@ func (app *application) mount(userHandler *handler.UserHandler, articleHandler *
 
 	r := gin.Default()
 	r.Use(middleware.CORSMiddleware()) // 全局 CORS
+	r.MaxMultipartMemory = 5 << 20 // 限制上传请求内存缓冲为 5MB
+	r.Static("/static", "./static") // 静态文件服务（用于图片访问）
 
 	public := r.Group("/api")
 	{
@@ -45,6 +47,7 @@ func (app *application) mount(userHandler *handler.UserHandler, articleHandler *
 		public.GET("/categories", categoryHandler.List)
 		public.GET("/tags", tagHandler.List)
 		public.GET("/articles/:id/comments", commentHandler.List)
+		public.POST("/articles/:id/comments", middleware.JWTOptionalMiddleware(), commentHandler.Create)
 		public.GET("/search", searchHandler.Search)
 		// Swagger UI
 		public.GET("/swagger/*any", ginswagger.WrapHandler(swaggerfiles.Handler))
@@ -60,12 +63,15 @@ func (app *application) mount(userHandler *handler.UserHandler, articleHandler *
 		private.DELETE("/categories/:id", categoryHandler.Delete)
 		private.POST("/tags", tagHandler.Create)
 		private.DELETE("/tags/:id", tagHandler.Delete)
-		private.POST("/articles/:id/comments", commentHandler.Create)
 		private.DELETE("/comments/:id", commentHandler.Delete)
-		// 个人主页 & 管理员
+		// 个人中心 & 管理员
 		private.GET("/users/me", userHandler.GetMe)
+		private.PUT("/users/me", userHandler.UpdateMe)
 		private.GET("/users/me/articles", articleHandler.ListMine)
 		private.GET("/admin/articles", articleHandler.AdminList)
+		private.GET("/admin/comments", commentHandler.AdminList)
+		// 图片上传
+		private.POST("/upload", uploadHandler.Upload)
 	}
 
 	return r

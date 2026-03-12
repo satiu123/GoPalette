@@ -26,6 +26,7 @@ import (
 	"github.com/satiu123/GoPalette/internal/model"
 	"github.com/satiu123/GoPalette/internal/pkg/config"
 	"github.com/satiu123/GoPalette/internal/pkg/database"
+	"github.com/satiu123/GoPalette/internal/pkg/storage"
 	"github.com/satiu123/GoPalette/internal/repository/mysql"
 	tokenredis "github.com/satiu123/GoPalette/internal/repository/redis"
 	"github.com/satiu123/GoPalette/internal/service"
@@ -68,8 +69,11 @@ func main() {
 
 	searchHandler := handler.NewSearchHandler(articleService)
 
+	stor := storage.NewLocalStorage("static/uploads", "/static/uploads")
+	uploadHandler := handler.NewUploadHandler(stor)
+
 	// 挂载路由
-	router := app.mount(userHandler, articleHandler, categoryHandler, tagHandler, commentHandler, searchHandler)
+	router := app.mount(userHandler, articleHandler, categoryHandler, tagHandler, commentHandler, searchHandler, uploadHandler)
 
 	// 启动服务
 	log.Fatal(app.run(router))
