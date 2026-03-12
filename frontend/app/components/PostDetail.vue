@@ -37,7 +37,6 @@ const commentError = ref('')
 
 async function submitComment() {
   if (!commentText.value.trim()) return
-  if (!isLoggedIn.value) { router.push('/login'); return }
   submitting.value = true
   commentError.value = ''
   try {
@@ -67,7 +66,7 @@ function toggleReply(commentId: number) {
 async function submitReply(parentComment: Comment) {
   const text = (replyTexts[parentComment.id] ?? '').trim()
   if (!text) return
-  if (!isLoggedIn.value) { router.push('/login'); return }
+
   replySubmitting[parentComment.id] = true
   try {
     await authFetch<ApiResponse<Comment>>(`/articles/${props.post.id}/comments`, {
@@ -103,7 +102,7 @@ async function deleteComment(commentId: number) {
 // 判断当前用户是否可以删除该评论
 function canDelete(comment: Comment) {
   return isLoggedIn.value && (
-    user.value?.id === comment.user_id ||
+    (comment.user_id !== null && user.value?.id === comment.user_id) ||
     user.value?.role === 'admin'
   )
 }
@@ -212,13 +211,13 @@ function goBack() {
         <div class="flex-grow relative">
           <textarea
             v-model="commentText"
-            :placeholder="isLoggedIn ? 'Add to the discussion…' : 'Sign in to comment…'"
-            :disabled="!isLoggedIn || submitting"
+            placeholder="Add to the discussion…"
+            :disabled="submitting"
             class="w-full bg-m3-sys-light-surface text-m3-sys-light-on-surface placeholder:text-m3-sys-light-on-surface-variant rounded-[1.5rem] p-5 pr-16 resize-none focus:outline-none focus:ring-4 focus:ring-m3-sys-light-primary/20 transition-all shadow-sm min-h-[100px] disabled:opacity-60"
           />
           <button
             @click="submitComment"
-            :disabled="!isLoggedIn || submitting || !commentText.trim()"
+            :disabled="submitting || !commentText.trim()"
             class="absolute bottom-4 right-4 p-3 bg-m3-sys-light-primary text-m3-sys-light-on-primary rounded-full hover:opacity-90 transition-opacity shadow-md disabled:opacity-50"
           >
             <Send class="w-5 h-5" />
@@ -228,9 +227,9 @@ function goBack() {
       <p v-if="commentError" class="text-red-500 text-sm -mt-8 mb-6">{{ commentError }}</p>
 
       <!-- 未登录提示 -->
-      <p v-if="!isLoggedIn" class="text-center text-m3-sys-light-on-surface-variant mb-8">
+      <p v-if="!isLoggedIn" class="text-center text-m3-sys-light-on-surface-variant mb-8 text-sm">
         <NuxtLink to="/login" class="text-m3-sys-light-primary font-semibold hover:underline">Sign in</NuxtLink>
-        to join the discussion.
+        to link your comment to your account, or post anonymously.
       </p>
 
       <!-- 评论列表（顶级 + 嵌套回复） -->
@@ -251,7 +250,7 @@ function goBack() {
             <div class="flex-1">
               <div class="bg-m3-sys-light-surface p-5 rounded-[1.5rem] rounded-tl-none shadow-sm">
                 <div class="flex items-center justify-between mb-1.5">
-                  <span class="font-bold text-m3-sys-light-on-surface">{{ comment.user?.username ?? 'Anonymous' }}</span>
+                  <span class="font-bold text-m3-sys-light-on-surface">{{ comment.user?.username || '匿名用户' }}</span>
                   <span class="text-xs text-m3-sys-light-on-surface-variant">{{ formatDate(comment.created_at) }}</span>
                 </div>
                 <p class="text-m3-sys-light-on-surface opacity-90 leading-relaxed">{{ comment.content }}</p>
@@ -316,7 +315,7 @@ function goBack() {
                   <div class="flex-1">
                     <div class="bg-m3-sys-light-surface-variant/70 p-4 rounded-xl rounded-tl-none">
                       <div class="flex items-center justify-between mb-1">
-                        <span class="font-semibold text-sm text-m3-sys-light-on-surface">{{ reply.user?.username ?? 'Anonymous' }}</span>
+                        <span class="font-semibold text-sm text-m3-sys-light-on-surface">{{ reply.user?.username || '匿名用户' }}</span>
                         <span class="text-xs text-m3-sys-light-on-surface-variant">{{ formatDate(reply.created_at) }}</span>
                       </div>
                       <p class="text-sm text-m3-sys-light-on-surface opacity-90 leading-relaxed">{{ reply.content }}</p>

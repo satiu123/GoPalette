@@ -36,11 +36,12 @@ export interface Article {
 export interface Comment {
   id: number
   article_id: number
-  user_id: number
+  user_id: number | null
   content: string
   parent_id: number
   created_at: string
-  user: ApiUser
+  user?: ApiUser | null
+  article?: Article | null
 }
 
 export interface ApiResponse<T = unknown> {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PenSquare, Trash2, BookOpen, FileText, User2, Clock } from 'lucide-vue-next'
+import { PenSquare, Trash2, BookOpen, FileText, User2, Clock, Settings } from 'lucide-vue-next'
 import type { Article, ArticleListData, ApiResponse, ApiUser } from '~/composables/useBlogData'
 import { formatDate, articleImageUrl } from '~/composables/useBlogData'
 
@@ -11,6 +11,49 @@ const { user, authFetch, accessToken } = useAuth()
 // 个人信息（从后端刷新）
 const profile = ref<ApiUser | null>(null)
 const profilePending = ref(true)
+
+// 编辑个人信息
+const editMode = ref(false)
+const editUsername = ref('')
+const editOldPassword = ref('')
+const editNewPassword = ref('')
+const editError = ref('')
+const editSuccess = ref('')
+const editSubmitting = ref(false)
+
+function openEdit() {
+  editUsername.value = profile.value?.username ?? user.value?.username ?? ''
+  editOldPassword.value = ''
+  editNewPassword.value = ''
+  editError.value = ''
+  editSuccess.value = ''
+  editMode.value = true
+}
+
+async function submitEdit() {
+  editError.value = ''
+  editSuccess.value = ''
+  if (!editUsername.value.trim()) {
+    editError.value = '用户名不能为空'
+    return
+  }
+  editSubmitting.value = true
+  try {
+    const body: Record<string, string> = { username: editUsername.value.trim() }
+    if (editNewPassword.value) {
+      body.old_password = editOldPassword.value
+      body.new_password = editNewPassword.value
+    }
+    await authFetch('/users/me', { method: 'PUT', body })
+    editSuccess.value = '更新成功'
+    editMode.value = false
+    await loadProfile()
+  } catch (e: unknown) {
+    editError.value = (e as { data?: { msg?: string } })?.data?.msg ?? '更新失败，请重试'
+  } finally {
+    editSubmitting.value = false
+  }
+}
 
 // 我的文章
 const page = ref(1)
@@ -111,6 +154,64 @@ const totalReads = computed(() =>
         <div class="text-center">
           <p class="text-3xl font-black text-m3-sys-light-primary">{{ totalReads }}</p>
           <p class="text-xs text-m3-sys-light-on-surface-variant mt-0.5">Total Reads</p>
+        </div>
+      </div>
+
+      <!-- 编辑按钮 -->
+      <button
+        @click="openEdit"
+        class="shrink-0 p-2.5 rounded-full bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container transition-colors"
+        title="编辑个人信息"
+      >
+        <Settings class="w-5 h-5" />
+      </button>
+    </div>
+
+    <!-- 编辑个人信息表单 -->
+    <div v-if="editMode" class="bg-m3-sys-light-surface rounded-[2rem] p-8 mb-8 border border-m3-sys-light-outline-variant">
+      <h3 class="text-lg font-bold text-m3-sys-light-on-surface mb-6">编辑个人信息</h3>
+      <div class="space-y-4 max-w-sm">
+        <div>
+          <label class="block text-sm font-medium text-m3-sys-light-on-surface-variant mb-1">用户名</label>
+          <input
+            v-model="editUsername"
+            type="text"
+            class="w-full bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-m3-sys-light-primary/30"
+          />
+        </div>
+        <div class="pt-2 border-t border-m3-sys-light-outline-variant">
+          <p class="text-xs text-m3-sys-light-on-surface-variant mb-3">留空则不修改密码</p>
+          <label class="block text-sm font-medium text-m3-sys-light-on-surface-variant mb-1">当前密码</label>
+          <input
+            v-model="editOldPassword"
+            type="password"
+            placeholder="修改密码时必填"
+            class="w-full bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-m3-sys-light-primary/30 mb-3"
+          />
+          <label class="block text-sm font-medium text-m3-sys-light-on-surface-variant mb-1">新密码</label>
+          <input
+            v-model="editNewPassword"
+            type="password"
+            placeholder="至少 6 位"
+            class="w-full bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-m3-sys-light-primary/30"
+          />
+        </div>
+        <p v-if="editError" class="text-red-500 text-sm">{{ editError }}</p>
+        <p v-if="editSuccess" class="text-green-600 text-sm">{{ editSuccess }}</p>
+        <div class="flex gap-3 pt-2">
+          <button
+            @click="submitEdit"
+            :disabled="editSubmitting"
+            class="px-5 py-2.5 bg-m3-sys-light-primary text-m3-sys-light-on-primary rounded-full font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {{ editSubmitting ? '保存中…' : '保存' }}
+          </button>
+          <button
+            @click="editMode = false"
+            class="px-5 py-2.5 bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface-variant rounded-full font-medium hover:bg-m3-sys-light-secondary-container transition-colors"
+          >
+            取消
+          </button>
         </div>
       </div>
     </div>

@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { ArrowLeft, Send } from 'lucide-vue-next'
+import { ArrowLeft, Send, Bold, Italic, List, ListOrdered, Image as ImageIcon, Quote, Code } from 'lucide-vue-next'
+import { useEditor, EditorContent } from '@tiptap/vue-3'
+import StarterKit from '@tiptap/starter-kit'
+import Image from '@tiptap/extension-image'
 import type { ApiResponse, Article } from '~/composables/useBlogData'
 
 const router = useRouter()
@@ -18,7 +21,6 @@ const editId = computed(() =>
 const isEdit = computed(() => editId.value !== null)
 
 const title   = ref('')
-const content = ref('')
 const summary = ref('')
 const status  = ref<'draft' | 'published'>('draft')
 const selectedCategoryId = ref<number | null>(null)
@@ -26,6 +28,48 @@ const selectedTagIds     = ref<number[]>([])
 const submitting = ref(false)
 const error      = ref('')
 const loading    = ref(false)
+
+// Tiptap 富文本编辑器
+const editor = useEditor({
+  content: '',
+  extensions: [
+    StarterKit,
+    Image.configure({ inline: false, allowBase64: false }),
+  ],
+})
+
+// 图片上传
+const fileInput = ref<HTMLInputElement | null>(null)
+const imageUploading = ref(false)
+
+async function handleImageUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (!input.files?.length) return
+  const file = input.files[0]!
+  if (file.size > 5 * 1024 * 1024) {
+    error.value = '图片不能超过 5MB'
+    return
+  }
+  imageUploading.value = true
+  try {
+    const formData = new FormData()
+    formData.append('image', file)
+    const res = await authFetch<ApiResponse<{ url: string }>>('/upload', {
+      method: 'POST',
+      body: formData,
+    })
+    if (res.code === 200) {
+      editor.value?.chain().focus().setImage({ src: res.data.url }).run()
+    }
+  } catch {
+    error.value = '图片上传失败，请重试'
+  } finally {
+    imageUploading.value = false
+    input.value = ''
+  }
+}
+
+onBeforeUnmount(() => editor.value?.destroy())
 
 // 拉取真实分类 & 标签
 const { data: catData }  = await useCategories()
@@ -42,11 +86,12 @@ onMounted(async () => {
     if (res.code === 200) {
       const a = res.data
       title.value   = a.title
-      content.value = a.content
       summary.value = a.summary ?? ''
       status.value  = (a.status as 'draft' | 'published') ?? 'draft'
       selectedCategoryId.value = a.category_id ? Number(a.category_id) : null
       selectedTagIds.value     = (a.tags ?? []).map(t => Number(t.id))
+      await nextTick()
+      editor.value?.commands.setContent(a.content)
     } else {
       error.value = '加载文章失败'
     }
@@ -64,7 +109,9 @@ function toggleTag(id: number) {
 }
 
 async function publish(draft = false) {
-  if (!title.value.trim() || !content.value.trim()) {
+  const htmlContent = editor.value?.getHTML() ?? ''
+  const textContent = editor.value?.getText().trim() ?? ''
+  if (!title.value.trim() || !textContent) {
     error.value = '标题和正文不能为空'
     return
   }
@@ -74,7 +121,7 @@ async function publish(draft = false) {
     const body = {
       title:       title.value.trim(),
       summary:     summary.value.trim() || undefined,
-      content:     content.value.trim(),
+      content:     htmlContent,
       category_id: selectedCategoryId.value ?? 0,
       tag_ids:     selectedTagIds.value,
       status:      draft ? 'draft' : 'published'
@@ -220,12 +267,66 @@ function goBack() {
           </div>
         </div>
 
-        <!-- 正文 -->
-        <textarea
-          v-model="content"
-          placeholder="Start writing your story…"
-          class="w-full bg-transparent text-xl leading-relaxed text-m3-sys-light-on-surface placeholder:text-m3-sys-light-on-surface-variant/50 resize-none focus:outline-none min-h-[400px]"
-        />
+        <!-- 正文 / 富文本编辑器 -->
+        <div class="border border-m3-sys-light-outline-variant rounded-2xl overflow-hidden">
+          <!-- 工具栏 -->
+          <div class="flex flex-wrap gap-1 p-2 bg-m3-sys-light-surface-variant border-b border-m3-sys-light-outline-variant">
+            <button type="button" @click="editor?.chain().focus().toggleBold().run()"
+              class="flex items-center p-2 rounded-lg text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container transition-colors"
+              :class="{ 'bg-m3-sys-light-secondary-container': editor?.isActive('bold') }">
+              <Bold class="w-4 h-4" />
+            </button>
+            <button type="button" @click="editor?.chain().focus().toggleItalic().run()"
+              class="flex items-center p-2 rounded-lg text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container transition-colors"
+              :class="{ 'bg-m3-sys-light-secondary-container': editor?.isActive('italic') }">
+              <Italic class="w-4 h-4" />
+            </button>
+            <span class="w-px h-6 bg-m3-sys-light-outline-variant mx-1 self-center" />
+            <button type="button" @click="editor?.chain().focus().toggleHeading({ level: 2 }).run()"
+              class="flex items-center px-2.5 py-2 rounded-lg text-xs font-bold text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container transition-colors"
+              :class="{ 'bg-m3-sys-light-secondary-container': editor?.isActive('heading', { level: 2 }) }">H2</button>
+            <button type="button" @click="editor?.chain().focus().toggleHeading({ level: 3 }).run()"
+              class="flex items-center px-2.5 py-2 rounded-lg text-xs font-bold text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container transition-colors"
+              :class="{ 'bg-m3-sys-light-secondary-container': editor?.isActive('heading', { level: 3 }) }">H3</button>
+            <span class="w-px h-6 bg-m3-sys-light-outline-variant mx-1 self-center" />
+            <button type="button" @click="editor?.chain().focus().toggleBulletList().run()"
+              class="flex items-center p-2 rounded-lg text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container transition-colors"
+              :class="{ 'bg-m3-sys-light-secondary-container': editor?.isActive('bulletList') }">
+              <List class="w-4 h-4" />
+            </button>
+            <button type="button" @click="editor?.chain().focus().toggleOrderedList().run()"
+              class="flex items-center p-2 rounded-lg text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container transition-colors"
+              :class="{ 'bg-m3-sys-light-secondary-container': editor?.isActive('orderedList') }">
+              <ListOrdered class="w-4 h-4" />
+            </button>
+            <span class="w-px h-6 bg-m3-sys-light-outline-variant mx-1 self-center" />
+            <button type="button" @click="editor?.chain().focus().toggleBlockquote().run()"
+              class="flex items-center p-2 rounded-lg text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container transition-colors"
+              :class="{ 'bg-m3-sys-light-secondary-container': editor?.isActive('blockquote') }">
+              <Quote class="w-4 h-4" />
+            </button>
+            <button type="button" @click="editor?.chain().focus().toggleCode().run()"
+              class="flex items-center p-2 rounded-lg text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container transition-colors"
+              :class="{ 'bg-m3-sys-light-secondary-container': editor?.isActive('code') }">
+              <Code class="w-4 h-4" />
+            </button>
+            <span class="w-px h-6 bg-m3-sys-light-outline-variant mx-1 self-center" />
+            <button type="button" @click="fileInput?.click()" :disabled="imageUploading"
+              class="flex items-center gap-1.5 p-2 rounded-lg text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <ImageIcon class="w-4 h-4" />
+              <span class="text-xs">{{ imageUploading ? '上传中…' : 'Image' }}</span>
+            </button>
+          </div>
+
+          <!-- 编辑器内容区 -->
+          <EditorContent
+            :editor="editor"
+            class="prose prose-lg max-w-none p-6 min-h-[400px] text-m3-sys-light-on-surface focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[360px]"
+          />
+        </div>
+
+        <!-- 隐藏的图片上传 input -->
+        <input ref="fileInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" @change="handleImageUpload" />
       </div>
     </template>
   </div>

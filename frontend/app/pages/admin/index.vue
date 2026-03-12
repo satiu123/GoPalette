@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { LayoutDashboard, FileText, Tag, FolderOpen, Trash2, Plus, X } from 'lucide-vue-next'
-import type { Article, ArticleListData, ApiCategory, ApiTag, ApiResponse } from '~/composables/useBlogData'
+import { LayoutDashboard, FileText, Tag, FolderOpen, Trash2, Plus, X, MessageSquare } from 'lucide-vue-next'
+import type { Article, ArticleListData, ApiCategory, ApiTag, ApiResponse, Comment } from '~/composables/useBlogData'
 import { formatDate } from '~/composables/useBlogData'
 
 definePageMeta({ ssr: false })
@@ -16,7 +16,7 @@ onMounted(async () => {
 })
 
 // 选项卡
-const tab = ref<'articles' | 'categories' | 'tags'>('articles')
+const tab = ref<'articles' | 'categories' | 'tags' | 'comments'>('articles')
 
 // 文章管理
 const articles = ref<Article[]>([])
@@ -104,17 +104,54 @@ async function deleteTag(id: number) {
   await loadTags()
 }
 
+// 评论管理
+interface AdminCommentResp {
+  comments: Comment[]
+  total: number
+}
+
+const comments = ref<Comment[]>([])
+const totalComments = ref(0)
+const commentPage = ref(1)
+const COMMENT_PAGE_SIZE = 20
+const commentPending = ref(false)
+
+async function loadComments() {
+  commentPending.value = true
+  try {
+    const res = await authFetch<ApiResponse<AdminCommentResp>>(
+      `/admin/comments?page=${commentPage.value}&page_size=${COMMENT_PAGE_SIZE}`
+    )
+    if (res.code === 200) {
+      comments.value = res.data.comments ?? []
+      totalComments.value = res.data.total ?? 0
+    }
+  } finally {
+    commentPending.value = false
+  }
+}
+
+async function deleteCommentAdmin(id: number) {
+  if (!confirm('确认删除此评论？')) return
+  await authFetch(`/comments/${id}`, { method: 'DELETE' })
+  await loadComments()
+}
+
+watch(commentPage, loadComments)
+
 // 初始化
 async function loadData() {
-  await Promise.all([loadArticles(), loadCategories(), loadTags()])
+  await Promise.all([loadArticles(), loadCategories(), loadTags(), loadComments()])
 }
 
 const articleTotalPages = computed(() => Math.ceil(totalArticles.value / ARTICLE_PAGE_SIZE))
+const commentTotalPages = computed(() => Math.ceil(totalComments.value / COMMENT_PAGE_SIZE))
 
 const stats = computed(() => [
   { label: 'Total Articles', value: totalArticles.value, icon: FileText },
   { label: 'Categories', value: categories.value.length, icon: FolderOpen },
   { label: 'Tags', value: tags.value.length, icon: Tag },
+  { label: 'Comments', value: totalComments.value, icon: MessageSquare },
 ])
 </script>
 
@@ -155,7 +192,7 @@ const stats = computed(() => [
     <!-- 选项卡 -->
     <div class="flex gap-1 bg-m3-sys-light-surface-variant rounded-2xl p-1 mb-8 w-fit">
       <button
-        v-for="t in (['articles', 'categories', 'tags'] as const)" :key="t"
+        v-for="t in (['articles', 'categories', 'tags', 'comments'] as const)" :key="t"
         @click="tab = t"
         class="px-5 py-2 rounded-xl font-medium text-sm capitalize transition-all"
         :class="tab === t
@@ -314,6 +351,74 @@ const stats = computed(() => [
         <span v-if="tags.length === 0" class="text-m3-sys-light-on-surface-variant text-sm py-2">
           No tags yet.
         </span>
+      </div>
+    </div>
+
+    <!-- 评论管理 -->
+    <div v-if="tab === 'comments'">
+      <h2 class="font-bold text-m3-sys-light-on-surface mb-4">All Comments</h2>
+
+      <div v-if="commentPending" class="space-y-3">
+        <div v-for="i in 6" :key="i" class="h-14 rounded-xl bg-m3-sys-light-surface-variant animate-pulse" />
+      </div>
+
+      <div v-else class="rounded-2xl overflow-hidden border border-m3-sys-light-outline-variant">
+        <table class="w-full text-sm">
+          <thead class="bg-m3-sys-light-surface-variant">
+            <tr>
+              <th class="text-left px-5 py-3 font-semibold text-m3-sys-light-on-surface-variant">评论内容</th>
+              <th class="text-left px-4 py-3 font-semibold text-m3-sys-light-on-surface-variant hidden md:table-cell">所属文章</th>
+              <th class="text-left px-4 py-3 font-semibold text-m3-sys-light-on-surface-variant hidden sm:table-cell">评论者</th>
+              <th class="text-left px-4 py-3 font-semibold text-m3-sys-light-on-surface-variant hidden lg:table-cell">时间</th>
+              <th class="px-4 py-3" />
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-m3-sys-light-outline-variant">
+            <tr
+              v-for="comment in comments" :key="comment.id"
+              class="bg-m3-sys-light-surface hover:bg-m3-sys-light-surface-variant/50 transition-colors"
+            >
+              <td class="px-5 py-3 max-w-xs">
+                <p class="line-clamp-2 text-m3-sys-light-on-surface">{{ comment.content }}</p>
+              </td>
+              <td class="px-4 py-3 hidden md:table-cell text-m3-sys-light-on-surface-variant">
+                <NuxtLink v-if="comment.article" :to="`/post/${comment.article_id}`" class="hover:text-m3-sys-light-primary transition-colors line-clamp-1">
+                  {{ comment.article.title }}
+                </NuxtLink>
+                <span v-else>—</span>
+              </td>
+              <td class="px-4 py-3 hidden sm:table-cell text-m3-sys-light-on-surface-variant">
+                {{ comment.user?.username || '匿名用户' }}
+              </td>
+              <td class="px-4 py-3 text-m3-sys-light-on-surface-variant text-xs hidden lg:table-cell">
+                {{ formatDate(comment.created_at) }}
+              </td>
+              <td class="px-4 py-3 text-right">
+                <button
+                  @click="deleteCommentAdmin(comment.id)"
+                  class="p-1.5 rounded-lg hover:bg-m3-sys-light-error-container text-m3-sys-light-on-surface-variant hover:text-m3-sys-light-on-error-container transition-colors"
+                >
+                  <Trash2 class="w-4 h-4" />
+                </button>
+              </td>
+            </tr>
+            <tr v-if="comments.length === 0">
+              <td colspan="5" class="px-5 py-10 text-center text-m3-sys-light-on-surface-variant">暂无评论</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 评论分页 -->
+      <div v-if="commentTotalPages > 1" class="flex justify-center gap-2 mt-6">
+        <button
+          v-for="p in commentTotalPages" :key="p"
+          @click="commentPage = p"
+          class="w-9 h-9 rounded-full text-sm font-medium transition-colors"
+          :class="p === commentPage
+            ? 'bg-m3-sys-light-primary text-m3-sys-light-on-primary'
+            : 'bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container'"
+        >{{ p }}</button>
       </div>
     </div>
   </div>
