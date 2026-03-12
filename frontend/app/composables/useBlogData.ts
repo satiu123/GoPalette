@@ -138,3 +138,23 @@ export function useSearch(params: Ref<{ q: string; page?: number; page_size?: nu
   })
 }
 
+/** 当前用户自己的文章列表（含草稿），需要 Authorization 头 */
+export function useMyArticles(token: Ref<string | null>, params?: Ref<{ page?: number; page_size?: number }>) {
+  const config = useRuntimeConfig()
+  return useFetch<ApiResponse<ArticleListData>>('/users/me/articles', {
+    baseURL: config.public.apiBase,
+    query: params,
+    headers: computed(() => token.value ? { Authorization: token.value } : {})
+  })
+}
+
+/** 管理员文章列表（所有状态），需要 admin 权限 */
+export function useAdminArticles(token: Ref<string | null>, params?: Ref<{ page?: number; page_size?: number; author_id?: number }>) {
+  const config = useRuntimeConfig()
+  return useFetch<ApiResponse<ArticleListData>>('/admin/articles', {
+    baseURL: config.public.apiBase,
+    query: params,
+    headers: computed(() => token.value ? { Authorization: token.value } : {})
+  })
+}
+

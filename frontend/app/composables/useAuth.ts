@@ -5,6 +5,18 @@ interface TokenData {
   refresh_token: string
 }
 
+/** 解析 JWT payload（不验证签名，仅前端展示用） */
+function parseJWT(token: string): { user_id: number; role: string } | null {
+  try {
+    const parts = token.split('.')
+    if (parts.length < 2 || !parts[1]) return null
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    return JSON.parse(atob(base64))
+  } catch {
+    return null
+  }
+}
+
 export function useAuth() {
   const config = useRuntimeConfig()
 
@@ -39,7 +51,8 @@ export function useAuth() {
     if (res.code !== 200) throw new Error(res.msg)
     accessToken.value = res.data.access_token
     refreshToken.value = res.data.refresh_token
-    user.value = { id: 0, username, role: 'user' } // 简单回填，重载后从 token 解析
+    const claims = parseJWT(res.data.access_token)
+    user.value = { id: claims?.user_id ?? 0, username, role: claims?.role ?? 'user' }
   }
 
   /** 注册 */
@@ -75,6 +88,19 @@ export function useAuth() {
     user.value = null
   }
 
+  /** 从后端恢复完整用户信息（页面刷新后调用） */
+  async function fetchMe(): Promise<void> {
+    if (!accessToken.value) return
+    try {
+      const res = await $fetch<ApiResponse<ApiUser>>(`${config.public.apiBase}/users/me`, {
+        headers: authHeaders()
+      })
+      if (res.code === 200) user.value = res.data
+    } catch {
+      // token 过期或无效，保持未登录状态
+    }
+  }
+
   /**
    * 带自动 token 刷新的 $fetch 封装。
    * 401 时尝试刷新一次，若仍失败则抛出错误。
@@ -102,5 +128,5 @@ export function useAuth() {
     }
   }
 
-  return { user, isLoggedIn, accessToken, login, register, refresh, logout, authFetch }
+  return { user, isLoggedIn, accessToken, login, register, refresh, logout, fetchMe, authFetch }
 }
