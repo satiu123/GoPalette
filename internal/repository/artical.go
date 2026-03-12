@@ -9,6 +9,7 @@ import (
 type ListArticlesFilter struct {
 	CategoryID int64
 	TagID      int64
+	AuthorID   int64
 	Status     string
 }
 

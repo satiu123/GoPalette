@@ -2,6 +2,7 @@ package handler
 
 import (
 	"log/slog"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/satiu123/GoPalette/internal/pkg/response"
@@ -16,6 +17,31 @@ func NewUserHandler(s *service.UserService) *UserHandler {
 	return &UserHandler{
 		UserService: s,
 	}
+}
+
+// GetMe 获取当前登录用户信息
+// @Summary      获取当前用户信息
+// @Description  需要携带 Access Token，返回用户基本信息
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  response.Response{data=UserResp}
+// @Failure      401  {object}  response.Response
+// @Failure      404  {object}  response.Response
+// @Router       /users/me [get]
+func (h *UserHandler) GetMe(c *gin.Context) {
+	userID := int64(c.GetInt("userID"))
+	u, err := h.UserService.GetByID(c.Request.Context(), userID)
+	if err != nil {
+		response.Error(c, http.StatusNotFound, "用户不存在")
+		return
+	}
+	response.Success(c, UserResp{
+		ID:       u.ID,
+		Username: u.Username,
+		Role:     u.Role,
+	})
 }
 
 // Login 登录

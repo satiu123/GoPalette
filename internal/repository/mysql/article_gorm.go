@@ -49,6 +49,9 @@ func (r *articleGormRepository) FindAll(ctx context.Context, page, pageSize int,
 	if filter.CategoryID > 0 {
 		query = query.Where("category_id = ?", filter.CategoryID)
 	}
+	if filter.AuthorID > 0 {
+		query = query.Where("author_id = ?", filter.AuthorID)
+	}
 	if filter.TagID > 0 {
 		// 用子查询避免 JOIN 产生重复行
 		query = query.Where("id IN (?)",

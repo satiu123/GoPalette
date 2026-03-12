@@ -57,6 +57,11 @@ func (s *UserService) Register(ctx context.Context, username, password, role str
 	return s.userRepo.Create(ctx, user)
 }
 
+// GetByID 按 ID 查询用户（用于 /users/me 接口）
+func (s *UserService) GetByID(ctx context.Context, id int64) (*model.User, error) {
+	return s.userRepo.FindByID(ctx, id)
+}
+
 // Refresh 验证 Refresh Token，撤销旧 token，签发新的 Access Token 和 Refresh Token
 func (s *UserService) Refresh(ctx context.Context, refreshToken string) (newAccess, newRefresh string, err error) {
 	cfg := config.GlobalConfig.JWT

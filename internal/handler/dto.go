@@ -49,6 +49,7 @@ type ListArticlesReq struct {
 	PageSize   int   `form:"page_size"`
 	CategoryID int64 `form:"category_id"`
 	TagID      int64 `form:"tag_id"`
+	AuthorID   int64 `form:"author_id"`
 }
 
 type CreateCategoryReq struct {
@@ -59,14 +60,10 @@ type CreateTagReq struct {
 	Name string `json:"name" binding:"required,max=50"`
 }
 
-// --- Comment DTOs ---
-
 type CreateCommentReq struct {
 	Content  string `json:"content" binding:"required,max=500"`
 	ParentID int64  `json:"parent_id"` // 0 表示一级评论
 }
-
-// --- Search DTO ---
 
 type SearchReq struct {
 	Q        string `form:"q" binding:"required"`

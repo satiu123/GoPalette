@@ -103,6 +103,7 @@ func (h *ArticleHandler) List(c *gin.Context) {
 		repository.ListArticlesFilter{
 			CategoryID: req.CategoryID,
 			TagID:      req.TagID,
+			AuthorID:   req.AuthorID,
 			Status:     "published",
 		})
 	if err != nil {
@@ -113,6 +114,44 @@ func (h *ArticleHandler) List(c *gin.Context) {
 		"total":    total,
 		"articles": articles,
 	})
+}
+
+// ListMine 当前登录用户的文章列表（含草稿）
+func (h *ArticleHandler) ListMine(c *gin.Context) {
+	authorID := int64(c.GetInt("userID"))
+	var req struct {
+		Page     int `form:"page"`
+		PageSize int `form:"page_size"`
+	}
+	_ = c.ShouldBindQuery(&req)
+	articles, total, err := h.articleService.ListArticles(c.Request.Context(), req.Page, req.PageSize,
+		repository.ListArticlesFilter{AuthorID: authorID})
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.Success(c, gin.H{"total": total, "articles": articles})
+}
+
+// AdminList 管理员查看所有文章（含草稿，所有作者）
+func (h *ArticleHandler) AdminList(c *gin.Context) {
+	if c.GetString("role") != "admin" {
+		response.Error(c, http.StatusForbidden, "需要管理员权限")
+		return
+	}
+	var req ListArticlesReq
+	_ = c.ShouldBindQuery(&req)
+	articles, total, err := h.articleService.ListArticles(c.Request.Context(), req.Page, req.PageSize,
+		repository.ListArticlesFilter{
+			CategoryID: req.CategoryID,
+			TagID:      req.TagID,
+			AuthorID:   req.AuthorID,
+		})
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.Success(c, gin.H{"total": total, "articles": articles})
 }
 
 // Update 更新文章
