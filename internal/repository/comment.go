@@ -11,4 +11,5 @@ type CommentRepository interface {
 	FindByArticleID(ctx context.Context, articleID int64) ([]model.Comment, error)
 	FindByID(ctx context.Context, id int64) (*model.Comment, error)
 	Delete(ctx context.Context, id int64) error
+	FindAll(ctx context.Context, page, pageSize int) ([]model.Comment, int64, error)
 }

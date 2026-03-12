@@ -70,3 +70,9 @@ type SearchReq struct {
 	Page     int    `form:"page"`
 	PageSize int    `form:"page_size"`
 }
+
+type UpdateUserReq struct {
+	Username    string `json:"username" binding:"omitempty,min=3,max=50"`
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password" binding:"omitempty,min=6"`
+}

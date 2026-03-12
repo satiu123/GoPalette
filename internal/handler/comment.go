@@ -42,16 +42,14 @@ func (h *CommentHandler) List(c *gin.Context) {
 
 // Create 发表评论
 // @Summary      发表评论
-// @Description  登录用户对文章进行评论，支持嵌套回复（parent_id != 0）
+// @Description  已登录用户或匿名访客均可评论；登录用户评论会关联账号，匿名评论显示「匿名用户」
 // @Tags         comments
 // @Accept       json
 // @Produce      json
-// @Security     BearerAuth
 // @Param        id    path  int            true  "文章 ID"
 // @Param        body  body  CreateCommentReq true  "评论内容"
 // @Success      200  {object}  response.Response
 // @Failure      400  {object}  response.Response
-// @Failure      401  {object}  response.Response
 // @Router       /articles/{id}/comments [post]
 func (h *CommentHandler) Create(c *gin.Context) {
 	articleID, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -66,13 +64,50 @@ func (h *CommentHandler) Create(c *gin.Context) {
 		return
 	}
 
-	userID := int64(c.GetInt("userID"))
+	// JWT 可选：登录用户关联账号，匿名访客 userID=nil
+	var userID *int64
+	if id, exists := c.Get("userID"); exists {
+		v := int64(id.(int))
+		userID = &v
+	}
+
 	comment, err := h.commentService.CreateComment(c.Request.Context(), articleID, userID, req.ParentID, req.Content)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	response.Success(c, comment)
+}
+
+// AdminList 管理员查看全部评论
+// @Summary      管理员获取所有评论
+// @Description  分页返回全部评论，含文章标题和评论者信息
+// @Tags         admin
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page       query  int  false  "页码，默认 1"
+// @Param        page_size  query  int  false  "每页数量，默认 20"
+// @Success      200  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Router       /admin/comments [get]
+func (h *CommentHandler) AdminList(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+	comments, total, err := h.commentService.ListAllComments(c.Request.Context(), page, pageSize)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.Success(c, gin.H{
+		"comments": comments,
+		"total":    total,
+	})
 }
 
 // Delete 删除评论

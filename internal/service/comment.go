@@ -16,7 +16,7 @@ func NewCommentService(commentRepo repository.CommentRepository) *CommentService
 	return &CommentService{commentRepo: commentRepo}
 }
 
-func (s *CommentService) CreateComment(ctx context.Context, articleID, userID, parentID int64, content string) (*model.Comment, error) {
+func (s *CommentService) CreateComment(ctx context.Context, articleID int64, userID *int64, parentID int64, content string) (*model.Comment, error) {
 	comment := &model.Comment{
 		ArticleID: articleID,
 		UserID:    userID,
@@ -41,8 +41,14 @@ func (s *CommentService) DeleteComment(ctx context.Context, id, requesterID int6
 	if comment == nil {
 		return errors.New("评论不存在")
 	}
-	if comment.UserID != requesterID && requesterRole != "admin" {
+	// 匿名评论（UserID == nil）只有 admin 可删；有 UserID 的评论本人或 admin 可删
+	if (comment.UserID == nil || *comment.UserID != requesterID) && requesterRole != "admin" {
 		return errors.New("无权限删除此评论")
 	}
 	return s.commentRepo.Delete(ctx, id)
+}
+
+// ListAllComments 管理员分页查询全部评论（含文章信息）
+func (s *CommentService) ListAllComments(ctx context.Context, page, pageSize int) ([]model.Comment, int64, error) {
+	return s.commentRepo.FindAll(ctx, page, pageSize)
 }

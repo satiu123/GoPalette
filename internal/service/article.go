@@ -49,12 +49,17 @@ func (s *ArticleService) CreateArticle(ctx context.Context, authorID int64, inpu
 		status = "draft"
 	}
 
+	var categoryID *int64
+	if input.CategoryID > 0 {
+		categoryID = &input.CategoryID
+	}
+
 	article := &model.Article{
 		Title:      input.Title,
 		Summary:    input.Summary,
-		Content:    ugcPolicy.Sanitize(input.Content), // XSS 过滤
+		Content:    ugcPolicy.Sanitize(input.Content),
 		AuthorID:   authorID,
-		CategoryID: input.CategoryID,
+		CategoryID: categoryID,
 		Status:     status,
 		Tags:       tags,
 	}
@@ -100,10 +105,15 @@ func (s *ArticleService) UpdateArticle(ctx context.Context, id, requesterID int6
 		return nil, errors.New("无权限修改此文章")
 	}
 
+	var categoryID *int64
+	if input.CategoryID > 0 {
+		categoryID = &input.CategoryID
+	}
+
 	article.Title = input.Title
 	article.Summary = input.Summary
-	article.Content = ugcPolicy.Sanitize(input.Content) // XSS 过滤
-	article.CategoryID = input.CategoryID
+	article.Content = ugcPolicy.Sanitize(input.Content)
+	article.CategoryID = categoryID
 	article.Status = input.Status
 
 	tags := make([]model.Tag, len(input.TagIDs))

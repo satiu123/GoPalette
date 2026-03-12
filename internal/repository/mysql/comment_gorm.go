@@ -45,3 +45,20 @@ func (r *commentGormRepository) FindByID(ctx context.Context, id int64) (*model.
 func (r *commentGormRepository) Delete(ctx context.Context, id int64) error {
 	return r.db.WithContext(ctx).Delete(&model.Comment{}, id).Error
 }
+
+// FindAll 分页查询全部评论（含用户信息、文章标题）
+func (r *commentGormRepository) FindAll(ctx context.Context, page, pageSize int) ([]model.Comment, int64, error) {
+	var comments []model.Comment
+	var total int64
+	offset := (page - 1) * pageSize
+	if err := r.db.WithContext(ctx).Model(&model.Comment{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	err := r.db.WithContext(ctx).
+		Preload("User").
+		Preload("Article").
+		Order("created_at DESC").
+		Offset(offset).Limit(pageSize).
+		Find(&comments).Error
+	return comments, total, err
+}

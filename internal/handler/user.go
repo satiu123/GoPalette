@@ -44,6 +44,32 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 	})
 }
 
+// UpdateMe 修改当前登录用户信息
+// @Summary      修改个人信息
+// @Description  可修改用户名；修改密码时需提供旧密码
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body body UpdateUserReq true "更新信息"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Router       /users/me [put]
+func (h *UserHandler) UpdateMe(c *gin.Context) {
+	var req UpdateUserReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "请求参数错误")
+		return
+	}
+	userID := int64(c.GetInt("userID"))
+	if err := h.UserService.UpdateUser(c.Request.Context(), userID, req.Username, req.OldPassword, req.NewPassword); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	response.Success(c, gin.H{"message": "更新成功"})
+}
+
 // Login 登录
 // @Summary      用户登录
 // @Description  返回 Access Token 和 Refresh Token
