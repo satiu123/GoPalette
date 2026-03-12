@@ -8,6 +8,23 @@ import (
 	"github.com/satiu123/GoPalette/internal/pkg/jwt"
 )
 
+// JWTOptionalMiddleware 尝试解析 Access Token，有效则写入 userID/role，无 token 或无效则跳过（不中断请求）
+func JWTOptionalMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenString := c.GetHeader("Authorization")
+		if tokenString == "" {
+			c.Next()
+			return
+		}
+		claims, err := jwt.ParseToken(tokenString, config.GlobalConfig.JWT.AccessTokenSecret)
+		if err == nil {
+			c.Set("userID", claims.UserID)
+			c.Set("role", claims.Role)
+		}
+		c.Next()
+	}
+}
+
 // JWTAuthMiddleware 校验 Access Token 的中间件
 func JWTAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {

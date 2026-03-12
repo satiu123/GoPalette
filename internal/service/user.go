@@ -62,6 +62,28 @@ func (s *UserService) GetByID(ctx context.Context, id int64) (*model.User, error
 	return s.userRepo.FindByID(ctx, id)
 }
 
+// UpdateUser 修改用户信息（用户名或密码），修改密码时需验证旧密码
+func (s *UserService) UpdateUser(ctx context.Context, id int64, username, oldPassword, newPassword string) error {
+	user, err := s.userRepo.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if username != "" {
+		user.Username = username
+	}
+	if newPassword != "" {
+		if !user.CheckPassword(oldPassword) {
+			return errors.New("旧密码不正确")
+		}
+		hashed, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+		user.Password = string(hashed)
+	}
+	return s.userRepo.Update(ctx, user)
+}
+
 // Refresh 验证 Refresh Token，撤销旧 token，签发新的 Access Token 和 Refresh Token
 func (s *UserService) Refresh(ctx context.Context, refreshToken string) (newAccess, newRefresh string, err error) {
 	cfg := config.GlobalConfig.JWT
