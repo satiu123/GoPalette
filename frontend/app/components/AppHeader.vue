@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search, Menu, User, PenSquare, LogOut } from 'lucide-vue-next'
+import { Search, Menu, User, PenSquare, LogOut, LayoutDashboard } from 'lucide-vue-next'
 
 const router = useRouter()
 const { isLoggedIn, user, logout } = useAuth()
@@ -77,15 +77,28 @@ function handleLogout() {
           <span>Write</span>
         </button>
 
-        <!-- 已登录：显示用户名 + 登出 -->
+        <!-- 已登录：显示用户名 + Profile + Admin(if admin) + 登出 -->
         <template v-if="isLoggedIn">
-          <span class="hidden sm:inline text-m3-sys-light-on-surface font-medium">{{ user?.username }}</span>
+          <NuxtLink
+            to="/profile"
+            class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full hover:bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface font-medium transition-colors"
+          >
+            <User class="w-4 h-4" />
+            <span>{{ user?.username }}</span>
+          </NuxtLink>
+          <NuxtLink
+            v-if="user?.role === 'admin'"
+            to="/admin"
+            class="hidden sm:flex items-center gap-2 px-4 py-2 bg-m3-sys-light-tertiary-container text-m3-sys-light-on-tertiary-container rounded-full font-medium hover:opacity-90 transition-opacity"
+          >
+            <LayoutDashboard class="w-4 h-4" />
+            <span>Admin</span>
+          </NuxtLink>
           <button
             @click="handleLogout"
-            class="hidden sm:flex items-center gap-2 px-6 py-3 bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface-variant rounded-full font-medium hover:bg-m3-sys-light-error-container hover:text-m3-sys-light-on-error-container transition-all duration-300"
+            class="hidden sm:flex items-center gap-2 px-5 py-2 bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface-variant rounded-full font-medium hover:bg-m3-sys-light-error-container hover:text-m3-sys-light-on-error-container transition-all duration-300"
           >
-            <LogOut class="w-5 h-5" />
-            <span>Sign Out</span>
+            <LogOut class="w-4 h-4" />
           </button>
         </template>
 
