@@ -62,6 +62,10 @@ func (app *application) mount(userHandler *handler.UserHandler, articleHandler *
 		private.DELETE("/tags/:id", tagHandler.Delete)
 		private.POST("/articles/:id/comments", commentHandler.Create)
 		private.DELETE("/comments/:id", commentHandler.Delete)
+		// 个人主页 & 管理员
+		private.GET("/users/me", userHandler.GetMe)
+		private.GET("/users/me/articles", articleHandler.ListMine)
+		private.GET("/admin/articles", articleHandler.AdminList)
 	}
 
 	return r
