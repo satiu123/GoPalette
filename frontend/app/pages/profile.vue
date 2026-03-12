@@ -1,0 +1,219 @@
+<script setup lang="ts">
+import { PenSquare, Trash2, BookOpen, FileText, User2, Clock } from 'lucide-vue-next'
+import type { Article, ArticleListData, ApiResponse, ApiUser } from '~/composables/useBlogData'
+import { formatDate, articleImageUrl } from '~/composables/useBlogData'
+
+definePageMeta({ middleware: 'auth', ssr: false })
+
+const router = useRouter()
+const { user, authFetch, accessToken } = useAuth()
+
+// 个人信息（从后端刷新）
+const profile = ref<ApiUser | null>(null)
+const profilePending = ref(true)
+
+// 我的文章
+const page = ref(1)
+const PAGE_SIZE = 12
+const myArticles = ref<Article[]>([])
+const totalArticles = ref(0)
+const articlesPending = ref(true)
+const deleteError = ref('')
+
+async function loadProfile() {
+  profilePending.value = true
+  try {
+    const res = await authFetch<ApiResponse<ApiUser>>('/users/me')
+    if (res.code === 200) profile.value = res.data
+  } finally {
+    profilePending.value = false
+  }
+}
+
+async function loadArticles() {
+  articlesPending.value = true
+  try {
+    const res = await authFetch<ApiResponse<ArticleListData>>(
+      `/users/me/articles?page=${page.value}&page_size=${PAGE_SIZE}`
+    )
+    if (res.code === 200) {
+      myArticles.value = res.data.articles ?? []
+      totalArticles.value = res.data.total ?? 0
+    }
+  } finally {
+    articlesPending.value = false
+  }
+}
+
+async function deleteArticle(id: number) {
+  if (!confirm('确认删除这篇文章？')) return
+  deleteError.value = ''
+  try {
+    await authFetch(`/articles/${id}`, { method: 'DELETE' })
+    await loadArticles()
+  } catch {
+    deleteError.value = '删除失败，请重试'
+  }
+}
+
+watch(page, loadArticles)
+
+onMounted(async () => {
+  await loadProfile()
+  await loadArticles()
+})
+
+const totalPages = computed(() => Math.ceil(totalArticles.value / PAGE_SIZE))
+
+const totalReads = computed(() =>
+  myArticles.value.reduce((sum, a) => sum + (a.read_count ?? 0), 0)
+)
+</script>
+
+<template>
+  <div
+    v-motion
+    :initial="{ opacity: 0, y: 16 }"
+    :enter="{ opacity: 1, y: 0, transition: { duration: 500 } }"
+    class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
+  >
+    <!-- 个人信息卡片 -->
+    <div class="bg-m3-sys-light-surface-variant rounded-[2rem] p-8 mb-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
+      <div class="w-20 h-20 rounded-full bg-m3-sys-light-primary-container flex items-center justify-center shrink-0">
+        <User2 class="w-10 h-10 text-m3-sys-light-on-primary-container" />
+      </div>
+      <div class="flex-1 text-center sm:text-left">
+        <div v-if="profilePending" class="h-6 w-32 bg-m3-sys-light-outline-variant rounded animate-pulse mb-2" />
+        <template v-else>
+          <h1 class="text-3xl font-black tracking-tight text-m3-sys-light-on-surface">
+            {{ profile?.username ?? user?.username }}
+          </h1>
+          <span
+            class="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider"
+            :class="profile?.role === 'admin'
+              ? 'bg-m3-sys-light-tertiary-container text-m3-sys-light-on-tertiary-container'
+              : 'bg-m3-sys-light-secondary-container text-m3-sys-light-on-secondary-container'"
+          >
+            {{ profile?.role === 'admin' ? 'Admin' : 'Member' }}
+          </span>
+          <p v-if="profile?.created_at" class="mt-2 text-sm text-m3-sys-light-on-surface-variant flex items-center justify-center sm:justify-start gap-1">
+            <Clock class="w-3.5 h-3.5" />
+            Joined {{ formatDate(profile.created_at) }}
+          </p>
+        </template>
+      </div>
+      <!-- 统计 -->
+      <div class="flex gap-8">
+        <div class="text-center">
+          <p class="text-3xl font-black text-m3-sys-light-primary">{{ totalArticles }}</p>
+          <p class="text-xs text-m3-sys-light-on-surface-variant mt-0.5">Articles</p>
+        </div>
+        <div class="text-center">
+          <p class="text-3xl font-black text-m3-sys-light-primary">{{ totalReads }}</p>
+          <p class="text-xs text-m3-sys-light-on-surface-variant mt-0.5">Total Reads</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 写文章入口 -->
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-xl font-bold text-m3-sys-light-on-surface">My Articles</h2>
+      <button
+        @click="router.push('/write')"
+        class="flex items-center gap-2 px-5 py-2.5 bg-m3-sys-light-primary text-m3-sys-light-on-primary rounded-full font-medium hover:opacity-90 transition-opacity"
+      >
+        <PenSquare class="w-4 h-4" />
+        <span>Write New</span>
+      </button>
+    </div>
+
+    <p v-if="deleteError" class="text-red-500 text-sm mb-4">{{ deleteError }}</p>
+
+    <!-- 文章列表 -->
+    <div v-if="articlesPending" class="space-y-4">
+      <div v-for="i in 4" :key="i" class="h-24 rounded-2xl bg-m3-sys-light-surface-variant animate-pulse" />
+    </div>
+
+    <div v-else-if="myArticles.length === 0" class="text-center py-20 text-m3-sys-light-on-surface-variant">
+      No articles yet. <button @click="router.push('/write')" class="text-m3-sys-light-primary hover:underline">Write your first one!</button>
+    </div>
+
+    <ul v-else class="space-y-4">
+      <li
+        v-for="article in myArticles"
+        :key="article.id"
+        class="flex items-center gap-4 bg-m3-sys-light-surface rounded-2xl px-6 py-4 shadow-sm hover:shadow-md transition-shadow group"
+      >
+        <!-- 缩略图 -->
+        <img :src="articleImageUrl(article)" alt="" class="w-16 h-16 rounded-xl object-cover shrink-0 hidden sm:block" />
+
+        <!-- 文章信息 -->
+        <div class="flex-1 min-w-0">
+          <NuxtLink :to="`/post/${article.id}`" class="font-semibold text-m3-sys-light-on-surface group-hover:text-m3-sys-light-primary transition-colors line-clamp-1">
+            {{ article.title }}
+          </NuxtLink>
+          <p class="text-sm text-m3-sys-light-on-surface-variant mt-0.5 flex items-center gap-3">
+            <span class="flex items-center gap-1">
+              <BookOpen class="w-3.5 h-3.5" />{{ article.read_count ?? 0 }} reads
+            </span>
+            <span>·</span>
+            <span>{{ formatDate(article.created_at) }}</span>
+          </p>
+        </div>
+
+        <!-- 状态徽章 -->
+        <span
+          class="shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold"
+          :class="article.status === 'published'
+            ? 'bg-green-100 text-green-700'
+            : 'bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface-variant'"
+        >
+          {{ article.status === 'published' ? 'Published' : 'Draft' }}
+        </span>
+
+        <!-- 操作按钮 -->
+        <div class="flex items-center gap-2 shrink-0">
+          <NuxtLink
+            :to="`/write?edit=${article.id}`"
+            class="p-2 rounded-full hover:bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface-variant hover:text-m3-sys-light-primary transition-colors"
+            title="Edit"
+          >
+            <PenSquare class="w-4 h-4" />
+          </NuxtLink>
+          <button
+            @click="deleteArticle(article.id)"
+            class="p-2 rounded-full hover:bg-m3-sys-light-error-container text-m3-sys-light-on-surface-variant hover:text-m3-sys-light-on-error-container transition-colors"
+            title="Delete"
+          >
+            <Trash2 class="w-4 h-4" />
+          </button>
+        </div>
+      </li>
+    </ul>
+
+    <!-- 分页 -->
+    <div v-if="totalPages > 1" class="flex justify-center gap-2 mt-8">
+      <button
+        v-for="p in totalPages" :key="p"
+        @click="page = p"
+        class="w-10 h-10 rounded-full font-medium transition-colors"
+        :class="p === page
+          ? 'bg-m3-sys-light-primary text-m3-sys-light-on-primary'
+          : 'bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container'"
+      >
+        {{ p }}
+      </button>
+    </div>
+
+    <!-- Admin 入口 -->
+    <div v-if="profile?.role === 'admin'" class="mt-10 text-center">
+      <NuxtLink
+        to="/admin"
+        class="inline-flex items-center gap-2 px-6 py-3 bg-m3-sys-light-tertiary-container text-m3-sys-light-on-tertiary-container rounded-full font-medium hover:opacity-90 transition-opacity"
+      >
+        <FileText class="w-4 h-4" />
+        Go to Admin Dashboard
+      </NuxtLink>
+    </div>
+  </div>
+</template>
