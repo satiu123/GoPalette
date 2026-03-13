@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { PenSquare, Trash2, BookOpen, FileText, User2, Clock, Settings } from 'lucide-vue-next'
+import { PenSquare, Trash2, BookOpen, FileText, Clock, Settings, Camera } from 'lucide-vue-next'
 import type { Article, ArticleListData, ApiResponse, ApiUser } from '~/composables/useBlogData'
-import { formatDate, articleImageUrl } from '~/composables/useBlogData'
+import { formatDate, articleImageUrl, userAvatarUrl } from '~/composables/useBlogData'
 
 definePageMeta({ middleware: 'auth', ssr: false })
 
 const router = useRouter()
-const { user, authFetch, accessToken } = useAuth()
+const { user, authFetch } = useAuth()
 
 // 个人信息（从后端刷新）
 const profile = ref<ApiUser | null>(null)
@@ -20,6 +20,66 @@ const editNewPassword = ref('')
 const editError = ref('')
 const editSuccess = ref('')
 const editSubmitting = ref(false)
+
+// 头像上传
+const avatarInput = ref<HTMLInputElement | null>(null)
+const avatarUploading = ref(false)
+const avatarError = ref('')
+
+const profileAvatarSrc = computed(() => userAvatarUrl(profile.value ?? user.value))
+
+function openAvatarUpload() {
+  avatarInput.value?.click()
+}
+
+async function onAvatarSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  avatarError.value = ''
+  const allowTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+  if (!allowTypes.includes(file.type)) {
+    avatarError.value = '仅支持 JPEG/PNG/WebP/GIF 格式'
+    input.value = ''
+    return
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    avatarError.value = '图片大小不能超过 5MB'
+    input.value = ''
+    return
+  }
+
+  avatarUploading.value = true
+  try {
+    const formData = new FormData()
+    formData.append('image', file)
+    const uploadRes = await authFetch<ApiResponse<{ url: string }>>('/upload', {
+      method: 'POST',
+      body: formData
+    })
+    if (uploadRes.code !== 200) {
+      avatarError.value = uploadRes.msg || '头像上传失败'
+      return
+    }
+
+    const saveRes = await authFetch<ApiResponse<unknown>>('/users/me', {
+      method: 'PUT',
+      body: { avatar_url: uploadRes.data.url }
+    })
+    if (saveRes.code !== 200) {
+      avatarError.value = saveRes.msg || '头像保存失败'
+      return
+    }
+
+    await loadProfile()
+  } catch {
+    avatarError.value = '头像上传失败，请重试'
+  } finally {
+    avatarUploading.value = false
+    input.value = ''
+  }
+}
 
 function openEdit() {
   editUsername.value = profile.value?.username ?? user.value?.username ?? ''
@@ -67,7 +127,10 @@ async function loadProfile() {
   profilePending.value = true
   try {
     const res = await authFetch<ApiResponse<ApiUser>>('/users/me')
-    if (res.code === 200) profile.value = res.data
+    if (res.code === 200) {
+      profile.value = res.data
+      user.value = res.data
+    }
   } finally {
     profilePending.value = false
   }
@@ -122,8 +185,28 @@ const totalReads = computed(() =>
   >
     <!-- 个人信息卡片 -->
     <div class="bg-m3-sys-light-surface-variant rounded-[2rem] p-8 mb-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
-      <div class="w-20 h-20 rounded-full bg-m3-sys-light-primary-container flex items-center justify-center shrink-0">
-        <User2 class="w-10 h-10 text-m3-sys-light-on-primary-container" />
+      <div class="relative shrink-0">
+        <img
+          :src="profileAvatarSrc"
+          :alt="profile?.username ?? user?.username"
+          class="w-20 h-20 rounded-full object-cover border-2 border-m3-sys-light-surface"
+          referrerpolicy="no-referrer"
+        />
+        <button
+          @click="openAvatarUpload"
+          :disabled="avatarUploading"
+          class="absolute -right-1 -bottom-1 w-8 h-8 rounded-full bg-m3-sys-light-primary text-m3-sys-light-on-primary flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-60"
+          title="上传头像"
+        >
+          <Camera class="w-4 h-4" />
+        </button>
+        <input
+          ref="avatarInput"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          class="hidden"
+          @change="onAvatarSelected"
+        />
       </div>
       <div class="flex-1 text-center sm:text-left">
         <div v-if="profilePending" class="h-6 w-32 bg-m3-sys-light-outline-variant rounded animate-pulse mb-2" />
@@ -143,6 +226,8 @@ const totalReads = computed(() =>
             <Clock class="w-3.5 h-3.5" />
             Joined {{ formatDate(profile.created_at) }}
           </p>
+          <p v-if="avatarUploading" class="mt-2 text-sm text-m3-sys-light-on-surface-variant">头像上传中...</p>
+          <p v-if="avatarError" class="mt-2 text-sm text-red-500">{{ avatarError }}</p>
         </template>
       </div>
       <!-- 统计 -->

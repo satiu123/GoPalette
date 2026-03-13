@@ -38,9 +38,11 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 		return
 	}
 	response.Success(c, UserResp{
-		ID:       u.ID,
-		Username: u.Username,
-		Role:     u.Role,
+		ID:        u.ID,
+		Username:  u.Username,
+		Role:      u.Role,
+		AvatarURL: u.AvatarURL,
+		CreatedAt: u.CreatedAt,
 	})
 }
 
@@ -63,7 +65,7 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 		return
 	}
 	userID := int64(c.GetInt("userID"))
-	if err := h.UserService.UpdateUser(c.Request.Context(), userID, req.Username, req.OldPassword, req.NewPassword); err != nil {
+	if err := h.UserService.UpdateUser(c.Request.Context(), userID, req.Username, req.AvatarURL, req.OldPassword, req.NewPassword); err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}

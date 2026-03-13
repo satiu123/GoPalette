@@ -22,7 +22,7 @@ const cardStyles = [
 ]
 
 function getCardStyle(index: number): string {
-  return cardStyles[index % cardStyles.length]
+  return cardStyles[index % cardStyles.length] ?? cardStyles[0] ?? ''
 }
 
 function goToPost(post: Article) {
@@ -81,7 +81,7 @@ function goToPost(post: Article) {
 
           <div class="flex items-center gap-3 mt-auto pt-6 border-t border-current/10">
             <img
-              :src="userAvatarUrl(post.author?.username ?? 'user')"
+              :src="userAvatarUrl(post.author)"
               :alt="post.author?.username"
               class="w-10 h-10 rounded-full object-cover"
               referrerpolicy="no-referrer"

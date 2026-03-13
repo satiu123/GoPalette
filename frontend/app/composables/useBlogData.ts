@@ -4,6 +4,7 @@ export interface ApiUser {
   id: number
   username: string
   role: string
+  avatar_url?: string
   created_at?: string
 }
 
@@ -62,8 +63,12 @@ export function articleImageUrl(article: Article): string {
   return `https://picsum.photos/seed/article${article.id}/800/600`
 }
 
-/** 生成用户头像占位图 */
-export function userAvatarUrl(username: string): string {
+/** 生成用户头像 URL：优先使用后端头像，缺失时回退占位图 */
+export function userAvatarUrl(user: ApiUser | string | null | undefined): string {
+  if (typeof user === 'object' && user?.avatar_url) {
+    return user.avatar_url
+  }
+  const username = typeof user === 'string' ? user : (user?.username ?? 'user')
   return `https://picsum.photos/seed/${encodeURIComponent(username)}/100/100`
 }
 
@@ -145,7 +150,7 @@ export function useMyArticles(token: Ref<string | null>, params?: Ref<{ page?: n
   return useFetch<ApiResponse<ArticleListData>>('/users/me/articles', {
     baseURL: config.public.apiBase,
     query: params,
-    headers: computed(() => token.value ? { Authorization: token.value } : {})
+    headers: computed(() => token.value ? { Authorization: token.value } : undefined)
   })
 }
 
@@ -155,7 +160,7 @@ export function useAdminArticles(token: Ref<string | null>, params?: Ref<{ page?
   return useFetch<ApiResponse<ArticleListData>>('/admin/articles', {
     baseURL: config.public.apiBase,
     query: params,
-    headers: computed(() => token.value ? { Authorization: token.value } : {})
+    headers: computed(() => token.value ? { Authorization: token.value } : undefined)
   })
 }
 

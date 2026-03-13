@@ -7,6 +7,7 @@ export default defineNuxtConfig({
   modules: ['@vueuse/motion/nuxt'],
   css: ['~/assets/css/main.css'],
   vite: {
+    // @ts-expect-error Nuxt/Vite 类型冲突（运行时可用）
     plugins: [tailwindcss()]
   },
   runtimeConfig: {

@@ -62,14 +62,17 @@ func (s *UserService) GetByID(ctx context.Context, id int64) (*model.User, error
 	return s.userRepo.FindByID(ctx, id)
 }
 
-// UpdateUser 修改用户信息（用户名或密码），修改密码时需验证旧密码
-func (s *UserService) UpdateUser(ctx context.Context, id int64, username, oldPassword, newPassword string) error {
+// UpdateUser 修改用户信息（用户名、头像或密码），修改密码时需验证旧密码
+func (s *UserService) UpdateUser(ctx context.Context, id int64, username, avatarURL, oldPassword, newPassword string) error {
 	user, err := s.userRepo.FindByID(ctx, id)
 	if err != nil {
 		return err
 	}
 	if username != "" {
 		user.Username = username
+	}
+	if avatarURL != "" {
+		user.AvatarURL = avatarURL
 	}
 	if newPassword != "" {
 		if !user.CheckPassword(oldPassword) {

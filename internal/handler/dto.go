@@ -1,5 +1,7 @@
 package handler
 
+import "time"
+
 type LoginReq struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
@@ -21,9 +23,11 @@ type TokenResp struct {
 }
 
 type UserResp struct {
-	ID       int64  `json:"id"`
-	Username string `json:"username"`
-	Role     string `json:"role"`
+	ID        int64     `json:"id"`
+	Username  string    `json:"username"`
+	Role      string    `json:"role"`
+	AvatarURL string    `json:"avatar_url"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type CreateArticleReq struct {
@@ -73,6 +77,7 @@ type SearchReq struct {
 
 type UpdateUserReq struct {
 	Username    string `json:"username" binding:"omitempty,min=3,max=50"`
+	AvatarURL   string `json:"avatar_url" binding:"omitempty,max=255"`
 	OldPassword string `json:"old_password"`
 	NewPassword string `json:"new_password" binding:"omitempty,min=6"`
 }

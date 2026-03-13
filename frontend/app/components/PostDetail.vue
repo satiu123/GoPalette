@@ -139,7 +139,7 @@ function goBack() {
       <div class="flex flex-wrap items-center justify-between gap-6 py-6 border-y border-m3-sys-light-surface-variant">
         <div class="flex items-center gap-4">
           <img
-            :src="userAvatarUrl(post.author?.username ?? 'user')"
+            :src="userAvatarUrl(post.author)"
             :alt="post.author?.username"
             class="w-14 h-14 rounded-full object-cover"
             referrerpolicy="no-referrer"
@@ -203,7 +203,7 @@ function goBack() {
       <!-- 发表顶级评论 -->
       <div class="flex gap-4 mb-12">
         <img
-          :src="userAvatarUrl(user?.username ?? 'you')"
+          :src="userAvatarUrl(user)"
           alt="You"
           class="w-12 h-12 rounded-full object-cover shrink-0"
           referrerpolicy="no-referrer"
@@ -242,7 +242,7 @@ function goBack() {
           <!-- 顶级评论 -->
           <div class="flex gap-4">
             <img
-              :src="userAvatarUrl(comment.user?.username ?? 'user')"
+              :src="userAvatarUrl(comment.user)"
               :alt="comment.user?.username"
               class="w-11 h-11 rounded-full object-cover shrink-0 mt-1"
               referrerpolicy="no-referrer"
@@ -280,7 +280,7 @@ function goBack() {
               <!-- 回复输入框 -->
               <div v-if="replyingTo === comment.id" class="mt-3 flex gap-3">
                 <img
-                  :src="userAvatarUrl(user?.username ?? 'you')"
+                  :src="userAvatarUrl(user)"
                   alt="You"
                   class="w-8 h-8 rounded-full object-cover shrink-0 mt-1"
                   referrerpolicy="no-referrer"
@@ -307,7 +307,7 @@ function goBack() {
               <div v-if="repliesMap[comment.id]?.length" class="mt-4 space-y-3 pl-4 border-l-2 border-m3-sys-light-primary/20">
                 <div v-for="reply in repliesMap[comment.id]" :key="reply.id" class="flex gap-3">
                   <img
-                    :src="userAvatarUrl(reply.user?.username ?? 'user')"
+                    :src="userAvatarUrl(reply.user)"
                     :alt="reply.user?.username"
                     class="w-8 h-8 rounded-full object-cover shrink-0 mt-1"
                     referrerpolicy="no-referrer"

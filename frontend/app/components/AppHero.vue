@@ -41,7 +41,7 @@ function goToPost() {
 
         <div class="flex items-center gap-4 mt-4">
           <img
-            :src="userAvatarUrl(post.author?.username ?? 'user')"
+            :src="userAvatarUrl(post.author)"
             :alt="post.author?.username"
             class="w-12 h-12 rounded-full object-cover border-2 border-m3-sys-light-surface"
             referrerpolicy="no-referrer"

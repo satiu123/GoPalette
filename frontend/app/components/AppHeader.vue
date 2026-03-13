@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Search, Menu, User, PenSquare, LogOut, LayoutDashboard } from 'lucide-vue-next'
+import { userAvatarUrl } from '~/composables/useBlogData'
 
 const router = useRouter()
 const { isLoggedIn, user, logout } = useAuth()
@@ -83,7 +84,12 @@ function handleLogout() {
             to="/profile"
             class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full hover:bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface font-medium transition-colors"
           >
-            <User class="w-4 h-4" />
+            <img
+              :src="userAvatarUrl(user)"
+              :alt="user?.username"
+              class="w-6 h-6 rounded-full object-cover"
+              referrerpolicy="no-referrer"
+            />
             <span>{{ user?.username }}</span>
           </NuxtLink>
           <NuxtLink
