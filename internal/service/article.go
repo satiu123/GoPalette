@@ -13,11 +13,12 @@ import (
 var ugcPolicy = bluemonday.UGCPolicy()
 
 type ArticleService struct {
-	articleRepo repository.ArticleRepository
+	articleRepo       repository.ArticleRepository
+	attachmentService *AttachmentService
 }
 
-func NewArticleService(articleRepo repository.ArticleRepository) *ArticleService {
-	return &ArticleService{articleRepo: articleRepo}
+func NewArticleService(articleRepo repository.ArticleRepository, attachmentService *AttachmentService) *ArticleService {
+	return &ArticleService{articleRepo: articleRepo, attachmentService: attachmentService}
 }
 
 type CreateArticleInput struct {
@@ -66,6 +67,11 @@ func (s *ArticleService) CreateArticle(ctx context.Context, authorID int64, inpu
 
 	if err := s.articleRepo.Create(ctx, article); err != nil {
 		return nil, err
+	}
+	if s.attachmentService != nil {
+		if err := s.attachmentService.BindFromContent(ctx, authorID, article.ID, article.Content); err != nil {
+			return nil, err
+		}
 	}
 	return article, nil
 }
@@ -124,6 +130,11 @@ func (s *ArticleService) UpdateArticle(ctx context.Context, id, requesterID int6
 
 	if err := s.articleRepo.Update(ctx, article); err != nil {
 		return nil, err
+	}
+	if s.attachmentService != nil {
+		if err := s.attachmentService.BindFromContent(ctx, article.AuthorID, article.ID, article.Content); err != nil {
+			return nil, err
+		}
 	}
 	return article, nil
 }

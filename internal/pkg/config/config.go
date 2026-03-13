@@ -11,11 +11,12 @@ import (
 var GlobalConfig *Config
 
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	JWT      JWTConfig      `mapstructure:"jwt"`
-	Database DatabaseConfig `mapstructure:"database"`
-	Redis    RedisConfig    `mapstructure:"redis"`
-	CORS     CORSConfig     `mapstructure:"cors"`
+	Server     ServerConfig     `mapstructure:"server"`
+	JWT        JWTConfig        `mapstructure:"jwt"`
+	Database   DatabaseConfig   `mapstructure:"database"`
+	Redis      RedisConfig      `mapstructure:"redis"`
+	CORS       CORSConfig       `mapstructure:"cors"`
+	Attachment AttachmentConfig `mapstructure:"attachment"`
 }
 
 func LoadConfig() {
@@ -32,6 +33,12 @@ func LoadConfig() {
 	GlobalConfig = &Config{}
 	if err := viper.Unmarshal(GlobalConfig); err != nil {
 		slog.Error("解析配置文件失败", "error", err)
+	}
+	if GlobalConfig.Attachment.CleanupSpec == "" {
+		GlobalConfig.Attachment.CleanupSpec = "@every 1h"
+	}
+	if GlobalConfig.Attachment.TempTTLHours <= 0 {
+		GlobalConfig.Attachment.TempTTLHours = 24
 	}
 
 	slog.Info("配置文件加载成功")
@@ -60,4 +67,9 @@ type RedisConfig struct {
 
 type CORSConfig struct {
 	AllowOrigins []string `mapstructure:"allow_origins"`
+}
+
+type AttachmentConfig struct {
+	CleanupSpec  string `mapstructure:"cleanup_spec"`
+	TempTTLHours int    `mapstructure:"temp_ttl_hours"`
 }

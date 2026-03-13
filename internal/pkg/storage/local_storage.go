@@ -44,6 +44,9 @@ func (s *LocalStorage) Delete(url string) error {
 	name := filepath.Base(url)
 	path := filepath.Join(s.dir, name)
 	if err := os.Remove(path); err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
 		return fmt.Errorf("删除文件失败: %w", err)
 	}
 	return nil

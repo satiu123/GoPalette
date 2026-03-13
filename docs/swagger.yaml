@@ -114,6 +114,9 @@ definitions:
     type: object
   handler.UpdateUserReq:
     properties:
+      avatar_url:
+        maxLength: 255
+        type: string
       new_password:
         minLength: 6
         type: string
@@ -126,6 +129,10 @@ definitions:
     type: object
   handler.UserResp:
     properties:
+      avatar_url:
+        type: string
+      created_at:
+        type: string
       id:
         type: integer
       role:

@@ -1209,6 +1209,10 @@ const docTemplate = `{
         "handler.UpdateUserReq": {
             "type": "object",
             "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "maxLength": 255
+                },
                 "new_password": {
                     "type": "string",
                     "minLength": 6
@@ -1226,6 +1230,12 @@ const docTemplate = `{
         "handler.UserResp": {
             "type": "object",
             "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
                 },

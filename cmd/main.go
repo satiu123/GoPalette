@@ -21,8 +21,10 @@ package main
 import (
 	"log"
 	"log/slog"
+	"time"
 
 	"github.com/satiu123/GoPalette/internal/handler"
+	"github.com/satiu123/GoPalette/internal/job"
 	"github.com/satiu123/GoPalette/internal/model"
 	"github.com/satiu123/GoPalette/internal/pkg/config"
 	"github.com/satiu123/GoPalette/internal/pkg/database"
@@ -43,7 +45,7 @@ func main() {
 		cfg: config.GlobalConfig.Server,
 	}
 
-	db := database.InitMySQL(&model.User{}, &model.Category{}, &model.Tag{}, &model.Article{}, &model.ArticleTag{}, &model.Comment{})
+	db := database.InitMySQL(&model.User{}, &model.Category{}, &model.Tag{}, &model.Article{}, &model.ArticleTag{}, &model.Comment{}, &model.Attachment{})
 	rdb := database.InitRedis()
 
 	userRepo := mysql.NewUserGormRepository(db, rdb)
@@ -51,8 +53,14 @@ func main() {
 	userService := service.NewUserService(userRepo, tokenRepo)
 	userHandler := handler.NewUserHandler(userService)
 
+	localStor := storage.NewLocalStorage("static/uploads", "/static/uploads")
+	stor := storage.NewImageProcessingStorage(localStor, 1920, 1920, 80)
+
+	attachmentRepo := mysql.NewAttachmentGormRepository(db)
+	attachmentService := service.NewAttachmentService(attachmentRepo, stor)
+
 	articleRepo := mysql.NewArticleGormRepository(db)
-	articleService := service.NewArticleService(articleRepo)
+	articleService := service.NewArticleService(articleRepo, attachmentService)
 	articleHandler := handler.NewArticleHandler(articleService)
 
 	categoryRepo := mysql.NewCategoryGormRepository(db)
@@ -68,9 +76,16 @@ func main() {
 	commentHandler := handler.NewCommentHandler(commentService)
 
 	searchHandler := handler.NewSearchHandler(articleService)
+	uploadHandler := handler.NewUploadHandler(stor, attachmentService)
 
-	stor := storage.NewLocalStorage("static/uploads", "/static/uploads")
-	uploadHandler := handler.NewUploadHandler(stor)
+	attachmentCfg := config.GlobalConfig.Attachment
+	if _, err := job.StartAttachmentCleanup(
+		attachmentService,
+		attachmentCfg.CleanupSpec,
+		time.Duration(attachmentCfg.TempTTLHours)*time.Hour,
+	); err != nil {
+		slog.Error("启动附件清理任务失败", "error", err)
+	}
 
 	// 挂载路由
 	router := app.mount(userHandler, articleHandler, categoryHandler, tagHandler, commentHandler, searchHandler, uploadHandler)

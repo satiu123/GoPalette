@@ -6,16 +6,18 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/satiu123/GoPalette/internal/pkg/response"
 	"github.com/satiu123/GoPalette/internal/pkg/storage"
+	"github.com/satiu123/GoPalette/internal/service"
 )
 
 // UploadHandler 处理文件上传
 type UploadHandler struct {
-	store storage.Storage
+	store             storage.Storage
+	attachmentService *service.AttachmentService
 }
 
 // NewUploadHandler 创建上传 handler，注入存储实现（支持本地/OSS 等）
-func NewUploadHandler(s storage.Storage) *UploadHandler {
-	return &UploadHandler{store: s}
+func NewUploadHandler(s storage.Storage, attachmentService *service.AttachmentService) *UploadHandler {
+	return &UploadHandler{store: s, attachmentService: attachmentService}
 }
 
 // Upload 上传图片
@@ -60,6 +62,12 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 	url, err := h.store.Save(file, fileHeader.Filename)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, "文件保存失败")
+		return
+	}
+
+	userID := int64(c.GetInt("userID"))
+	if err := h.attachmentService.CreateTemporary(c.Request.Context(), userID, url); err != nil {
+		response.Error(c, http.StatusInternalServerError, "附件元数据保存失败")
 		return
 	}
 

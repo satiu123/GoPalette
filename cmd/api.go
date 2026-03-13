@@ -33,8 +33,8 @@ func (app *application) mount(userHandler *handler.UserHandler, articleHandler *
 
 	r := gin.Default()
 	r.Use(middleware.CORSMiddleware()) // 全局 CORS
-	r.MaxMultipartMemory = 5 << 20 // 限制上传请求内存缓冲为 5MB
-	r.Static("/static", "./static") // 静态文件服务（用于图片访问）
+	r.MaxMultipartMemory = 5 << 20     // 限制上传请求内存缓冲为 5MB
+	r.Static("/static", "./static")    // 静态文件服务（用于图片访问）
 
 	public := r.Group("/api")
 	{

@@ -83,7 +83,20 @@ func (r *articleGormRepository) Update(ctx context.Context, article *model.Artic
 }
 
 func (r *articleGormRepository) Delete(ctx context.Context, id int64) error {
-	return r.db.WithContext(ctx).Delete(&model.Article{}, id).Error
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("article_id = ?", id).Delete(&model.Comment{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("article_id = ?", id).Delete(&model.ArticleTag{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&model.Attachment{}).
+			Where("post_id = ?", id).
+			Updates(map[string]any{"post_id": 0}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&model.Article{}, id).Error
+	})
 }
 
 func (r *articleGormRepository) IncrReadCount(ctx context.Context, id int64) error {
