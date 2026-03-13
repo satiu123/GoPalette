@@ -43,7 +43,15 @@ func (r *commentGormRepository) FindByID(ctx context.Context, id int64) (*model.
 }
 
 func (r *commentGormRepository) Delete(ctx context.Context, id int64) error {
-	return r.db.WithContext(ctx).Delete(&model.Comment{}, id).Error
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// 先删除子评论
+		if err := tx.WithContext(ctx).Where("parent_id = ?", id).Delete(&model.Comment{}).Error; err != nil {
+			return err
+		}
+		// 再删除当前评论（使用 tx 保证在同一事务内）
+		return tx.WithContext(ctx).Delete(&model.Comment{}, id).Error
+	})
+
 }
 
 // FindAll 分页查询全部评论（含用户信息、文章标题）
