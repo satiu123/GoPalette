@@ -1,16 +1,16 @@
 server:
   addr: ":8080"
-  Env: "development"
+  env: "development"
 jwt:
-  access_token_secret: "GPA"
-  refresh_token_secret: "GPR"
+  access_token_secret: "change-me-access"
+  refresh_token_secret: "change-me-refresh"
   access_token_ttl: 15m
   refresh_token_ttl: 168h
 database:
-  dsn: "root:GP123@tcp(localhost:3306)/gopalette?charset=utf8mb4&parseTime=True&loc=Local"
+  dsn: ""
 redis:
   addr: "localhost:6379"
-  password: "GP123"
+  password: ""
   db: 0
 cors:
   allow_origins:
