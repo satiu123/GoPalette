@@ -5,7 +5,7 @@ const route = useRoute()
 const router = useRouter()
 
 // 搜索关键词（来自 ?q=... 查询参数或 Header 搜索框）
-const searchQuery = computed(() => route.query.q as string || '')
+const searchQuery = computed(() => String(route.query.q ?? '').trim())
 
 const filterParams = ref<{ page: number; page_size: number; category_id?: number; tag_id?: number }>({
   page: 1,
@@ -27,8 +27,15 @@ const {
 
 const {
   data: searchData,
-  pending: searchPending
+  pending: searchPending,
+  refresh: refreshSearch
 } = useSearch(searchParams)
+
+watch(searchParams, (params) => {
+  if (params.q) {
+    refreshSearch()
+  }
+}, { immediate: true, deep: true })
 
 const isSearching = computed(() => !!searchQuery.value)
 const pending     = computed(() => isSearching.value ? searchPending.value : listPending.value)

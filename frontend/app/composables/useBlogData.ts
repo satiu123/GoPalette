@@ -140,7 +140,8 @@ export function useSearch(params: Ref<{ q: string; page?: number; page_size?: nu
   const config = useRuntimeConfig()
   return useFetch<ApiResponse<ArticleListData>>('/search', {
     baseURL: config.public.apiBase,
-    query: params
+    query: params,
+    immediate: false
   })
 }
 
