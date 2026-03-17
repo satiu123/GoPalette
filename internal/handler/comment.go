@@ -34,7 +34,7 @@ func (h *CommentHandler) List(c *gin.Context) {
 	}
 	comments, err := h.commentService.ListComments(c.Request.Context(), articleID)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err.Error())
+		response.Internal(c, "获取评论失败")
 		return
 	}
 	response.Success(c, comments)
@@ -60,7 +60,7 @@ func (h *CommentHandler) Create(c *gin.Context) {
 
 	var req CreateCommentReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+		response.BadRequest(c, "")
 		return
 	}
 
@@ -73,7 +73,7 @@ func (h *CommentHandler) Create(c *gin.Context) {
 
 	comment, err := h.commentService.CreateComment(c.Request.Context(), articleID, userID, req.ParentID, req.Content)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err.Error())
+		response.Internal(c, "发表评论失败")
 		return
 	}
 	response.Success(c, comment)
@@ -101,7 +101,7 @@ func (h *CommentHandler) AdminList(c *gin.Context) {
 	}
 	comments, total, err := h.commentService.ListAllComments(c.Request.Context(), page, pageSize)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err.Error())
+		response.Internal(c, "获取评论列表失败")
 		return
 	}
 	response.Success(c, gin.H{
@@ -139,7 +139,7 @@ func (h *CommentHandler) Delete(c *gin.Context) {
 		case "无权限删除此评论":
 			response.Error(c, http.StatusForbidden, err.Error())
 		default:
-			response.Error(c, http.StatusInternalServerError, err.Error())
+			response.Internal(c, "删除评论失败")
 		}
 		return
 	}

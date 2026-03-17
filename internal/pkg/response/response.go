@@ -1,6 +1,10 @@
 package response
 
-import "github.com/gin-gonic/gin"
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
 
 // 统一的返回结构
 type Response struct {
@@ -9,16 +13,64 @@ type Response struct {
 	Data any    `json:"data,omitempty"`
 }
 
+const (
+	MsgSuccess         = "success"
+	MsgBadRequest      = "请求参数错误"
+	MsgUnauthorized    = "未授权访问"
+	MsgForbidden       = "无权限访问"
+	MsgNotFound        = "资源不存在"
+	MsgInternal        = "服务器内部错误"
+	MsgTooManyRequests = "请求过于频繁，请稍后再试"
+)
+
 // 成功返回
 func Success(c *gin.Context, data any) {
-	c.JSON(200, Response{Code: 200, Msg: "success", Data: data})
+	c.JSON(http.StatusOK, Response{Code: http.StatusOK, Msg: MsgSuccess, Data: data})
 }
 
-// 错误返回：429 用真实 HTTP 状态码，其他业务错误统一用 200 + code 区分
-func Error(c *gin.Context, code int, msg string) {
-	httpStatus := 200
-	if code == 429 {
-		httpStatus = 429
+// 错误返回：HTTP 状态码与业务 code 保持一致。
+func Error(c *gin.Context, status int, msg string) {
+	c.JSON(status, Response{Code: status, Msg: msg})
+}
+
+func BadRequest(c *gin.Context, msg string) {
+	if msg == "" {
+		msg = MsgBadRequest
 	}
-	c.JSON(httpStatus, Response{Code: code, Msg: msg})
+	Error(c, http.StatusBadRequest, msg)
+}
+
+func Unauthorized(c *gin.Context, msg string) {
+	if msg == "" {
+		msg = MsgUnauthorized
+	}
+	Error(c, http.StatusUnauthorized, msg)
+}
+
+func Forbidden(c *gin.Context, msg string) {
+	if msg == "" {
+		msg = MsgForbidden
+	}
+	Error(c, http.StatusForbidden, msg)
+}
+
+func NotFound(c *gin.Context, msg string) {
+	if msg == "" {
+		msg = MsgNotFound
+	}
+	Error(c, http.StatusNotFound, msg)
+}
+
+func Internal(c *gin.Context, msg string) {
+	if msg == "" {
+		msg = MsgInternal
+	}
+	Error(c, http.StatusInternalServerError, msg)
+}
+
+func TooManyRequests(c *gin.Context, msg string) {
+	if msg == "" {
+		msg = MsgTooManyRequests
+	}
+	Error(c, http.StatusTooManyRequests, msg)
 }

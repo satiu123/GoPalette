@@ -1,11 +1,10 @@
 package middleware
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/satiu123/GoPalette/internal/pkg/config"
 	"github.com/satiu123/GoPalette/internal/pkg/jwt"
+	"github.com/satiu123/GoPalette/internal/pkg/response"
 )
 
 // JWTOptionalMiddleware 尝试解析 Access Token，有效则写入 userID/role，无 token 或无效则跳过（不中断请求）
@@ -31,7 +30,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		// 从请求头中获取 JWT Token
 		tokenString := c.GetHeader("Authorization")
 		if tokenString == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "缺少 Authorization 头"})
+			response.Unauthorized(c, "缺少 Authorization 头")
 			c.Abort()
 			return
 		}
@@ -39,7 +38,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		// 解析 Access Token
 		claims, err := jwt.ParseToken(tokenString, config.GlobalConfig.JWT.AccessTokenSecret)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "无效的 Token"})
+			response.Unauthorized(c, "无效的 Token")
 			c.Abort()
 			return
 		}

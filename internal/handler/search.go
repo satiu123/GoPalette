@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/satiu123/GoPalette/internal/pkg/response"
 	"github.com/satiu123/GoPalette/internal/service"
@@ -30,13 +28,13 @@ func NewSearchHandler(s *service.ArticleService) *SearchHandler {
 func (h *SearchHandler) Search(c *gin.Context) {
 	var req SearchReq
 	if err := c.ShouldBindQuery(&req); err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+		response.BadRequest(c, "")
 		return
 	}
 
 	articles, total, err := h.articleService.SearchArticles(c.Request.Context(), req.Q, req.Page, req.PageSize)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err.Error())
+		response.Internal(c, "搜索失败")
 		return
 	}
 	response.Success(c, gin.H{

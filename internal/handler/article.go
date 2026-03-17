@@ -34,7 +34,7 @@ func NewArticleHandler(s *service.ArticleService) *ArticleHandler {
 func (h *ArticleHandler) Create(c *gin.Context) {
 	var req CreateArticleReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+		response.BadRequest(c, "")
 		return
 	}
 
@@ -49,7 +49,7 @@ func (h *ArticleHandler) Create(c *gin.Context) {
 		Status:     req.Status,
 	})
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err.Error())
+		response.Internal(c, "创建文章失败")
 		return
 	}
 	response.Success(c, article)
@@ -95,7 +95,7 @@ func (h *ArticleHandler) Get(c *gin.Context) {
 func (h *ArticleHandler) List(c *gin.Context) {
 	var req ListArticlesReq
 	if err := c.ShouldBindQuery(&req); err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+		response.BadRequest(c, "")
 		return
 	}
 
@@ -107,7 +107,7 @@ func (h *ArticleHandler) List(c *gin.Context) {
 			Status:     "published",
 		})
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err.Error())
+		response.Internal(c, "获取文章列表失败")
 		return
 	}
 	response.Success(c, gin.H{
@@ -127,7 +127,7 @@ func (h *ArticleHandler) ListMine(c *gin.Context) {
 	articles, total, err := h.articleService.ListArticles(c.Request.Context(), req.Page, req.PageSize,
 		repository.ListArticlesFilter{AuthorID: authorID})
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err.Error())
+		response.Internal(c, "获取文章列表失败")
 		return
 	}
 	response.Success(c, gin.H{"total": total, "articles": articles})
@@ -136,7 +136,7 @@ func (h *ArticleHandler) ListMine(c *gin.Context) {
 // AdminList 管理员查看所有文章（含草稿，所有作者）
 func (h *ArticleHandler) AdminList(c *gin.Context) {
 	if c.GetString("role") != "admin" {
-		response.Error(c, http.StatusForbidden, "需要管理员权限")
+		response.Forbidden(c, "需要管理员权限")
 		return
 	}
 	var req ListArticlesReq
@@ -148,7 +148,7 @@ func (h *ArticleHandler) AdminList(c *gin.Context) {
 			AuthorID:   req.AuthorID,
 		})
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err.Error())
+		response.Internal(c, "获取文章列表失败")
 		return
 	}
 	response.Success(c, gin.H{"total": total, "articles": articles})
@@ -177,7 +177,7 @@ func (h *ArticleHandler) Update(c *gin.Context) {
 
 	var req UpdateArticleReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+		response.BadRequest(c, "")
 		return
 	}
 
@@ -200,7 +200,7 @@ func (h *ArticleHandler) Update(c *gin.Context) {
 		case "无权限修改此文章":
 			response.Error(c, http.StatusForbidden, err.Error())
 		default:
-			response.Error(c, http.StatusInternalServerError, err.Error())
+			response.Internal(c, "更新文章失败")
 		}
 		return
 	}
@@ -236,7 +236,7 @@ func (h *ArticleHandler) Delete(c *gin.Context) {
 		case "无权限删除此文章":
 			response.Error(c, http.StatusForbidden, err.Error())
 		default:
-			response.Error(c, http.StatusInternalServerError, err.Error())
+			response.Internal(c, "删除文章失败")
 		}
 		return
 	}

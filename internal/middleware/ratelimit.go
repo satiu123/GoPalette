@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"net/http"
 	"sync"
 	"time"
 
@@ -10,8 +9,8 @@ import (
 )
 
 type visitor struct {
-	count    int
-	resetAt  time.Time
+	count   int
+	resetAt time.Time
 }
 
 type rateLimiter struct {
@@ -70,7 +69,7 @@ func RateLimitAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := c.ClientIP()
 		if !authLimiter.allow(ip) {
-			response.Error(c, http.StatusTooManyRequests, "请求过于频繁，请稍后再试")
+			response.TooManyRequests(c, "")
 			c.Abort()
 			return
 		}
