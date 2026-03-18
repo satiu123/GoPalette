@@ -50,6 +50,7 @@ func main() {
 
 	userRepo := mysql.NewUserGormRepository(db, rdb)
 	tokenRepo := tokenredis.NewTokenRedisRepository(rdb)
+	cacheRepo := tokenredis.NewCacheRedisRepository(rdb)
 	userService := service.NewUserService(userRepo, tokenRepo)
 	userHandler := handler.NewUserHandler(userService)
 
@@ -60,7 +61,7 @@ func main() {
 	attachmentService := service.NewAttachmentService(attachmentRepo, stor)
 
 	articleRepo := mysql.NewArticleGormRepository(db)
-	articleService := service.NewArticleService(articleRepo, attachmentService)
+	articleService := service.NewArticleService(articleRepo, attachmentService, cacheRepo)
 	articleHandler := handler.NewArticleHandler(articleService)
 
 	categoryRepo := mysql.NewCategoryGormRepository(db)
