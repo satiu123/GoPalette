@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ArrowLeft, MessageSquare, Heart, Share2, Send, Reply, Trash2 } from 'lucide-vue-next'
+import MarkdownIt from 'markdown-it'
+import { createHighlighter } from 'shiki'
+import { ArrowLeft, MessageSquare, Heart, Share2, Send, Reply, Trash2, ChevronUp, ListTree } from 'lucide-vue-next'
 import type { Article, Comment } from '~/composables/useBlogData'
-import { articleImageUrl, userAvatarUrl, formatDate } from '~/composables/useBlogData'
+import { userAvatarUrl, formatDate } from '~/composables/useBlogData'
 import type { ApiResponse } from '~/composables/useBlogData'
 
 const props = defineProps<{
@@ -12,6 +14,229 @@ const router = useRouter()
 const { isLoggedIn, authFetch, user } = useAuth()
 const { askConfirm } = useConfirmDialog()
 const isLiked = ref(false)
+const postBodyRef = ref<HTMLElement | null>(null)
+const readingProgress = ref(0)
+const showBackTop = ref(false)
+
+interface TocItem {
+  id: string
+  text: string
+  level: 2 | 3 | 4
+}
+
+const tocItems = ref<TocItem[]>([])
+const activeHeadingId = ref('')
+
+const highlighter = await createHighlighter({
+  themes: ['github-light'],
+  langs: ['text', 'bash', 'javascript', 'typescript', 'json', 'go', 'yaml', 'markdown', 'html', 'css', 'sql']
+})
+
+function normalizeLang(lang: string) {
+  const lower = lang.toLowerCase()
+  if (lower === 'js') return 'javascript'
+  if (lower === 'ts') return 'typescript'
+  if (lower === 'sh' || lower === 'shell') return 'bash'
+  if (lower === 'yml') return 'yaml'
+  return lower
+}
+
+function decodeHtmlEntities(content: string) {
+  return content
+    .replace(/&#34;|&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+}
+
+const markdown = new MarkdownIt({
+  html: false,
+  linkify: true,
+  breaks: true,
+  typographer: true,
+  highlight(code, lang) {
+    const normalized = normalizeLang(lang || 'text')
+    const language = highlighter.getLoadedLanguages().includes(normalized as never) ? normalized : 'text'
+    return highlighter.codeToHtml(code, {
+      lang: language,
+      theme: 'github-light'
+    })
+  }
+})
+
+function looksLikeHtml(content: string) {
+  return /<([a-z][\w0-9-]*)(\s[^>]*)?>/i.test(content)
+}
+
+const renderedContent = computed(() => {
+  const raw = props.post.content ?? ''
+  if (!raw.trim()) return ''
+  if (looksLikeHtml(raw)) return raw
+  return markdown.render(decodeHtmlEntities(raw))
+})
+
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+}
+
+function updateHeadingState() {
+  if (!import.meta.client || !postBodyRef.value) return
+  const headings = Array.from(postBodyRef.value.querySelectorAll('h2, h3, h4')) as HTMLElement[]
+  if (!headings.length) {
+    activeHeadingId.value = ''
+    return
+  }
+
+  const threshold = window.scrollY + 140
+  let current: HTMLElement | null = headings[0] ?? null
+  for (const heading of headings) {
+    const top = heading.getBoundingClientRect().top + window.scrollY
+    if (top <= threshold) current = heading
+    else break
+  }
+  activeHeadingId.value = current?.id ?? ''
+}
+
+function updateReadingState() {
+  if (!import.meta.client) return
+  const doc = document.documentElement
+  const scrollTop = window.scrollY || doc.scrollTop
+  const max = doc.scrollHeight - window.innerHeight
+  readingProgress.value = max > 0 ? Math.min(100, Math.max(0, (scrollTop / max) * 100)) : 0
+  showBackTop.value = scrollTop > 500
+  updateHeadingState()
+}
+
+function buildTOCAndDecorateHeadings() {
+  if (!postBodyRef.value) return
+
+  const headings = Array.from(postBodyRef.value.querySelectorAll('h2, h3, h4')) as HTMLElement[]
+  const slugCount: Record<string, number> = {}
+  tocItems.value = headings.map((heading) => {
+    const text = heading.textContent?.trim() || 'Section'
+    const base = slugify(text) || 'section'
+    const count = slugCount[base] ?? 0
+    slugCount[base] = count + 1
+    const id = count === 0 ? base : `${base}-${count}`
+    heading.id = id
+
+    if (!heading.querySelector('.article-anchor')) {
+      const anchor = document.createElement('a')
+      anchor.className = 'article-anchor'
+      anchor.href = `#${id}`
+      anchor.textContent = '#'
+      anchor.setAttribute('aria-label', `跳转到 ${text}`)
+      heading.appendChild(anchor)
+    }
+
+    return {
+      id,
+      text,
+      level: Number(heading.tagName.slice(1)) as 2 | 3 | 4
+    }
+  })
+}
+
+function decorateCodeBlocks() {
+  if (!postBodyRef.value) return
+  const blocks = Array.from(postBodyRef.value.querySelectorAll('pre.shiki')) as HTMLElement[]
+
+  for (const pre of blocks) {
+    if (pre.parentElement?.classList.contains('article-code-wrap')) continue
+
+    const wrapper = document.createElement('div')
+    wrapper.className = 'article-code-wrap'
+    pre.parentNode?.insertBefore(wrapper, pre)
+    wrapper.appendChild(pre)
+
+    const code = pre.querySelector('code')
+    const codeText = code?.textContent?.replace(/\n$/, '') ?? ''
+    const lines = Math.max(1, codeText.split('\n').length)
+
+    const gutter = document.createElement('div')
+    gutter.className = 'article-code-gutter'
+    const nums = Array.from({ length: lines }, (_, i) => `<span>${i + 1}</span>`).join('')
+    gutter.innerHTML = nums
+    wrapper.insertBefore(gutter, pre)
+
+    const copyBtn = document.createElement('button')
+    copyBtn.type = 'button'
+    copyBtn.className = 'article-copy-btn'
+    copyBtn.textContent = '复制'
+    wrapper.appendChild(copyBtn)
+  }
+}
+
+async function onBodyClick(event: MouseEvent) {
+  const target = event.target as HTMLElement
+  const button = target.closest('.article-copy-btn') as HTMLButtonElement | null
+  if (!button) return
+  const wrapper = button.closest('.article-code-wrap')
+  const code = wrapper?.querySelector('pre code')
+  const raw = code?.textContent ?? ''
+  if (!raw || !import.meta.client) return
+
+  try {
+    await navigator.clipboard.writeText(raw)
+    button.textContent = '已复制'
+    setTimeout(() => {
+      button.textContent = '复制'
+    }, 1200)
+  } catch {
+    button.textContent = '复制失败'
+    setTimeout(() => {
+      button.textContent = '复制'
+    }, 1200)
+  }
+}
+
+function enhanceArticleBody() {
+  if (!postBodyRef.value) return
+  buildTOCAndDecorateHeadings()
+  decorateCodeBlocks()
+  updateHeadingState()
+}
+
+function goTop() {
+  if (!import.meta.client) return
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function scrollToHeading(id: string) {
+  if (!import.meta.client) return
+  const el = document.getElementById(id)
+  if (!el) return
+  const top = el.getBoundingClientRect().top + window.scrollY - 90
+  window.scrollTo({ top, behavior: 'smooth' })
+}
+
+watch(renderedContent, async () => {
+  await nextTick()
+  enhanceArticleBody()
+})
+
+onMounted(async () => {
+  await nextTick()
+  enhanceArticleBody()
+  if (import.meta.client) {
+    window.addEventListener('scroll', updateReadingState, { passive: true })
+    postBodyRef.value?.addEventListener('click', onBodyClick)
+    updateReadingState()
+  }
+})
+
+onBeforeUnmount(() => {
+  if (import.meta.client) {
+    window.removeEventListener('scroll', updateReadingState)
+    postBodyRef.value?.removeEventListener('click', onBodyClick)
+  }
+})
 
 // 获取评论列表
 const { data: commentsData, refresh: refreshComments } = await useComments(props.post.id)
@@ -127,6 +352,10 @@ function goBack() {
     :enter="{ opacity: 1, y: 0, transition: { duration: 500, ease: [0.22, 1, 0.36, 1] } }"
     class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
   >
+    <div class="fixed top-0 left-0 right-0 h-1 bg-m3-sys-light-surface-variant/70 z-50">
+      <div class="h-full bg-m3-sys-light-primary transition-[width] duration-150" :style="{ width: `${readingProgress}%` }" />
+    </div>
+
     <button
       @click="goBack"
       class="mb-8 flex items-center gap-2 px-4 py-2 rounded-full hover:bg-m3-sys-light-surface-variant transition-colors text-m3-sys-light-on-surface-variant font-medium"
@@ -172,35 +401,80 @@ function goBack() {
       </div>
     </div>
 
-    <!-- 封面图 -->
-    <div class="relative mb-16">
-      <div class="absolute inset-0 bg-m3-sys-light-primary-container rounded-[3rem] transform -rotate-2 scale-105 -z-10"></div>
-      <img
-        :src="articleImageUrl(post)"
-        :alt="post.title"
-        class="w-full h-[400px] md:h-[500px] object-cover rounded-[2.5rem] shadow-xl"
-        referrerpolicy="no-referrer"
-      />
+    <div v-if="tocItems.length" class="lg:hidden mb-6 p-4 rounded-2xl border border-m3-sys-light-outline-variant bg-m3-sys-light-surface">
+      <div class="flex items-center gap-2 text-sm font-semibold text-m3-sys-light-on-surface mb-3">
+        <ListTree class="w-4 h-4" /> 目录
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button
+          v-for="item in tocItems"
+          :key="item.id"
+          @click="scrollToHeading(item.id)"
+          class="px-3 py-1.5 rounded-full text-xs transition-colors"
+          :class="activeHeadingId === item.id
+            ? 'bg-m3-sys-light-primary text-m3-sys-light-on-primary'
+            : 'bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container'"
+        >
+          {{ item.text }}
+        </button>
+      </div>
     </div>
 
-    <!-- 文章正文 -->
-    <div
-      class="prose prose-lg max-w-none mb-20 text-m3-sys-light-on-surface leading-relaxed"
-      v-html="post.content"
-    />
+    <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_240px] gap-8 items-start">
+      <div>
+        <!-- 文章正文 -->
+        <div
+          ref="postBodyRef"
+          class="article-rich-content max-w-none mb-20 text-m3-sys-light-on-surface leading-relaxed"
+          v-html="renderedContent"
+        />
 
-    <!-- Tags -->
-    <div v-if="post.tags?.length" class="flex flex-wrap gap-2 mb-12">
-      <span
-        v-for="tag in post.tags"
-        :key="tag.id"
-        class="px-3 py-1 rounded-full bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface-variant text-sm"
-      >
-        #{{ tag.name }}
-      </span>
+        <!-- Tags -->
+        <div v-if="post.tags?.length" class="flex flex-wrap gap-2 mb-12">
+          <span
+            v-for="tag in post.tags"
+            :key="tag.id"
+            class="px-3 py-1 rounded-full bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface-variant text-sm"
+          >
+            #{{ tag.name }}
+          </span>
+        </div>
+      </div>
+
+      <aside v-if="tocItems.length" class="hidden lg:block sticky top-24">
+        <div class="rounded-2xl border border-m3-sys-light-outline-variant bg-m3-sys-light-surface p-4">
+          <div class="flex items-center gap-2 text-sm font-semibold text-m3-sys-light-on-surface mb-3">
+            <ListTree class="w-4 h-4" /> 目录
+          </div>
+          <ul class="space-y-1.5">
+            <li v-for="item in tocItems" :key="item.id">
+              <button
+                @click="scrollToHeading(item.id)"
+                class="w-full text-left text-sm rounded-lg px-2 py-1.5 transition-colors"
+                :class="[
+                  item.level === 3 ? 'pl-4' : item.level === 4 ? 'pl-6' : '',
+                  activeHeadingId === item.id
+                    ? 'bg-m3-sys-light-primary-container text-m3-sys-light-on-primary-container'
+                    : 'text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-surface-variant'
+                ]"
+              >
+                {{ item.text }}
+              </button>
+            </li>
+          </ul>
+        </div>
+      </aside>
     </div>
 
-    <!-- 评论区 -->
+    <button
+      v-if="showBackTop"
+      @click="goTop"
+      class="fixed right-5 bottom-6 z-40 w-11 h-11 rounded-full bg-m3-sys-light-primary text-m3-sys-light-on-primary shadow-lg hover:opacity-90 transition-opacity flex items-center justify-center"
+      aria-label="回到顶部"
+    >
+      <ChevronUp class="w-5 h-5" />
+    </button>
+
     <section class="bg-m3-sys-light-surface-variant/50 rounded-[3rem] p-8 sm:p-12">
       <div class="flex items-center gap-3 mb-10">
         <MessageSquare class="w-8 h-8 text-m3-sys-light-primary" />
