@@ -7,6 +7,7 @@ definePageMeta({ middleware: 'auth', ssr: false })
 
 const router = useRouter()
 const { user, authFetch } = useAuth()
+const { askConfirm } = useConfirmDialog()
 
 // 个人信息（从后端刷新）
 const profile = ref<ApiUser | null>(null)
@@ -119,9 +120,11 @@ async function submitEdit() {
 const page = ref(1)
 const PAGE_SIZE = 12
 const myArticles = ref<Article[]>([])
+const selectedArticleIds = ref<number[]>([])
 const totalArticles = ref(0)
 const articlesPending = ref(true)
 const deleteError = ref('')
+const bulkDeleting = ref(false)
 
 async function loadProfile() {
   profilePending.value = true
@@ -145,6 +148,7 @@ async function loadArticles() {
     if (res.code === 200) {
       myArticles.value = res.data.articles ?? []
       totalArticles.value = res.data.total ?? 0
+      selectedArticleIds.value = []
     }
   } finally {
     articlesPending.value = false
@@ -152,7 +156,13 @@ async function loadArticles() {
 }
 
 async function deleteArticle(id: number) {
-  if (!confirm('确认删除这篇文章？')) return
+  const ok = await askConfirm({
+    title: '删除文章',
+    message: '确认删除这篇文章吗？该操作不可撤销。',
+    confirmText: '删除',
+    tone: 'danger'
+  })
+  if (!ok) return
   deleteError.value = ''
   try {
     await authFetch(`/articles/${id}`, { method: 'DELETE' })
@@ -163,6 +173,47 @@ async function deleteArticle(id: number) {
 }
 
 watch(page, loadArticles)
+
+const allArticlesSelected = computed(() =>
+  myArticles.value.length > 0 && selectedArticleIds.value.length === myArticles.value.length
+)
+
+function toggleAllArticles(checked: boolean) {
+  selectedArticleIds.value = checked ? myArticles.value.map(item => item.id) : []
+}
+
+function updateSelection(id: number, checked: boolean) {
+  if (checked) {
+    if (!selectedArticleIds.value.includes(id)) selectedArticleIds.value.push(id)
+    return
+  }
+  selectedArticleIds.value = selectedArticleIds.value.filter(item => item !== id)
+}
+
+async function bulkDeleteArticles() {
+  if (!selectedArticleIds.value.length) return
+  const count = selectedArticleIds.value.length
+  const ok = await askConfirm({
+    title: '批量删除文章',
+    message: `确认删除已选中的 ${count} 篇文章吗？该操作不可撤销。`,
+    confirmText: '删除',
+    tone: 'danger'
+  })
+  if (!ok) return
+
+  bulkDeleting.value = true
+  deleteError.value = ''
+  try {
+    const results = await Promise.allSettled(
+      selectedArticleIds.value.map(id => authFetch(`/articles/${id}`, { method: 'DELETE' }))
+    )
+    const failed = results.filter(item => item.status === 'rejected').length
+    await loadArticles()
+    if (failed > 0) deleteError.value = `有 ${failed} 篇文章删除失败，请重试。`
+  } finally {
+    bulkDeleting.value = false
+  }
+}
 
 onMounted(async () => {
   await loadProfile()
@@ -304,16 +355,36 @@ const totalReads = computed(() =>
     <!-- 写文章入口 -->
     <div class="flex items-center justify-between mb-6">
       <h2 class="text-xl font-bold text-m3-sys-light-on-surface">My Articles</h2>
-      <button
-        @click="router.push('/write')"
-        class="flex items-center gap-2 px-5 py-2.5 bg-m3-sys-light-primary text-m3-sys-light-on-primary rounded-full font-medium hover:opacity-90 transition-opacity"
-      >
-        <PenSquare class="w-4 h-4" />
-        <span>Write New</span>
-      </button>
+      <div class="flex items-center gap-2">
+        <button
+          v-if="selectedArticleIds.length > 0"
+          :disabled="bulkDeleting"
+          @click="bulkDeleteArticles"
+          class="flex items-center gap-2 px-5 py-2.5 bg-m3-sys-light-error-container text-m3-sys-light-on-error-container rounded-full font-medium hover:opacity-90 transition-opacity disabled:opacity-60"
+        >
+          <Trash2 class="w-4 h-4" />
+          <span>删除已选 ({{ selectedArticleIds.length }})</span>
+        </button>
+        <button
+          @click="router.push('/write')"
+          class="flex items-center gap-2 px-5 py-2.5 bg-m3-sys-light-primary text-m3-sys-light-on-primary rounded-full font-medium hover:opacity-90 transition-opacity"
+        >
+          <PenSquare class="w-4 h-4" />
+          <span>Write New</span>
+        </button>
+      </div>
     </div>
 
     <p v-if="deleteError" class="text-red-500 text-sm mb-4">{{ deleteError }}</p>
+    <label v-if="myArticles.length > 0" class="inline-flex items-center gap-2 mb-4 text-sm text-m3-sys-light-on-surface-variant">
+      <input
+        type="checkbox"
+        :checked="allArticlesSelected"
+        @change="toggleAllArticles(($event.target as HTMLInputElement).checked)"
+        class="w-4 h-4 rounded border-m3-sys-light-outline accent-m3-sys-light-primary"
+      />
+      全选
+    </label>
 
     <!-- 文章列表 -->
     <div v-if="articlesPending" class="space-y-4">
@@ -330,6 +401,12 @@ const totalReads = computed(() =>
         :key="article.id"
         class="flex items-center gap-4 bg-m3-sys-light-surface rounded-2xl px-6 py-4 shadow-sm hover:shadow-md transition-shadow group"
       >
+        <input
+          type="checkbox"
+          :checked="selectedArticleIds.includes(article.id)"
+          @change="updateSelection(article.id, ($event.target as HTMLInputElement).checked)"
+          class="w-4 h-4 rounded border-m3-sys-light-outline accent-m3-sys-light-primary shrink-0"
+        />
         <!-- 缩略图 -->
         <img :src="articleImageUrl(article)" alt="" class="w-16 h-16 rounded-xl object-cover shrink-0 hidden sm:block" />
 

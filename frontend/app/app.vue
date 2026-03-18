@@ -12,5 +12,6 @@ if (import.meta.client) fetchMe()
       <NuxtPage />
     </main>
     <AppFooter />
+    <AppConfirmDialog />
   </div>
 </template>

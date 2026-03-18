@@ -10,6 +10,7 @@ const props = defineProps<{
 
 const router = useRouter()
 const { isLoggedIn, authFetch, user } = useAuth()
+const { askConfirm } = useConfirmDialog()
 const isLiked = ref(false)
 
 // 获取评论列表
@@ -87,7 +88,13 @@ async function submitReply(parentComment: Comment) {
 const deletingIds = reactive<Set<number>>(new Set())
 
 async function deleteComment(commentId: number) {
-  if (!confirm('确认删除这条评论？')) return
+  const ok = await askConfirm({
+    title: '删除评论',
+    message: '确认删除这条评论吗？该操作不可撤销。',
+    confirmText: '删除',
+    tone: 'danger'
+  })
+  if (!ok) return
   deletingIds.add(commentId)
   try {
     await authFetch(`/comments/${commentId}`, { method: 'DELETE' })

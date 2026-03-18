@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { Ref } from 'vue'
 import { LayoutDashboard, FileText, Tag, FolderOpen, Trash2, Plus, X, MessageSquare } from 'lucide-vue-next'
 import type { Article, ArticleListData, ApiCategory, ApiTag, ApiResponse, Comment } from '~/composables/useBlogData'
 import { formatDate } from '~/composables/useBlogData'
@@ -7,6 +8,7 @@ definePageMeta({ ssr: false })
 
 const router = useRouter()
 const { user, authFetch, isLoggedIn } = useAuth()
+const { askConfirm } = useConfirmDialog()
 
 // 权限检查
 onMounted(async () => {
@@ -20,6 +22,7 @@ const tab = ref<'articles' | 'categories' | 'tags' | 'comments'>('articles')
 
 // 文章管理
 const articles = ref<Article[]>([])
+const selectedArticleIds = ref<number[]>([])
 const totalArticles = ref(0)
 const articlePage = ref(1)
 const ARTICLE_PAGE_SIZE = 20
@@ -34,6 +37,7 @@ async function loadArticles() {
     if (res.code === 200) {
       articles.value = res.data.articles ?? []
       totalArticles.value = res.data.total ?? 0
+      selectedArticleIds.value = []
     }
   } finally {
     articlePending.value = false
@@ -41,7 +45,13 @@ async function loadArticles() {
 }
 
 async function deleteArticle(id: number) {
-  if (!confirm('确认删除此文章？')) return
+  const ok = await askConfirm({
+    title: '删除文章',
+    message: '确认删除这篇文章吗？该操作不可撤销。',
+    confirmText: '删除',
+    tone: 'danger'
+  })
+  if (!ok) return
   await authFetch(`/articles/${id}`, { method: 'DELETE' })
   await loadArticles()
 }
@@ -50,12 +60,16 @@ watch(articlePage, loadArticles)
 
 // 分类管理
 const categories = ref<ApiCategory[]>([])
+const selectedCategoryIds = ref<number[]>([])
 const newCategoryName = ref('')
 const catError = ref('')
 
 async function loadCategories() {
   const res = await authFetch<ApiResponse<ApiCategory[]>>('/categories')
-  if (res.code === 200) categories.value = res.data ?? []
+  if (res.code === 200) {
+    categories.value = res.data ?? []
+    selectedCategoryIds.value = []
+  }
 }
 
 async function createCategory() {
@@ -71,19 +85,29 @@ async function createCategory() {
 }
 
 async function deleteCategory(id: number) {
-  if (!confirm('确认删除此分类？')) return
+  const ok = await askConfirm({
+    title: '删除分类',
+    message: '确认删除这个分类吗？该操作不可撤销。',
+    confirmText: '删除',
+    tone: 'danger'
+  })
+  if (!ok) return
   await authFetch(`/categories/${id}`, { method: 'DELETE' })
   await loadCategories()
 }
 
 // 标签管理
 const tags = ref<ApiTag[]>([])
+const selectedTagIds = ref<number[]>([])
 const newTagName = ref('')
 const tagError = ref('')
 
 async function loadTags() {
   const res = await authFetch<ApiResponse<ApiTag[]>>('/tags')
-  if (res.code === 200) tags.value = res.data ?? []
+  if (res.code === 200) {
+    tags.value = res.data ?? []
+    selectedTagIds.value = []
+  }
 }
 
 async function createTag() {
@@ -99,7 +123,13 @@ async function createTag() {
 }
 
 async function deleteTag(id: number) {
-  if (!confirm('确认删除此标签？')) return
+  const ok = await askConfirm({
+    title: '删除标签',
+    message: '确认删除这个标签吗？该操作不可撤销。',
+    confirmText: '删除',
+    tone: 'danger'
+  })
+  if (!ok) return
   await authFetch(`/tags/${id}`, { method: 'DELETE' })
   await loadTags()
 }
@@ -111,6 +141,7 @@ interface AdminCommentResp {
 }
 
 const comments = ref<Comment[]>([])
+const selectedCommentIds = ref<number[]>([])
 const totalComments = ref(0)
 const commentPage = ref(1)
 const COMMENT_PAGE_SIZE = 20
@@ -125,6 +156,7 @@ async function loadComments() {
     if (res.code === 200) {
       comments.value = res.data.comments ?? []
       totalComments.value = res.data.total ?? 0
+      selectedCommentIds.value = []
     }
   } finally {
     commentPending.value = false
@@ -132,12 +164,178 @@ async function loadComments() {
 }
 
 async function deleteCommentAdmin(id: number) {
-  if (!confirm('确认删除此评论？')) return
+  const ok = await askConfirm({
+    title: '删除评论',
+    message: '确认删除这条评论吗？该操作不可撤销。',
+    confirmText: '删除',
+    tone: 'danger'
+  })
+  if (!ok) return
   await authFetch(`/comments/${id}`, { method: 'DELETE' })
   await loadComments()
 }
 
 watch(commentPage, loadComments)
+
+const bulkDeleting = ref(false)
+const bulkError = ref('')
+
+function updateSelection(list: Ref<number[]>, id: number, checked: boolean) {
+  if (checked) {
+    if (!list.value.includes(id)) list.value.push(id)
+    return
+  }
+  list.value = list.value.filter(item => item !== id)
+}
+
+function updateArticleSelection(id: number, checked: boolean) {
+  updateSelection(selectedArticleIds, id, checked)
+}
+
+function updateCategorySelection(id: number, checked: boolean) {
+  updateSelection(selectedCategoryIds, id, checked)
+}
+
+function updateTagSelection(id: number, checked: boolean) {
+  updateSelection(selectedTagIds, id, checked)
+}
+
+function updateCommentSelection(id: number, checked: boolean) {
+  updateSelection(selectedCommentIds, id, checked)
+}
+
+async function deleteMany(requests: Array<Promise<unknown>>) {
+  const results = await Promise.allSettled(requests)
+  return results.filter(item => item.status === 'rejected').length
+}
+
+const allArticlesSelected = computed(() =>
+  articles.value.length > 0 && selectedArticleIds.value.length === articles.value.length
+)
+
+function toggleAllArticles(checked: boolean) {
+  selectedArticleIds.value = checked ? articles.value.map(item => item.id) : []
+}
+
+async function bulkDeleteArticles() {
+  if (!selectedArticleIds.value.length) return
+  const count = selectedArticleIds.value.length
+  const ok = await askConfirm({
+    title: '批量删除文章',
+    message: `确认删除已选中的 ${count} 篇文章吗？该操作不可撤销。`,
+    confirmText: '删除',
+    tone: 'danger'
+  })
+  if (!ok) return
+
+  bulkDeleting.value = true
+  bulkError.value = ''
+  try {
+    const failed = await deleteMany(
+      selectedArticleIds.value.map(id => authFetch(`/articles/${id}`, { method: 'DELETE' }))
+    )
+    await loadArticles()
+    if (failed > 0) bulkError.value = `有 ${failed} 篇文章删除失败，请重试。`
+  } finally {
+    bulkDeleting.value = false
+  }
+}
+
+const allCategoriesSelected = computed(() =>
+  categories.value.length > 0 && selectedCategoryIds.value.length === categories.value.length
+)
+
+function toggleAllCategories(checked: boolean) {
+  selectedCategoryIds.value = checked ? categories.value.map(item => item.id) : []
+}
+
+async function bulkDeleteCategories() {
+  if (!selectedCategoryIds.value.length) return
+  const count = selectedCategoryIds.value.length
+  const ok = await askConfirm({
+    title: '批量删除分类',
+    message: `确认删除已选中的 ${count} 个分类吗？该操作不可撤销。`,
+    confirmText: '删除',
+    tone: 'danger'
+  })
+  if (!ok) return
+
+  bulkDeleting.value = true
+  bulkError.value = ''
+  try {
+    const failed = await deleteMany(
+      selectedCategoryIds.value.map(id => authFetch(`/categories/${id}`, { method: 'DELETE' }))
+    )
+    await loadCategories()
+    if (failed > 0) bulkError.value = `有 ${failed} 个分类删除失败，请重试。`
+  } finally {
+    bulkDeleting.value = false
+  }
+}
+
+const allTagsSelected = computed(() =>
+  tags.value.length > 0 && selectedTagIds.value.length === tags.value.length
+)
+
+function toggleAllTags(checked: boolean) {
+  selectedTagIds.value = checked ? tags.value.map(item => item.id) : []
+}
+
+async function bulkDeleteTags() {
+  if (!selectedTagIds.value.length) return
+  const count = selectedTagIds.value.length
+  const ok = await askConfirm({
+    title: '批量删除标签',
+    message: `确认删除已选中的 ${count} 个标签吗？该操作不可撤销。`,
+    confirmText: '删除',
+    tone: 'danger'
+  })
+  if (!ok) return
+
+  bulkDeleting.value = true
+  bulkError.value = ''
+  try {
+    const failed = await deleteMany(
+      selectedTagIds.value.map(id => authFetch(`/tags/${id}`, { method: 'DELETE' }))
+    )
+    await loadTags()
+    if (failed > 0) bulkError.value = `有 ${failed} 个标签删除失败，请重试。`
+  } finally {
+    bulkDeleting.value = false
+  }
+}
+
+const allCommentsSelected = computed(() =>
+  comments.value.length > 0 && selectedCommentIds.value.length === comments.value.length
+)
+
+function toggleAllComments(checked: boolean) {
+  selectedCommentIds.value = checked ? comments.value.map(item => item.id) : []
+}
+
+async function bulkDeleteComments() {
+  if (!selectedCommentIds.value.length) return
+  const count = selectedCommentIds.value.length
+  const ok = await askConfirm({
+    title: '批量删除评论',
+    message: `确认删除已选中的 ${count} 条评论吗？该操作不可撤销。`,
+    confirmText: '删除',
+    tone: 'danger'
+  })
+  if (!ok) return
+
+  bulkDeleting.value = true
+  bulkError.value = ''
+  try {
+    const failed = await deleteMany(
+      selectedCommentIds.value.map(id => authFetch(`/comments/${id}`, { method: 'DELETE' }))
+    )
+    await loadComments()
+    if (failed > 0) bulkError.value = `有 ${failed} 条评论删除失败，请重试。`
+  } finally {
+    bulkDeleting.value = false
+  }
+}
 
 // 初始化
 async function loadData() {
@@ -202,17 +400,28 @@ const stats = computed(() => [
         {{ t }}
       </button>
     </div>
+    <p v-if="bulkError" class="text-red-500 text-sm mb-4">{{ bulkError }}</p>
 
     <!-- 文章管理 -->
     <div v-if="tab === 'articles'">
       <div class="flex items-center justify-between mb-4">
         <h2 class="font-bold text-m3-sys-light-on-surface">All Articles</h2>
-        <button
-          @click="router.push('/write')"
-          class="flex items-center gap-1.5 px-4 py-2 bg-m3-sys-light-primary text-m3-sys-light-on-primary rounded-full text-sm font-medium hover:opacity-90 transition-opacity"
-        >
-          <Plus class="w-4 h-4" />New Article
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            v-if="selectedArticleIds.length > 0"
+            :disabled="bulkDeleting"
+            @click="bulkDeleteArticles"
+            class="flex items-center gap-1.5 px-4 py-2 bg-m3-sys-light-error-container text-m3-sys-light-on-error-container rounded-full text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60"
+          >
+            <Trash2 class="w-4 h-4" />删除已选 ({{ selectedArticleIds.length }})
+          </button>
+          <button
+            @click="router.push('/write')"
+            class="flex items-center gap-1.5 px-4 py-2 bg-m3-sys-light-primary text-m3-sys-light-on-primary rounded-full text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            <Plus class="w-4 h-4" />New Article
+          </button>
+        </div>
       </div>
 
       <div v-if="articlePending" class="space-y-3">
@@ -223,6 +432,14 @@ const stats = computed(() => [
         <table class="w-full text-sm">
           <thead class="bg-m3-sys-light-surface-variant">
             <tr>
+              <th class="w-12 px-3 py-3">
+                <input
+                  type="checkbox"
+                  :checked="allArticlesSelected"
+                  @change="toggleAllArticles(($event.target as HTMLInputElement).checked)"
+                  class="w-4 h-4 rounded border-m3-sys-light-outline accent-m3-sys-light-primary"
+                />
+              </th>
               <th class="text-left px-5 py-3 font-semibold text-m3-sys-light-on-surface-variant">Title</th>
               <th class="text-left px-4 py-3 font-semibold text-m3-sys-light-on-surface-variant hidden sm:table-cell">Author</th>
               <th class="text-left px-4 py-3 font-semibold text-m3-sys-light-on-surface-variant hidden md:table-cell">Status</th>
@@ -235,6 +452,14 @@ const stats = computed(() => [
               v-for="article in articles" :key="article.id"
               class="bg-m3-sys-light-surface hover:bg-m3-sys-light-surface-variant/50 transition-colors"
             >
+              <td class="px-3 py-3">
+                <input
+                  type="checkbox"
+                  :checked="selectedArticleIds.includes(article.id)"
+                  @change="updateArticleSelection(article.id, ($event.target as HTMLInputElement).checked)"
+                  class="w-4 h-4 rounded border-m3-sys-light-outline accent-m3-sys-light-primary"
+                />
+              </td>
               <td class="px-5 py-3">
                 <NuxtLink :to="`/post/${article.id}`" class="font-medium text-m3-sys-light-on-surface hover:text-m3-sys-light-primary transition-colors line-clamp-1">
                   {{ article.title }}
@@ -282,7 +507,17 @@ const stats = computed(() => [
 
     <!-- 分类管理 -->
     <div v-if="tab === 'categories'" class="max-w-md">
-      <h2 class="font-bold text-m3-sys-light-on-surface mb-4">Manage Categories</h2>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-bold text-m3-sys-light-on-surface">Manage Categories</h2>
+        <button
+          v-if="selectedCategoryIds.length > 0"
+          :disabled="bulkDeleting"
+          @click="bulkDeleteCategories"
+          class="flex items-center gap-1.5 px-4 py-2 bg-m3-sys-light-error-container text-m3-sys-light-on-error-container rounded-full text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60"
+        >
+          <Trash2 class="w-4 h-4" />删除已选 ({{ selectedCategoryIds.length }})
+        </button>
+      </div>
 
       <!-- 新建表单 -->
       <form @submit.prevent="createCategory" class="flex gap-2 mb-4">
@@ -296,6 +531,15 @@ const stats = computed(() => [
         </button>
       </form>
       <p v-if="catError" class="text-red-500 text-sm mb-3">{{ catError }}</p>
+      <label class="inline-flex items-center gap-2 mb-3 text-sm text-m3-sys-light-on-surface-variant">
+        <input
+          type="checkbox"
+          :checked="allCategoriesSelected"
+          @change="toggleAllCategories(($event.target as HTMLInputElement).checked)"
+          class="w-4 h-4 rounded border-m3-sys-light-outline accent-m3-sys-light-primary"
+        />
+        全选
+      </label>
 
       <!-- 分类列表 -->
       <ul class="space-y-2">
@@ -303,7 +547,15 @@ const stats = computed(() => [
           v-for="cat in categories" :key="cat.id"
           class="flex items-center justify-between bg-m3-sys-light-surface rounded-xl px-4 py-3"
         >
-          <span class="font-medium text-m3-sys-light-on-surface">{{ cat.name }}</span>
+          <div class="flex items-center gap-2 min-w-0">
+            <input
+              type="checkbox"
+              :checked="selectedCategoryIds.includes(cat.id)"
+              @change="updateCategorySelection(cat.id, ($event.target as HTMLInputElement).checked)"
+              class="w-4 h-4 rounded border-m3-sys-light-outline accent-m3-sys-light-primary"
+            />
+            <span class="font-medium text-m3-sys-light-on-surface truncate">{{ cat.name }}</span>
+          </div>
           <button
             @click="deleteCategory(cat.id)"
             class="p-1.5 rounded-lg hover:bg-m3-sys-light-error-container text-m3-sys-light-on-surface-variant hover:text-m3-sys-light-on-error-container transition-colors"
@@ -319,7 +571,17 @@ const stats = computed(() => [
 
     <!-- 标签管理 -->
     <div v-if="tab === 'tags'" class="max-w-2xl">
-      <h2 class="font-bold text-m3-sys-light-on-surface mb-4">Manage Tags</h2>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-bold text-m3-sys-light-on-surface">Manage Tags</h2>
+        <button
+          v-if="selectedTagIds.length > 0"
+          :disabled="bulkDeleting"
+          @click="bulkDeleteTags"
+          class="flex items-center gap-1.5 px-4 py-2 bg-m3-sys-light-error-container text-m3-sys-light-on-error-container rounded-full text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60"
+        >
+          <Trash2 class="w-4 h-4" />删除已选 ({{ selectedTagIds.length }})
+        </button>
+      </div>
 
       <!-- 新建表单 -->
       <form @submit.prevent="createTag" class="flex gap-2 mb-4">
@@ -333,6 +595,15 @@ const stats = computed(() => [
         </button>
       </form>
       <p v-if="tagError" class="text-red-500 text-sm mb-3">{{ tagError }}</p>
+      <label class="inline-flex items-center gap-2 mb-3 text-sm text-m3-sys-light-on-surface-variant">
+        <input
+          type="checkbox"
+          :checked="allTagsSelected"
+          @change="toggleAllTags(($event.target as HTMLInputElement).checked)"
+          class="w-4 h-4 rounded border-m3-sys-light-outline accent-m3-sys-light-primary"
+        />
+        全选
+      </label>
 
       <!-- 标签云 -->
       <div class="flex flex-wrap gap-2">
@@ -340,6 +611,12 @@ const stats = computed(() => [
           v-for="tag in tags" :key="tag.id"
           class="flex items-center gap-1.5 bg-m3-sys-light-surface rounded-full px-3 py-1.5 text-sm font-medium text-m3-sys-light-on-surface"
         >
+          <input
+            type="checkbox"
+            :checked="selectedTagIds.includes(tag.id)"
+            @change="updateTagSelection(tag.id, ($event.target as HTMLInputElement).checked)"
+            class="w-3.5 h-3.5 rounded border-m3-sys-light-outline accent-m3-sys-light-primary"
+          />
           # {{ tag.name }}
           <button
             @click="deleteTag(tag.id)"
@@ -356,7 +633,17 @@ const stats = computed(() => [
 
     <!-- 评论管理 -->
     <div v-if="tab === 'comments'">
-      <h2 class="font-bold text-m3-sys-light-on-surface mb-4">All Comments</h2>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-bold text-m3-sys-light-on-surface">All Comments</h2>
+        <button
+          v-if="selectedCommentIds.length > 0"
+          :disabled="bulkDeleting"
+          @click="bulkDeleteComments"
+          class="flex items-center gap-1.5 px-4 py-2 bg-m3-sys-light-error-container text-m3-sys-light-on-error-container rounded-full text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60"
+        >
+          <Trash2 class="w-4 h-4" />删除已选 ({{ selectedCommentIds.length }})
+        </button>
+      </div>
 
       <div v-if="commentPending" class="space-y-3">
         <div v-for="i in 6" :key="i" class="h-14 rounded-xl bg-m3-sys-light-surface-variant animate-pulse" />
@@ -366,6 +653,14 @@ const stats = computed(() => [
         <table class="w-full text-sm">
           <thead class="bg-m3-sys-light-surface-variant">
             <tr>
+              <th class="w-12 px-3 py-3">
+                <input
+                  type="checkbox"
+                  :checked="allCommentsSelected"
+                  @change="toggleAllComments(($event.target as HTMLInputElement).checked)"
+                  class="w-4 h-4 rounded border-m3-sys-light-outline accent-m3-sys-light-primary"
+                />
+              </th>
               <th class="text-left px-5 py-3 font-semibold text-m3-sys-light-on-surface-variant">评论内容</th>
               <th class="text-left px-4 py-3 font-semibold text-m3-sys-light-on-surface-variant hidden md:table-cell">所属文章</th>
               <th class="text-left px-4 py-3 font-semibold text-m3-sys-light-on-surface-variant hidden sm:table-cell">评论者</th>
@@ -378,6 +673,14 @@ const stats = computed(() => [
               v-for="comment in comments" :key="comment.id"
               class="bg-m3-sys-light-surface hover:bg-m3-sys-light-surface-variant/50 transition-colors"
             >
+              <td class="px-3 py-3">
+                <input
+                  type="checkbox"
+                  :checked="selectedCommentIds.includes(comment.id)"
+                  @change="updateCommentSelection(comment.id, ($event.target as HTMLInputElement).checked)"
+                  class="w-4 h-4 rounded border-m3-sys-light-outline accent-m3-sys-light-primary"
+                />
+              </td>
               <td class="px-5 py-3 max-w-xs">
                 <p class="line-clamp-2 text-m3-sys-light-on-surface">{{ comment.content }}</p>
               </td>
@@ -403,7 +706,7 @@ const stats = computed(() => [
               </td>
             </tr>
             <tr v-if="comments.length === 0">
-              <td colspan="5" class="px-5 py-10 text-center text-m3-sys-light-on-surface-variant">暂无评论</td>
+              <td colspan="6" class="px-5 py-10 text-center text-m3-sys-light-on-surface-variant">暂无评论</td>
             </tr>
           </tbody>
         </table>
