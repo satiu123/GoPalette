@@ -69,6 +69,8 @@ func (app *application) mount(userHandler *handler.UserHandler, articleHandler *
 		private.GET("/users/me", userHandler.GetMe)
 		private.PUT("/users/me", userHandler.UpdateMe)
 		private.GET("/users/me/articles", articleHandler.ListMine)
+		private.GET("/users/me/comments", commentHandler.ListMine)
+		private.GET("/users/me/comments/received", commentHandler.ListReceived)
 		private.GET("/admin/articles", articleHandler.AdminList)
 		private.GET("/admin/comments", commentHandler.AdminList)
 		// 图片上传

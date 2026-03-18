@@ -13,6 +13,8 @@ type fakeCommentRepo struct {
 	findByIDFn        func(ctx context.Context, id int64) (*model.Comment, error)
 	deleteFn          func(ctx context.Context, id int64) error
 	findAllFn         func(ctx context.Context, page, pageSize int) ([]model.Comment, int64, error)
+	findByUserIDFn    func(ctx context.Context, userID int64, page, pageSize int) ([]model.Comment, int64, error)
+	findReceivedFn    func(ctx context.Context, authorID int64, page, pageSize int) ([]model.Comment, int64, error)
 }
 
 func (f *fakeCommentRepo) Create(ctx context.Context, comment *model.Comment) error {
@@ -46,6 +48,20 @@ func (f *fakeCommentRepo) Delete(ctx context.Context, id int64) error {
 func (f *fakeCommentRepo) FindAll(ctx context.Context, page, pageSize int) ([]model.Comment, int64, error) {
 	if f.findAllFn != nil {
 		return f.findAllFn(ctx, page, pageSize)
+	}
+	return nil, 0, nil
+}
+
+func (f *fakeCommentRepo) FindByUserID(ctx context.Context, userID int64, page, pageSize int) ([]model.Comment, int64, error) {
+	if f.findByUserIDFn != nil {
+		return f.findByUserIDFn(ctx, userID, page, pageSize)
+	}
+	return nil, 0, nil
+}
+
+func (f *fakeCommentRepo) FindReceivedByAuthorID(ctx context.Context, authorID int64, page, pageSize int) ([]model.Comment, int64, error) {
+	if f.findReceivedFn != nil {
+		return f.findReceivedFn(ctx, authorID, page, pageSize)
 	}
 	return nil, 0, nil
 }

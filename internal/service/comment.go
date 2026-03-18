@@ -52,3 +52,13 @@ func (s *CommentService) DeleteComment(ctx context.Context, id, requesterID int6
 func (s *CommentService) ListAllComments(ctx context.Context, page, pageSize int) ([]model.Comment, int64, error) {
 	return s.commentRepo.FindAll(ctx, page, pageSize)
 }
+
+// ListMyComments 分页查询当前用户发表的评论
+func (s *CommentService) ListMyComments(ctx context.Context, userID int64, page, pageSize int) ([]model.Comment, int64, error) {
+	return s.commentRepo.FindByUserID(ctx, userID, page, pageSize)
+}
+
+// ListReceivedComments 分页查询当前用户文章收到的评论
+func (s *CommentService) ListReceivedComments(ctx context.Context, authorID int64, page, pageSize int) ([]model.Comment, int64, error) {
+	return s.commentRepo.FindReceivedByAuthorID(ctx, authorID, page, pageSize)
+}

@@ -70,3 +70,46 @@ func (r *commentGormRepository) FindAll(ctx context.Context, page, pageSize int)
 		Find(&comments).Error
 	return comments, total, err
 }
+
+// FindByUserID 分页查询某用户发表的评论
+func (r *commentGormRepository) FindByUserID(ctx context.Context, userID int64, page, pageSize int) ([]model.Comment, int64, error) {
+	var comments []model.Comment
+	var total int64
+	offset := (page - 1) * pageSize
+
+	query := r.db.WithContext(ctx).Model(&model.Comment{}).Where("user_id = ?", userID)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	err := query.
+		Preload("User").
+		Preload("Article").
+		Order("created_at DESC").
+		Offset(offset).Limit(pageSize).
+		Find(&comments).Error
+	return comments, total, err
+}
+
+// FindReceivedByAuthorID 分页查询某作者文章收到的评论
+func (r *commentGormRepository) FindReceivedByAuthorID(ctx context.Context, authorID int64, page, pageSize int) ([]model.Comment, int64, error) {
+	var comments []model.Comment
+	var total int64
+	offset := (page - 1) * pageSize
+
+	query := r.db.WithContext(ctx).Model(&model.Comment{}).
+		Joins("JOIN articles ON articles.id = comments.article_id").
+		Where("articles.author_id = ?", authorID)
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	err := query.
+		Preload("User").
+		Preload("Article").
+		Order("comments.created_at DESC").
+		Offset(offset).Limit(pageSize).
+		Find(&comments).Error
+	return comments, total, err
+}

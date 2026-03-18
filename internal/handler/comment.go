@@ -110,6 +110,72 @@ func (h *CommentHandler) AdminList(c *gin.Context) {
 	})
 }
 
+// ListMine 当前登录用户发表的评论
+// @Summary      获取我的评论
+// @Description  分页返回当前登录用户发表的评论，含文章标题和评论时间
+// @Tags         comments
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page       query  int  false  "页码，默认 1"
+// @Param        page_size  query  int  false  "每页数量，默认 10，最大 100"
+// @Success      200  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Router       /comments/mine [get]
+func (h *CommentHandler) ListMine(c *gin.Context) {
+	userID := int64(c.GetInt("userID"))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 10
+	}
+
+	comments, total, err := h.commentService.ListMyComments(c.Request.Context(), userID, page, pageSize)
+	if err != nil {
+		response.Internal(c, "获取我的评论失败")
+		return
+	}
+	response.Success(c, gin.H{
+		"comments": comments,
+		"total":    total,
+	})
+}
+
+// ListReceived 当前登录用户文章收到的评论
+// @Summary      获取收到的评论
+// @Description  分页返回当前登录用户文章收到的评论，含文章标题、评论者信息和评论时间
+// @Tags         comments
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page       query  int  false  "页码，默认 1"
+// @Param        page_size  query  int  false  "每页数量，默认 10，最大 100"
+// @Success      200  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Router       /comments/received [get]
+func (h *CommentHandler) ListReceived(c *gin.Context) {
+	userID := int64(c.GetInt("userID"))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 10
+	}
+
+	comments, total, err := h.commentService.ListReceivedComments(c.Request.Context(), userID, page, pageSize)
+	if err != nil {
+		response.Internal(c, "获取收到的评论失败")
+		return
+	}
+	response.Success(c, gin.H{
+		"comments": comments,
+		"total":    total,
+	})
+}
+
 // Delete 删除评论
 // @Summary      删除评论
 // @Description  评论本人或 admin 可删除

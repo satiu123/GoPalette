@@ -143,6 +143,12 @@ func (f *testCommentRepo) Delete(ctx context.Context, id int64) error { return n
 func (f *testCommentRepo) FindAll(ctx context.Context, page, pageSize int) ([]model.Comment, int64, error) {
 	return f.rows, int64(len(f.rows)), nil
 }
+func (f *testCommentRepo) FindByUserID(ctx context.Context, userID int64, page, pageSize int) ([]model.Comment, int64, error) {
+	return nil, 0, nil
+}
+func (f *testCommentRepo) FindReceivedByAuthorID(ctx context.Context, authorID int64, page, pageSize int) ([]model.Comment, int64, error) {
+	return nil, 0, nil
+}
 
 func TestLoginAPIIntegration(t *testing.T) {
 	gin.SetMode(gin.TestMode)

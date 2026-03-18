@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { PenSquare, Trash2, BookOpen, FileText, Clock, Settings, Camera } from 'lucide-vue-next'
-import type { Article, ArticleListData, ApiResponse, ApiUser } from '~/composables/useBlogData'
+import { PenSquare, Trash2, BookOpen, FileText, Clock, Settings, Camera, MessageSquare } from 'lucide-vue-next'
+import type { Article, ArticleListData, ApiResponse, ApiUser, Comment, CommentListData } from '~/composables/useBlogData'
 import { formatDate, articleImageUrl, userAvatarUrl } from '~/composables/useBlogData'
 
 definePageMeta({ middleware: 'auth', ssr: false })
@@ -125,6 +125,21 @@ const totalArticles = ref(0)
 const articlesPending = ref(true)
 const deleteError = ref('')
 const bulkDeleting = ref(false)
+const articleViewStatus = ref<'published' | 'draft' | 'all'>('published')
+
+// 我的评论 & 收到的评论
+const commentsError = ref('')
+const myComments = ref<Comment[]>([])
+const myCommentsTotal = ref(0)
+const myCommentsPage = ref(1)
+const MY_COMMENTS_PAGE_SIZE = 5
+const myCommentsPending = ref(true)
+
+const receivedComments = ref<Comment[]>([])
+const receivedCommentsTotal = ref(0)
+const receivedCommentsPage = ref(1)
+const RECEIVED_COMMENTS_PAGE_SIZE = 5
+const receivedCommentsPending = ref(true)
 
 async function loadProfile() {
   profilePending.value = true
@@ -142,8 +157,9 @@ async function loadProfile() {
 async function loadArticles() {
   articlesPending.value = true
   try {
+    const statusQuery = articleViewStatus.value === 'all' ? '' : `&status=${articleViewStatus.value}`
     const res = await authFetch<ApiResponse<ArticleListData>>(
-      `/users/me/articles?page=${page.value}&page_size=${PAGE_SIZE}`
+      `/users/me/articles?page=${page.value}&page_size=${PAGE_SIZE}${statusQuery}`
     )
     if (res.code === 200) {
       myArticles.value = res.data.articles ?? []
@@ -173,14 +189,13 @@ async function deleteArticle(id: number) {
 }
 
 watch(page, loadArticles)
-
-const allArticlesSelected = computed(() =>
-  myArticles.value.length > 0 && selectedArticleIds.value.length === myArticles.value.length
-)
-
-function toggleAllArticles(checked: boolean) {
-  selectedArticleIds.value = checked ? myArticles.value.map(item => item.id) : []
-}
+watch(articleViewStatus, async () => {
+  page.value = 1
+  selectedArticleIds.value = []
+  await loadArticles()
+})
+watch(myCommentsPage, loadMyComments)
+watch(receivedCommentsPage, loadReceivedComments)
 
 function updateSelection(id: number, checked: boolean) {
   if (checked) {
@@ -217,14 +232,66 @@ async function bulkDeleteArticles() {
 
 onMounted(async () => {
   await loadProfile()
-  await loadArticles()
+  await Promise.all([loadArticles(), loadMyComments(), loadReceivedComments()])
 })
 
+async function loadMyComments() {
+  myCommentsPending.value = true
+  try {
+    const res = await authFetch<ApiResponse<CommentListData>>(
+      `/users/me/comments?page=${myCommentsPage.value}&page_size=${MY_COMMENTS_PAGE_SIZE}`
+    )
+    if (res.code === 200) {
+      myComments.value = res.data.comments ?? []
+      myCommentsTotal.value = res.data.total ?? 0
+    }
+  } catch {
+    commentsError.value = '加载评论失败，请稍后重试'
+  } finally {
+    myCommentsPending.value = false
+  }
+}
+
+async function loadReceivedComments() {
+  receivedCommentsPending.value = true
+  try {
+    const res = await authFetch<ApiResponse<CommentListData>>(
+      `/users/me/comments/received?page=${receivedCommentsPage.value}&page_size=${RECEIVED_COMMENTS_PAGE_SIZE}`
+    )
+    if (res.code === 200) {
+      receivedComments.value = res.data.comments ?? []
+      receivedCommentsTotal.value = res.data.total ?? 0
+    }
+  } catch {
+    commentsError.value = '加载评论失败，请稍后重试'
+  } finally {
+    receivedCommentsPending.value = false
+  }
+}
+
 const totalPages = computed(() => Math.ceil(totalArticles.value / PAGE_SIZE))
+const myCommentsTotalPages = computed(() => Math.ceil(myCommentsTotal.value / MY_COMMENTS_PAGE_SIZE))
+const receivedCommentsTotalPages = computed(() => Math.ceil(receivedCommentsTotal.value / RECEIVED_COMMENTS_PAGE_SIZE))
+
+const visibleArticles = computed(() => myArticles.value)
+const totalVisibleArticles = computed(() => visibleArticles.value.length)
+const articleSectionTitle = computed(() => {
+  if (articleViewStatus.value === 'draft') return 'Draft Articles'
+  if (articleViewStatus.value === 'all') return 'All Articles'
+  return 'Published Articles'
+})
 
 const totalReads = computed(() =>
   myArticles.value.reduce((sum, a) => sum + (a.read_count ?? 0), 0)
 )
+
+const allArticlesSelected = computed(() =>
+  visibleArticles.value.length > 0 && selectedArticleIds.value.length === visibleArticles.value.length
+)
+
+function toggleAllArticles(checked: boolean) {
+  selectedArticleIds.value = checked ? visibleArticles.value.map(item => item.id) : []
+}
 </script>
 
 <template>
@@ -282,14 +349,22 @@ const totalReads = computed(() =>
         </template>
       </div>
       <!-- 统计 -->
-      <div class="flex gap-8">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-6">
         <div class="text-center">
-          <p class="text-3xl font-black text-m3-sys-light-primary">{{ totalArticles }}</p>
-          <p class="text-xs text-m3-sys-light-on-surface-variant mt-0.5">Articles</p>
+          <p class="text-3xl font-black text-m3-sys-light-primary">{{ totalVisibleArticles }}</p>
+          <p class="text-xs text-m3-sys-light-on-surface-variant mt-0.5">Visible Articles</p>
         </div>
         <div class="text-center">
           <p class="text-3xl font-black text-m3-sys-light-primary">{{ totalReads }}</p>
           <p class="text-xs text-m3-sys-light-on-surface-variant mt-0.5">Total Reads</p>
+        </div>
+        <div class="text-center">
+          <p class="text-3xl font-black text-m3-sys-light-primary">{{ myCommentsTotal }}</p>
+          <p class="text-xs text-m3-sys-light-on-surface-variant mt-0.5">My Comments</p>
+        </div>
+        <div class="text-center">
+          <p class="text-3xl font-black text-m3-sys-light-primary">{{ receivedCommentsTotal }}</p>
+          <p class="text-xs text-m3-sys-light-on-surface-variant mt-0.5">Received</p>
         </div>
       </div>
 
@@ -354,7 +429,7 @@ const totalReads = computed(() =>
 
     <!-- 写文章入口 -->
     <div class="flex items-center justify-between mb-6">
-      <h2 class="text-xl font-bold text-m3-sys-light-on-surface">My Articles</h2>
+      <h2 class="text-xl font-bold text-m3-sys-light-on-surface">{{ articleSectionTitle }}</h2>
       <div class="flex items-center gap-2">
         <button
           v-if="selectedArticleIds.length > 0"
@@ -375,8 +450,21 @@ const totalReads = computed(() =>
       </div>
     </div>
 
+    <div class="flex gap-1 bg-m3-sys-light-surface-variant rounded-2xl p-1 mb-4 w-fit">
+      <button
+        v-for="s in (['published', 'draft', 'all'] as const)" :key="s"
+        @click="articleViewStatus = s"
+        class="px-4 py-1.5 rounded-xl text-sm font-medium transition-colors"
+        :class="articleViewStatus === s
+          ? 'bg-m3-sys-light-surface text-m3-sys-light-on-surface shadow-sm'
+          : 'text-m3-sys-light-on-surface-variant hover:text-m3-sys-light-on-surface'"
+      >
+        {{ s === 'published' ? '已发布' : s === 'draft' ? '草稿' : '全部' }}
+      </button>
+    </div>
+
     <p v-if="deleteError" class="text-red-500 text-sm mb-4">{{ deleteError }}</p>
-    <label v-if="myArticles.length > 0" class="inline-flex items-center gap-2 mb-4 text-sm text-m3-sys-light-on-surface-variant">
+    <label v-if="visibleArticles.length > 0" class="inline-flex items-center gap-2 mb-4 text-sm text-m3-sys-light-on-surface-variant">
       <input
         type="checkbox"
         :checked="allArticlesSelected"
@@ -391,13 +479,13 @@ const totalReads = computed(() =>
       <div v-for="i in 4" :key="i" class="h-24 rounded-2xl bg-m3-sys-light-surface-variant animate-pulse" />
     </div>
 
-    <div v-else-if="myArticles.length === 0" class="text-center py-20 text-m3-sys-light-on-surface-variant">
+    <div v-else-if="visibleArticles.length === 0" class="text-center py-20 text-m3-sys-light-on-surface-variant">
       No articles yet. <button @click="router.push('/write')" class="text-m3-sys-light-primary hover:underline">Write your first one!</button>
     </div>
 
     <ul v-else class="space-y-4">
       <li
-        v-for="article in myArticles"
+        v-for="article in visibleArticles"
         :key="article.id"
         class="flex items-center gap-4 bg-m3-sys-light-surface rounded-2xl px-6 py-4 shadow-sm hover:shadow-md transition-shadow group"
       >
@@ -424,7 +512,6 @@ const totalReads = computed(() =>
           </p>
         </div>
 
-        <!-- 状态徽章 -->
         <span
           class="shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold"
           :class="article.status === 'published'
@@ -467,6 +554,74 @@ const totalReads = computed(() =>
         {{ p }}
       </button>
     </div>
+
+    <p v-if="commentsError" class="text-red-500 text-sm mt-8">{{ commentsError }}</p>
+
+    <section class="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="bg-m3-sys-light-surface rounded-2xl border border-m3-sys-light-outline-variant p-6">
+        <h3 class="text-lg font-bold text-m3-sys-light-on-surface mb-4 flex items-center gap-2">
+          <MessageSquare class="w-4 h-4" /> 我发表的评论
+        </h3>
+
+        <div v-if="myCommentsPending" class="space-y-3">
+          <div v-for="i in 3" :key="i" class="h-16 rounded-xl bg-m3-sys-light-surface-variant animate-pulse" />
+        </div>
+        <ul v-else-if="myComments.length > 0" class="space-y-3">
+          <li v-for="comment in myComments" :key="comment.id" class="bg-m3-sys-light-surface-variant rounded-xl p-3">
+            <NuxtLink :to="`/post/${comment.article_id}`" class="text-xs font-semibold text-m3-sys-light-primary hover:underline">
+              {{ comment.article?.title ?? '查看文章' }}
+            </NuxtLink>
+            <p class="text-sm text-m3-sys-light-on-surface mt-1 line-clamp-2">{{ comment.content }}</p>
+            <p class="text-xs text-m3-sys-light-on-surface-variant mt-1">{{ formatDate(comment.created_at) }}</p>
+          </li>
+        </ul>
+        <p v-else class="text-sm text-m3-sys-light-on-surface-variant">还没有发表评论。</p>
+
+        <div v-if="myCommentsTotalPages > 1" class="flex gap-2 mt-4">
+          <button
+            v-for="p in myCommentsTotalPages" :key="`my-${p}`"
+            @click="myCommentsPage = p"
+            class="w-8 h-8 rounded-full text-xs font-medium transition-colors"
+            :class="p === myCommentsPage
+              ? 'bg-m3-sys-light-primary text-m3-sys-light-on-primary'
+              : 'bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container'"
+          >{{ p }}</button>
+        </div>
+      </div>
+
+      <div class="bg-m3-sys-light-surface rounded-2xl border border-m3-sys-light-outline-variant p-6">
+        <h3 class="text-lg font-bold text-m3-sys-light-on-surface mb-4 flex items-center gap-2">
+          <MessageSquare class="w-4 h-4" /> 我收到的评论
+        </h3>
+
+        <div v-if="receivedCommentsPending" class="space-y-3">
+          <div v-for="i in 3" :key="i" class="h-16 rounded-xl bg-m3-sys-light-surface-variant animate-pulse" />
+        </div>
+        <ul v-else-if="receivedComments.length > 0" class="space-y-3">
+          <li v-for="comment in receivedComments" :key="comment.id" class="bg-m3-sys-light-surface-variant rounded-xl p-3">
+            <NuxtLink :to="`/post/${comment.article_id}`" class="text-xs font-semibold text-m3-sys-light-primary hover:underline">
+              {{ comment.article?.title ?? '查看文章' }}
+            </NuxtLink>
+            <p class="text-sm text-m3-sys-light-on-surface mt-1 line-clamp-2">{{ comment.content }}</p>
+            <p class="text-xs text-m3-sys-light-on-surface-variant mt-1">
+              {{ comment.user?.username ?? '匿名用户' }} · {{ formatDate(comment.created_at) }}
+            </p>
+          </li>
+        </ul>
+        <p v-else class="text-sm text-m3-sys-light-on-surface-variant">还没有收到评论。</p>
+
+        <div v-if="receivedCommentsTotalPages > 1" class="flex gap-2 mt-4">
+          <button
+            v-for="p in receivedCommentsTotalPages" :key="`received-${p}`"
+            @click="receivedCommentsPage = p"
+            class="w-8 h-8 rounded-full text-xs font-medium transition-colors"
+            :class="p === receivedCommentsPage
+              ? 'bg-m3-sys-light-primary text-m3-sys-light-on-primary'
+              : 'bg-m3-sys-light-surface-variant text-m3-sys-light-on-surface-variant hover:bg-m3-sys-light-secondary-container'"
+          >{{ p }}</button>
+        </div>
+      </div>
+    </section>
 
     <!-- Admin 入口 -->
     <div v-if="profile?.role === 'admin'" class="mt-10 text-center">

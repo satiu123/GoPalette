@@ -56,6 +56,11 @@ export interface ArticleListData {
   articles: Article[]
 }
 
+export interface CommentListData {
+  total: number
+  comments: Comment[]
+}
+
 // 工具函数
 
 /** 生成固定占位图（用文章 id 做 seed，保证同一文章图片不变） */
@@ -149,6 +154,26 @@ export function useSearch(params: Ref<{ q: string; page?: number; page_size?: nu
 export function useMyArticles(token: Ref<string | null>, params?: Ref<{ page?: number; page_size?: number }>) {
   const config = useRuntimeConfig()
   return useFetch<ApiResponse<ArticleListData>>('/users/me/articles', {
+    baseURL: config.public.apiBase,
+    query: params,
+    headers: computed(() => token.value ? { Authorization: token.value } : undefined)
+  })
+}
+
+/** 当前用户发表的评论，需要 Authorization 头 */
+export function useMyComments(token: Ref<string | null>, params?: Ref<{ page?: number; page_size?: number }>) {
+  const config = useRuntimeConfig()
+  return useFetch<ApiResponse<CommentListData>>('/users/me/comments', {
+    baseURL: config.public.apiBase,
+    query: params,
+    headers: computed(() => token.value ? { Authorization: token.value } : undefined)
+  })
+}
+
+/** 当前用户文章收到的评论，需要 Authorization 头 */
+export function useReceivedComments(token: Ref<string | null>, params?: Ref<{ page?: number; page_size?: number }>) {
+  const config = useRuntimeConfig()
+  return useFetch<ApiResponse<CommentListData>>('/users/me/comments/received', {
     baseURL: config.public.apiBase,
     query: params,
     headers: computed(() => token.value ? { Authorization: token.value } : undefined)

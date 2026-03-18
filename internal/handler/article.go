@@ -117,15 +117,28 @@ func (h *ArticleHandler) List(c *gin.Context) {
 }
 
 // ListMine 当前登录用户的文章列表（含草稿）
+// @Summary      我的文章分页列表
+// @Description  登录用户查看自己的文章列表，含草稿和已发布
+// @Tags         articles
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page       query  int  false  "页码，默认 1"
+// @Param        page_size  query  int  false  "每页数量，默认 10，最大 50"
+// @Param        status     query  string false "状态过滤（draft 或 published）"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Router       /articles/mine [get]
 func (h *ArticleHandler) ListMine(c *gin.Context) {
 	authorID := int64(c.GetInt("userID"))
 	var req struct {
-		Page     int `form:"page"`
-		PageSize int `form:"page_size"`
+		Page     int    `form:"page"`
+		PageSize int    `form:"page_size"`
+		Status   string `form:"status"`
 	}
 	_ = c.ShouldBindQuery(&req)
 	articles, total, err := h.articleService.ListArticles(c.Request.Context(), req.Page, req.PageSize,
-		repository.ListArticlesFilter{AuthorID: authorID})
+		repository.ListArticlesFilter{AuthorID: authorID, Status: req.Status})
 	if err != nil {
 		response.Internal(c, "获取文章列表失败")
 		return
@@ -134,6 +147,19 @@ func (h *ArticleHandler) ListMine(c *gin.Context) {
 }
 
 // AdminList 管理员查看所有文章（含草稿，所有作者）
+// @Summary      管理员获取所有文章
+// @Description  管理员分页返回全部文章，含草稿和已发布，支持按分类、标签、作者过滤
+// @Tags         admin
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page       query  int  false  "页码，默认 1"
+// @Param        page_size  query  int  false  "每页数量，默认 10，最大 50"
+// @Param        category_id query int false "分类 ID"
+// @Param        tag_id      query int false "标签 ID"
+// @Param        author_id   query int false "作者 ID"
+// @Success      200  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Router       /admin/articles [get]
 func (h *ArticleHandler) AdminList(c *gin.Context) {
 	if c.GetString("role") != "admin" {
 		response.Forbidden(c, "需要管理员权限")
