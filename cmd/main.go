@@ -26,6 +26,7 @@ import (
 	"github.com/satiu123/GoPalette/internal/handler"
 	"github.com/satiu123/GoPalette/internal/job"
 	"github.com/satiu123/GoPalette/internal/model"
+	gpCasbin "github.com/satiu123/GoPalette/internal/pkg/casbin"
 	"github.com/satiu123/GoPalette/internal/pkg/config"
 	"github.com/satiu123/GoPalette/internal/pkg/database"
 	"github.com/satiu123/GoPalette/internal/pkg/storage"
@@ -47,6 +48,9 @@ func main() {
 
 	db := database.InitMySQL(&model.User{}, &model.Category{}, &model.Tag{}, &model.Article{}, &model.ArticleTag{}, &model.Comment{}, &model.Attachment{})
 	rdb := database.InitRedis()
+	if err := gpCasbin.InitializeCasbin(db); err != nil {
+		log.Fatal(err)
+	}
 
 	userRepo := mysql.NewUserGormRepository(db, rdb)
 	tokenRepo := tokenredis.NewTokenRedisRepository(rdb)

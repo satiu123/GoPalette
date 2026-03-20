@@ -161,10 +161,6 @@ func (h *ArticleHandler) ListMine(c *gin.Context) {
 // @Failure      401  {object}  response.Response
 // @Router       /admin/articles [get]
 func (h *ArticleHandler) AdminList(c *gin.Context) {
-	if c.GetString("role") != "admin" {
-		response.Forbidden(c, "需要管理员权限")
-		return
-	}
 	var req ListArticlesReq
 	_ = c.ShouldBindQuery(&req)
 	articles, total, err := h.articleService.ListArticles(c.Request.Context(), req.Page, req.PageSize,

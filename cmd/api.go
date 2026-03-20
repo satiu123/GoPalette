@@ -39,7 +39,6 @@ func (app *application) mount(userHandler *handler.UserHandler, articleHandler *
 
 	public := r.Group("/api")
 	{
-		public.GET("/health", handler.HealthCheckHandler)
 		public.POST("/login", middleware.RateLimitAuth(), userHandler.Login)
 		public.POST("/register", middleware.RateLimitAuth(), userHandler.Register)
 		public.POST("/refresh", userHandler.Refresh)
@@ -55,7 +54,7 @@ func (app *application) mount(userHandler *handler.UserHandler, articleHandler *
 	}
 
 	private := r.Group("/api")
-	private.Use(middleware.JWTAuthMiddleware())
+	private.Use(middleware.JWTAuthMiddleware(), middleware.RBACMiddleware())
 	{
 		private.POST("/articles", articleHandler.Create)
 		private.PUT("/articles/:id", articleHandler.Update)
