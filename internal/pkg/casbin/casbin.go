@@ -1,16 +1,20 @@
 package casbin
 
 import (
+	_ "embed"
 	"fmt"
 	"log/slog"
-	"os"
 
 	"github.com/casbin/casbin/v3"
+	"github.com/casbin/casbin/v3/model"
 	gormadapter "github.com/casbin/gorm-adapter/v3"
 	"gorm.io/gorm"
 )
 
 var Enforcer *casbin.Enforcer
+
+//go:embed rbac_model.conf
+var m string
 
 func InitializeCasbin(db *gorm.DB) error {
 	// 创建一个适配器，使用 Gorm 连接到数据库
@@ -19,13 +23,12 @@ func InitializeCasbin(db *gorm.DB) error {
 		return fmt.Errorf("无法创建 Casbin 适配器: %w", err)
 	}
 
-	modelPath := "rbac_model.conf"
-	if _, statErr := os.Stat(modelPath); statErr != nil {
-		return fmt.Errorf("找不到 Casbin 模型文件 %s: %w", modelPath, statErr)
-	}
-
 	// 创建一个 Casbin enforcer，加载模型和策略。
-	Enforcer, err = casbin.NewEnforcer(modelPath, adapter)
+	m, err := model.NewModelFromString(m)
+	if err != nil {
+		return fmt.Errorf("无法加载 Casbin 模型: %w", err)
+	}
+	Enforcer, err = casbin.NewEnforcer(m, adapter)
 	if err != nil {
 		return fmt.Errorf("无法创建 Casbin enforcer: %w", err)
 	}
