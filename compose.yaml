@@ -1,29 +1,29 @@
 services:
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: always
-    depends_on:
-      mariadb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      SERVER_ADDR: ":8080"
-      SERVER_ENV: "production"
-      JWT_ACCESS_TOKEN_SECRET: "${JWT_ACCESS_TOKEN_SECRET}"
-      JWT_REFRESH_TOKEN_SECRET: "${JWT_REFRESH_TOKEN_SECRET}"
-      DATABASE_DSN: "root:${MYSQL_ROOT_PASSWORD}@tcp(mariadb:3306)/gopalette?charset=utf8mb4&parseTime=True&loc=Local"
-      REDIS_ADDR: "redis:6379"
-      REDIS_PASSWORD: "${REDIS_PASSWORD}"
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./static/uploads:/app/static/uploads
+  # api:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   restart: always
+  #   depends_on:
+  #     mariadb:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   environment:
+  #     SERVER_ADDR: ":8080"
+  #     SERVER_ENV: "production"
+  #     JWT_ACCESS_TOKEN_SECRET: "${JWT_ACCESS_TOKEN_SECRET}"
+  #     JWT_REFRESH_TOKEN_SECRET: "${JWT_REFRESH_TOKEN_SECRET}"
+  #     DATABASE_DSN: "root:${MYSQL_ROOT_PASSWORD}@tcp(mariadb:3306)/gopalette?charset=utf8mb4&parseTime=True&loc=Local"
+  #     REDIS_ADDR: "redis:6379"
+  #     REDIS_PASSWORD: "${REDIS_PASSWORD}"
+  #   ports:
+  #     - "8080:8080"
+  #   volumes:
+  #     - ./static/uploads:/app/static/uploads
 
   mariadb:
-    image: mariadb:11
+    image: mariadb
     restart: always
     environment:
       MARIADB_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
