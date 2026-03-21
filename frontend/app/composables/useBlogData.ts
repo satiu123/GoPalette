@@ -146,7 +146,8 @@ export function useSearch(params: Ref<{ q: string; page?: number; page_size?: nu
   return useFetch<ApiResponse<ArticleListData>>('/search', {
     baseURL: config.public.apiBase,
     query: params,
-    immediate: false
+    immediate: false,
+    watch: false
   })
 }
 
