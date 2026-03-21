@@ -6,6 +6,9 @@ definitions:
         type: integer
       content:
         type: string
+      slug:
+        maxLength: 220
+        type: string
       status:
         description: draft | published
         type: string
@@ -95,6 +98,9 @@ definitions:
       category_id:
         type: integer
       content:
+        type: string
+      slug:
+        maxLength: 220
         type: string
       status:
         type: string

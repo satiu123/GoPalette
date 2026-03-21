@@ -1265,6 +1265,10 @@ const docTemplate = `{
                 "content": {
                     "type": "string"
                 },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 220
+                },
                 "status": {
                     "description": "draft | published",
                     "type": "string"
@@ -1396,6 +1400,10 @@ const docTemplate = `{
                 },
                 "content": {
                     "type": "string"
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 220
                 },
                 "status": {
                     "type": "string"
