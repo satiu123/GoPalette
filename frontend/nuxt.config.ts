@@ -12,7 +12,8 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      apiBase: '/api'
+      apiBase: '/api',
+      siteUrl: import.meta.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'
     }
   },
   routeRules: {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Article } from '~/composables/useBlogData'
-import { articleImageUrl, userAvatarUrl, formatDate } from '~/composables/useBlogData'
+import { articleImageUrl, userAvatarUrl, formatDate, articlePath } from '~/composables/useBlogData'
 
 defineProps<{
   posts: Article[]
@@ -26,7 +26,7 @@ function getCardStyle(index: number): string {
 }
 
 function goToPost(post: Article) {
-  router.push(`/post/${post.id}`)
+  router.push(articlePath(post))
 }
 </script>
 

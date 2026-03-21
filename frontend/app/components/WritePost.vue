@@ -4,6 +4,7 @@ import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import type { ApiResponse, Article } from '~/composables/useBlogData'
+import { articlePath } from '~/composables/useBlogData'
 
 const router = useRouter()
 const route  = useRoute()
@@ -21,6 +22,7 @@ const editId = computed(() =>
 const isEdit = computed(() => editId.value !== null)
 
 const title   = ref('')
+const slug    = ref('')
 const summary = ref('')
 const status  = ref<'draft' | 'published'>('draft')
 const selectedCategoryId = ref<number | null>(null)
@@ -86,6 +88,7 @@ onMounted(async () => {
     if (res.code === 200) {
       const a = res.data
       title.value   = a.title
+      slug.value    = a.slug ?? ''
       summary.value = a.summary ?? ''
       status.value  = (a.status as 'draft' | 'published') ?? 'draft'
       selectedCategoryId.value = a.category_id ? Number(a.category_id) : null
@@ -120,6 +123,7 @@ async function publish(draft = false) {
   try {
     const body = {
       title:       title.value.trim(),
+      slug:        slug.value.trim() || undefined,
       summary:     summary.value.trim() || undefined,
       content:     htmlContent,
       category_id: selectedCategoryId.value ?? 0,
@@ -143,7 +147,7 @@ async function publish(draft = false) {
     }
 
     if (res.code === 200) {
-      router.push(`/post/${res.data.id}`)
+      router.push(articlePath(res.data))
     } else {
       error.value = res.msg
     }
@@ -159,7 +163,8 @@ function goBack() {
   if (window.history.length > 1) {
     router.back()
   } else if (isEdit.value) {
-    router.push(`/post/${editId.value}`)
+    const fallbackSlug = slug.value.trim()
+    router.push(`/post/${encodeURIComponent(fallbackSlug || String(editId.value))}`)
   } else {
     router.push('/')
   }
@@ -226,6 +231,12 @@ function goBack() {
           v-model="summary"
           placeholder="Short summary (optional)…"
           class="w-full bg-transparent text-lg text-m3-sys-light-on-surface-variant placeholder:text-m3-sys-light-on-surface-variant/40 focus:outline-none border-b border-m3-sys-light-surface-variant pb-2"
+        />
+
+        <input
+          v-model="slug"
+          placeholder="SEO Slug (optional): how-to-learn-go"
+          class="w-full bg-transparent text-base text-m3-sys-light-on-surface-variant placeholder:text-m3-sys-light-on-surface-variant/40 focus:outline-none border-b border-m3-sys-light-surface-variant pb-2"
         />
 
         <!-- 分类 & 标签 -->

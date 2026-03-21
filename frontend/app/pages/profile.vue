@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { PenSquare, Trash2, BookOpen, FileText, Clock, Settings, Camera, MessageSquare } from 'lucide-vue-next'
 import type { Article, ArticleListData, ApiResponse, ApiUser, Comment, CommentListData } from '~/composables/useBlogData'
-import { formatDate, articleImageUrl, userAvatarUrl } from '~/composables/useBlogData'
+import { formatDate, articleImageUrl, userAvatarUrl, articlePath } from '~/composables/useBlogData'
 
 definePageMeta({ middleware: 'auth', ssr: false })
 
@@ -500,7 +500,7 @@ function toggleAllArticles(checked: boolean) {
 
         <!-- 文章信息 -->
         <div class="flex-1 min-w-0">
-          <NuxtLink :to="`/post/${article.id}`" class="font-semibold text-m3-sys-light-on-surface group-hover:text-m3-sys-light-primary transition-colors line-clamp-1">
+          <NuxtLink :to="articlePath(article)" class="font-semibold text-m3-sys-light-on-surface group-hover:text-m3-sys-light-primary transition-colors line-clamp-1">
             {{ article.title }}
           </NuxtLink>
           <p class="text-sm text-m3-sys-light-on-surface-variant mt-0.5 flex items-center gap-3">
@@ -568,7 +568,7 @@ function toggleAllArticles(checked: boolean) {
         </div>
         <ul v-else-if="myComments.length > 0" class="space-y-3">
           <li v-for="comment in myComments" :key="comment.id" class="bg-m3-sys-light-surface-variant rounded-xl p-3">
-            <NuxtLink :to="`/post/${comment.article_id}`" class="text-xs font-semibold text-m3-sys-light-primary hover:underline">
+            <NuxtLink :to="comment.article ? articlePath(comment.article) : `/post/${comment.article_id}`" class="text-xs font-semibold text-m3-sys-light-primary hover:underline">
               {{ comment.article?.title ?? '查看文章' }}
             </NuxtLink>
             <p class="text-sm text-m3-sys-light-on-surface mt-1 line-clamp-2">{{ comment.content }}</p>
@@ -599,7 +599,7 @@ function toggleAllArticles(checked: boolean) {
         </div>
         <ul v-else-if="receivedComments.length > 0" class="space-y-3">
           <li v-for="comment in receivedComments" :key="comment.id" class="bg-m3-sys-light-surface-variant rounded-xl p-3">
-            <NuxtLink :to="`/post/${comment.article_id}`" class="text-xs font-semibold text-m3-sys-light-primary hover:underline">
+            <NuxtLink :to="comment.article ? articlePath(comment.article) : `/post/${comment.article_id}`" class="text-xs font-semibold text-m3-sys-light-primary hover:underline">
               {{ comment.article?.title ?? '查看文章' }}
             </NuxtLink>
             <p class="text-sm text-m3-sys-light-on-surface mt-1 line-clamp-2">{{ comment.content }}</p>

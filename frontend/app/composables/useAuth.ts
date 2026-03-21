@@ -111,16 +111,16 @@ export function useAuth() {
       return await $fetch<T>(fullUrl, {
         ...options,
         headers: { ...authHeaders(), ...(options?.headers as Record<string, string> ?? {}) }
-      })
+      }) as T
     } catch (err: unknown) {
       const status = (err as { status?: number })?.status
       if (status === 401) {
         const ok = await refresh()
         if (ok) {
-          return $fetch<T>(fullUrl, {
+          return await $fetch<T>(fullUrl, {
             ...options,
             headers: { ...authHeaders(), ...(options?.headers as Record<string, string> ?? {}) }
-          })
+          }) as T
         }
         logout()
       }

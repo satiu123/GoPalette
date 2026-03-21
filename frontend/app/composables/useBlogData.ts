@@ -20,6 +20,7 @@ export interface ApiTag {
 
 export interface Article {
   id: number
+  slug: string
   title: string
   summary: string
   content: string
@@ -68,6 +69,12 @@ export function articleImageUrl(article: Article): string {
   return `https://picsum.photos/seed/article${article.id}/800/600`
 }
 
+/** 生成文章详情页路径：优先使用 SEO 友好的 slug */
+export function articlePath(article: Pick<Article, 'id' | 'slug'>): string {
+  const identifier = (article.slug || String(article.id)).trim()
+  return `/post/${encodeURIComponent(identifier)}`
+}
+
 /** 生成用户头像 URL：优先使用后端头像，缺失时回退占位图 */
 export function userAvatarUrl(user: ApiUser | string | null | undefined): string {
   if (typeof user === 'object' && user?.avatar_url) {
@@ -111,7 +118,7 @@ export function useArticleList(params?: Ref<{
 /** 单篇文章详情（自动累加阅读数） */
 export function useArticle(id: string | number) {
   const config = useRuntimeConfig()
-  return useFetch<ApiResponse<Article>>(`/articles/${id}`, {
+  return useFetch<ApiResponse<Article>>(`/articles/${encodeURIComponent(String(id))}`, {
     baseURL: config.public.apiBase
   })
 }

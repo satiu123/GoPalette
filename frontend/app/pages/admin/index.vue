@@ -2,7 +2,7 @@
 import type { Ref } from 'vue'
 import { LayoutDashboard, FileText, Tag, FolderOpen, Trash2, Plus, X, MessageSquare } from 'lucide-vue-next'
 import type { Article, ArticleListData, ApiCategory, ApiTag, ApiResponse, Comment } from '~/composables/useBlogData'
-import { formatDate } from '~/composables/useBlogData'
+import { formatDate, articlePath } from '~/composables/useBlogData'
 
 definePageMeta({ ssr: false })
 
@@ -461,7 +461,7 @@ const stats = computed(() => [
                 />
               </td>
               <td class="px-5 py-3">
-                <NuxtLink :to="`/post/${article.id}`" class="font-medium text-m3-sys-light-on-surface hover:text-m3-sys-light-primary transition-colors line-clamp-1">
+                <NuxtLink :to="articlePath(article)" class="font-medium text-m3-sys-light-on-surface hover:text-m3-sys-light-primary transition-colors line-clamp-1">
                   {{ article.title }}
                 </NuxtLink>
               </td>
@@ -685,7 +685,7 @@ const stats = computed(() => [
                 <p class="line-clamp-2 text-m3-sys-light-on-surface">{{ comment.content }}</p>
               </td>
               <td class="px-4 py-3 hidden md:table-cell text-m3-sys-light-on-surface-variant">
-                <NuxtLink v-if="comment.article" :to="`/post/${comment.article_id}`" class="hover:text-m3-sys-light-primary transition-colors line-clamp-1">
+                <NuxtLink v-if="comment.article" :to="articlePath(comment.article)" class="hover:text-m3-sys-light-primary transition-colors line-clamp-1">
                   {{ comment.article.title }}
                 </NuxtLink>
                 <span v-else>—</span>

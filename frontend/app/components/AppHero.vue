@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ArrowRight } from 'lucide-vue-next'
 import type { Article } from '~/composables/useBlogData'
-import { articleImageUrl, userAvatarUrl, formatDate } from '~/composables/useBlogData'
+import { articleImageUrl, userAvatarUrl, formatDate, articlePath } from '~/composables/useBlogData'
 
 const props = defineProps<{
   post: Article
@@ -10,7 +10,7 @@ const props = defineProps<{
 const router = useRouter()
 
 function goToPost() {
-  router.push(`/post/${props.post.id}`)
+  router.push(articlePath(props.post))
 }
 </script>
 
