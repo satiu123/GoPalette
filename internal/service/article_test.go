@@ -9,14 +9,15 @@ import (
 )
 
 type fakeArticleRepo struct {
-	createFn    func(ctx context.Context, article *model.Article) error
-	findByIDFn  func(ctx context.Context, id int64) (*model.Article, error)
-	findAllFn   func(ctx context.Context, page, pageSize int, filter repository.ListArticlesFilter) ([]model.Article, int64, error)
-	searchFn    func(ctx context.Context, keyword string, page, pageSize int) ([]model.Article, int64, error)
-	updateFn    func(ctx context.Context, article *model.Article) error
-	deleteFn    func(ctx context.Context, id int64) error
-	incrReadFn  func(ctx context.Context, id int64) error
-	createdItem *model.Article
+	createFn     func(ctx context.Context, article *model.Article) error
+	findByIDFn   func(ctx context.Context, id int64) (*model.Article, error)
+	findBySlugFn func(ctx context.Context, slug string) (*model.Article, error)
+	findAllFn    func(ctx context.Context, page, pageSize int, filter repository.ListArticlesFilter) ([]model.Article, int64, error)
+	searchFn     func(ctx context.Context, keyword string, page, pageSize int) ([]model.Article, int64, error)
+	updateFn     func(ctx context.Context, article *model.Article) error
+	deleteFn     func(ctx context.Context, id int64) error
+	incrReadFn   func(ctx context.Context, id int64) error
+	createdItem  *model.Article
 }
 
 func (f *fakeArticleRepo) Create(ctx context.Context, article *model.Article) error {
@@ -31,6 +32,13 @@ func (f *fakeArticleRepo) Create(ctx context.Context, article *model.Article) er
 func (f *fakeArticleRepo) FindByID(ctx context.Context, id int64) (*model.Article, error) {
 	if f.findByIDFn != nil {
 		return f.findByIDFn(ctx, id)
+	}
+	return nil, nil
+}
+
+func (f *fakeArticleRepo) FindBySlug(ctx context.Context, slug string) (*model.Article, error) {
+	if f.findBySlugFn != nil {
+		return f.findBySlugFn(ctx, slug)
 	}
 	return nil, nil
 }

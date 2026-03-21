@@ -42,6 +42,7 @@ func (h *ArticleHandler) Create(c *gin.Context) {
 
 	article, err := h.articleService.CreateArticle(c.Request.Context(), authorID, service.CreateArticleInput{
 		Title:      req.Title,
+		Slug:       req.Slug,
 		Summary:    req.Summary,
 		Content:    req.Content,
 		CategoryID: req.CategoryID,
@@ -66,13 +67,13 @@ func (h *ArticleHandler) Create(c *gin.Context) {
 // @Failure      404  {object}  response.Response
 // @Router       /articles/{id} [get]
 func (h *ArticleHandler) Get(c *gin.Context) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, "无效的文章 ID")
+	identifier := c.Param("id")
+	if identifier == "" {
+		response.Error(c, http.StatusBadRequest, "无效的文章标识")
 		return
 	}
 
-	article, err := h.articleService.GetArticle(c.Request.Context(), id)
+	article, err := h.articleService.GetArticle(c.Request.Context(), identifier)
 	if err != nil {
 		response.Error(c, http.StatusNotFound, err.Error())
 		return
@@ -209,6 +210,7 @@ func (h *ArticleHandler) Update(c *gin.Context) {
 	article, err := h.articleService.UpdateArticle(c.Request.Context(), id, requesterID, role,
 		service.UpdateArticleInput{
 			Title:      req.Title,
+			Slug:       req.Slug,
 			Summary:    req.Summary,
 			Content:    req.Content,
 			CategoryID: req.CategoryID,

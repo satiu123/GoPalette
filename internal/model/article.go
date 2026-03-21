@@ -4,6 +4,7 @@ import "time"
 
 type Article struct {
 	ID         int64     `json:"id" gorm:"primaryKey;autoIncrement"`
+	Slug       string    `json:"slug" gorm:"type:varchar(220);not null;index"`
 	Title      string    `json:"title" gorm:"type:varchar(200);not null;index"`
 	Summary    string    `json:"summary" gorm:"type:varchar(500)"`
 	Content    string    `json:"content" gorm:"type:longtext;not null"`

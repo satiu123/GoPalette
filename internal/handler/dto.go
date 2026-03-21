@@ -32,6 +32,7 @@ type UserResp struct {
 
 type CreateArticleReq struct {
 	Title      string  `json:"title" binding:"required,max=200"`
+	Slug       string  `json:"slug" binding:"max=220"`
 	Summary    string  `json:"summary" binding:"max=500"`
 	Content    string  `json:"content" binding:"required"`
 	CategoryID int64   `json:"category_id"`
@@ -41,6 +42,7 @@ type CreateArticleReq struct {
 
 type UpdateArticleReq struct {
 	Title      string  `json:"title" binding:"required,max=200"`
+	Slug       string  `json:"slug" binding:"max=220"`
 	Summary    string  `json:"summary" binding:"max=500"`
 	Content    string  `json:"content" binding:"required"`
 	CategoryID int64   `json:"category_id"`

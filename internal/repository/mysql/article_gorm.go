@@ -37,6 +37,23 @@ func (r *articleGormRepository) FindByID(ctx context.Context, id int64) (*model.
 	return &article, nil
 }
 
+func (r *articleGormRepository) FindBySlug(ctx context.Context, slug string) (*model.Article, error) {
+	var article model.Article
+	err := r.db.WithContext(ctx).
+		Preload("Author").
+		Preload("Category").
+		Preload("Tags").
+		Where("slug = ?", slug).
+		First(&article).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &article, nil
+}
+
 func (r *articleGormRepository) FindAll(ctx context.Context, page, pageSize int, filter repository.ListArticlesFilter) ([]model.Article, int64, error) {
 	var articles []model.Article
 	var total int64

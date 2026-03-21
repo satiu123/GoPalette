@@ -7,6 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
+	"strings"
+	"unicode"
 
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/satiu123/GoPalette/internal/model"
@@ -103,6 +106,7 @@ func (s *ArticleService) invalidateArticleCaches(ctx context.Context, articleID 
 
 type CreateArticleInput struct {
 	Title      string
+	Slug       string
 	Summary    string
 	Content    string
 	CategoryID int64
@@ -112,6 +116,7 @@ type CreateArticleInput struct {
 
 type UpdateArticleInput struct {
 	Title      string
+	Slug       string
 	Summary    string
 	Content    string
 	CategoryID int64
@@ -119,7 +124,63 @@ type UpdateArticleInput struct {
 	Status     string
 }
 
+func sanitizeSlug(input string) string {
+	input = strings.ToLower(strings.TrimSpace(input))
+	if input == "" {
+		return ""
+	}
+
+	var b strings.Builder
+	lastDash := false
+	for _, r := range input {
+		switch {
+		case r >= 'a' && r <= 'z':
+			b.WriteRune(r)
+			lastDash = false
+		case r >= '0' && r <= '9':
+			b.WriteRune(r)
+			lastDash = false
+		case unicode.IsSpace(r) || r == '-' || r == '_':
+			if b.Len() > 0 && !lastDash {
+				b.WriteByte('-')
+				lastDash = true
+			}
+		}
+	}
+
+	return strings.Trim(b.String(), "-")
+}
+
+func (s *ArticleService) resolveUniqueSlug(ctx context.Context, title, preferred string, excludeID int64) (string, error) {
+	base := sanitizeSlug(preferred)
+	if base == "" {
+		base = sanitizeSlug(title)
+	}
+	if base == "" {
+		base = "article"
+	}
+
+	candidate := base
+	for i := 2; i <= 9999; i++ {
+		existing, err := s.articleRepo.FindBySlug(ctx, candidate)
+		if err != nil {
+			return "", err
+		}
+		if existing == nil || existing.ID == excludeID {
+			return candidate, nil
+		}
+		candidate = fmt.Sprintf("%s-%d", base, i)
+	}
+
+	return "", errors.New("生成文章别名失败")
+}
+
 func (s *ArticleService) CreateArticle(ctx context.Context, authorID int64, input CreateArticleInput) (*model.Article, error) {
+	slug, err := s.resolveUniqueSlug(ctx, input.Title, input.Slug, 0)
+	if err != nil {
+		return nil, err
+	}
+
 	tags := make([]model.Tag, len(input.TagIDs))
 	for i, id := range input.TagIDs {
 		tags[i] = model.Tag{ID: id}
@@ -137,6 +198,7 @@ func (s *ArticleService) CreateArticle(ctx context.Context, authorID int64, inpu
 
 	article := &model.Article{
 		Title:      input.Title,
+		Slug:       slug,
 		Summary:    input.Summary,
 		Content:    ugcPolicy.Sanitize(input.Content),
 		AuthorID:   authorID,
@@ -157,7 +219,26 @@ func (s *ArticleService) CreateArticle(ctx context.Context, authorID int64, inpu
 	return article, nil
 }
 
-func (s *ArticleService) GetArticle(ctx context.Context, id int64) (*model.Article, error) {
+func (s *ArticleService) GetArticle(ctx context.Context, identifier string) (*model.Article, error) {
+	var (
+		id      int64
+		article *model.Article
+		err     error
+	)
+
+	if numericID, parseErr := strconv.ParseInt(identifier, 10, 64); parseErr == nil && numericID > 0 {
+		id = numericID
+	} else {
+		article, err = s.articleRepo.FindBySlug(ctx, sanitizeSlug(identifier))
+		if err != nil {
+			return nil, err
+		}
+		if article == nil {
+			return nil, errors.New("文章不存在")
+		}
+		id = article.ID
+	}
+
 	if s.cacheRepo != nil {
 		var cached model.Article
 		hit, err := s.cacheRepo.GetJSON(ctx, articleDetailCacheKey(id), &cached)
@@ -169,7 +250,9 @@ func (s *ArticleService) GetArticle(ctx context.Context, id int64) (*model.Artic
 		}
 	}
 
-	article, err := s.articleRepo.FindByID(ctx, id)
+	if article == nil {
+		article, err = s.articleRepo.FindByID(ctx, id)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -237,6 +320,13 @@ func (s *ArticleService) UpdateArticle(ctx context.Context, id, requesterID int6
 	}
 
 	article.Title = input.Title
+	if input.Slug != "" || article.Slug == "" {
+		slug, err := s.resolveUniqueSlug(ctx, input.Title, input.Slug, article.ID)
+		if err != nil {
+			return nil, err
+		}
+		article.Slug = slug
+	}
 	article.Summary = input.Summary
 	article.Content = ugcPolicy.Sanitize(input.Content)
 	article.CategoryID = categoryID

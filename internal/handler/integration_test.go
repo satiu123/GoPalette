@@ -83,9 +83,10 @@ func (f *testTokenRepo) DeleteRefreshToken(ctx context.Context, token string) er
 }
 
 type testArticleRepo struct {
-	createFn   func(ctx context.Context, article *model.Article) error
-	findByIDFn func(ctx context.Context, id int64) (*model.Article, error)
-	searchFn   func(ctx context.Context, keyword string, page, pageSize int) ([]model.Article, int64, error)
+	createFn     func(ctx context.Context, article *model.Article) error
+	findByIDFn   func(ctx context.Context, id int64) (*model.Article, error)
+	findBySlugFn func(ctx context.Context, slug string) (*model.Article, error)
+	searchFn     func(ctx context.Context, keyword string, page, pageSize int) ([]model.Article, int64, error)
 }
 
 func (f *testArticleRepo) Create(ctx context.Context, article *model.Article) error {
@@ -97,6 +98,12 @@ func (f *testArticleRepo) Create(ctx context.Context, article *model.Article) er
 func (f *testArticleRepo) FindByID(ctx context.Context, id int64) (*model.Article, error) {
 	if f.findByIDFn != nil {
 		return f.findByIDFn(ctx, id)
+	}
+	return nil, nil
+}
+func (f *testArticleRepo) FindBySlug(ctx context.Context, slug string) (*model.Article, error) {
+	if f.findBySlugFn != nil {
+		return f.findBySlugFn(ctx, slug)
 	}
 	return nil, nil
 }
