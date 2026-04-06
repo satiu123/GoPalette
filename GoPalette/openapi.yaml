@@ -3,15 +3,13 @@
 
 openapi: 3.0.3
 info:
-    title: Greeter API
-    description: The greeting service definition.
+    title: ""
     version: 0.0.1
 paths:
     /helloworld/{name}:
         get:
             tags:
                 - Greeter
-                - subgroup
             description: Sends a greeting
             operationId: Greeter_SayHello
             parameters:
@@ -27,8 +25,182 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/helloworld.v1.HelloReply'
+    /v1/users:
+        get:
+            tags:
+                - User
+            description: 列出用户，输入分页参数，返回用户列表和总数
+            operationId: User_ListUser
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.user.v1.ListUserReply'
+        post:
+            tags:
+                - User
+            description: 创建用户，输入用户名、邮箱、密码和角色，返回创建的用户信息
+            operationId: User_CreateUser
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.user.v1.CreateUserRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.user.v1.CreateUserReply'
+    /v1/users/{id}:
+        get:
+            tags:
+                - User
+            description: 获取用户，输入用户ID，返回用户信息
+            operationId: User_GetUser
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.user.v1.GetUserReply'
+        delete:
+            tags:
+                - User
+            description: 删除用户，输入用户ID，返回删除是否成功
+            operationId: User_DeleteUser
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.user.v1.DeleteUserReply'
+        patch:
+            tags:
+                - User
+            description: 更新用户，输入用户ID、要更新的用户信息和更新字段掩码，返回更新后的用户信息
+            operationId: User_UpdateUser
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: updateMask
+                  in: query
+                  schema:
+                    type: string
+                    format: field-mask
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.user.v1.UserInfo'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.user.v1.UpdateUserReply'
 components:
     schemas:
+        api.user.v1.CreateUserReply:
+            type: object
+            properties:
+                user:
+                    $ref: '#/components/schemas/api.user.v1.UserInfo'
+        api.user.v1.CreateUserRequest:
+            type: object
+            properties:
+                username:
+                    type: string
+                email:
+                    type: string
+                password:
+                    type: string
+                role:
+                    type: integer
+                    format: enum
+        api.user.v1.DeleteUserReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        api.user.v1.GetUserReply:
+            type: object
+            properties:
+                user:
+                    $ref: '#/components/schemas/api.user.v1.UserInfo'
+        api.user.v1.ListUserReply:
+            type: object
+            properties:
+                users:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.user.v1.UserInfo'
+                total:
+                    type: integer
+                    format: int32
+        api.user.v1.UpdateUserReply:
+            type: object
+            properties:
+                user:
+                    $ref: '#/components/schemas/api.user.v1.UserInfo'
+        api.user.v1.UserInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                username:
+                    type: string
+                email:
+                    type: string
+                role:
+                    type: integer
+                    format: enum
+                avatarURL:
+                    type: string
+                status:
+                    type: integer
+                    format: enum
+                createdAt:
+                    type: string
+                    format: date-time
+                updatedAt:
+                    type: string
+                    format: date-time
+            description: 包含了用户的基本信息，如用户名、邮箱、角色、状态等
         helloworld.v1.HelloReply:
             type: object
             properties:
@@ -37,3 +209,6 @@ components:
             description: The response message containing the greetings
 tags:
     - name: Greeter
+      description: The greeting service definition.
+    - name: User
+      description: 用户服务，提供了创建、更新、删除、获取和列出用户的接口

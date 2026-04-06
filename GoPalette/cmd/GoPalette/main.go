@@ -3,11 +3,13 @@ package main
 import (
 	"flag"
 	"os"
+	"strconv"
 
 	"GoPalette/internal/conf"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"
+	"github.com/go-kratos/kratos/v2/config/env"
 	"github.com/go-kratos/kratos/v2/config/file"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
@@ -60,6 +62,7 @@ func main() {
 	)
 	c := config.New(
 		config.WithSource(
+			env.NewSource(),
 			file.NewSource(flagconf),
 		),
 	)
@@ -72,6 +75,34 @@ func main() {
 	var bc conf.Bootstrap
 	if err := c.Scan(&bc); err != nil {
 		panic(err)
+	}
+	// Kratos env source keeps raw keys (e.g. DATA_DATABASE_SOURCE) and does not
+	// automatically map underscore keys to nested fields like data.database.source.
+	// Apply explicit overrides so .env (via direnv) reliably takes effect.
+	if v := os.Getenv("DATA_DATABASE_DRIVER"); v != "" {
+		bc.Data.Database.Driver = v
+	}
+	if v := os.Getenv("DATA_DATABASE_SOURCE"); v != "" {
+		bc.Data.Database.Source = v
+	}
+	if v := os.Getenv("DATA_DATABASE_REDIS_ADDR"); v != "" {
+		bc.Data.Redis.Addr = v
+	} else if v := os.Getenv("DATA_REDIS_ADDR"); v != "" {
+		bc.Data.Redis.Addr = v
+	}
+	if v := os.Getenv("DATA_DATABASE_REDIS_PASSWORD"); v != "" {
+		bc.Data.Redis.Password = v
+	} else if v := os.Getenv("DATA_REDIS_PASSWORD"); v != "" {
+		bc.Data.Redis.Password = v
+	}
+	if v := os.Getenv("DATA_DATABASE_REDIS_DB"); v != "" {
+		if db, err := strconv.Atoi(v); err == nil {
+			bc.Data.Redis.Db = int32(db)
+		}
+	} else if v := os.Getenv("DATA_REDIS_DB"); v != "" {
+		if db, err := strconv.Atoi(v); err == nil {
+			bc.Data.Redis.Db = int32(db)
+		}
 	}
 
 	app, cleanup, err := wireApp(bc.Server, bc.Data, logger)
