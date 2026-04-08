@@ -5,8 +5,7 @@ import (
 	"time"
 
 	pb "GoPalette/api/user/v1"
-
-	"golang.org/x/crypto/bcrypt"
+	"GoPalette/internal/pkg/util"
 )
 
 type User struct {
@@ -46,11 +45,27 @@ func (uc *UserUsecase) CreateUser(ctx context.Context, u *User) (*User, error) {
 	}
 
 	// 密码加密
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+	hashedPassword, err := util.HashPassword(u.Password)
 	if err != nil {
-		return nil, err
+		return nil, pb.ErrorInternalServerError("%s", "服务器开小差了，请稍后再试")
 	}
-	u.Password = string(hashedPassword)
+	u.Password = hashedPassword
+
+	return uc.repo.Create(ctx, u)
+}
+
+func (uc *UserUsecase) Register(ctx context.Context, u *User) (*User, error) {
+	exist, _ := uc.repo.FindByEmail(ctx, u.Email)
+	if exist != nil {
+		return nil, pb.ErrorEmailConflict("邮箱 %s 已存在", u.Email)
+	}
+
+	// 密码加密
+	hashedPassword, err := util.HashPassword(u.Password)
+	if err != nil {
+		return nil, pb.ErrorInternalServerError("%s", "服务器开小差了，请稍后再试")
+	}
+	u.Password = hashedPassword
 
 	return uc.repo.Create(ctx, u)
 }

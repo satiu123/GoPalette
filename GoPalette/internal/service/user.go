@@ -13,10 +13,14 @@ type UserService struct {
 	pb.UnimplementedUserServer
 
 	uc *biz.UserUsecase
+	ac *biz.AuthUsecase
 }
 
-func NewUserService(uc *biz.UserUsecase) *UserService {
-	return &UserService{uc: uc}
+func NewUserService(uc *biz.UserUsecase, ac *biz.AuthUsecase) *UserService {
+	return &UserService{
+		uc: uc,
+		ac: ac,
+	}
 }
 
 func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserReply, error) {
@@ -43,6 +47,50 @@ func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 			UpdatedAt: timestamppb.New(createdUser.UpdatedAt),
 		}}, nil
 }
+
+func (s *UserService) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterReply, error) {
+	if req.Username == "" || req.Email == "" || req.Password == "" {
+		return nil, pb.ErrorInvalidArgument("用户名、邮箱和密码不能为空")
+	}
+	u := &biz.User{
+		Username: req.Username,
+		Email:    req.Email,
+		Password: req.Password,
+		Role:     int32(pb.Role_ROLE_USER), // 注册用户默认角色为 USER
+	}
+	createdUser, err := s.uc.Register(ctx, u)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.RegisterReply{
+		User: &pb.UserInfo{
+			Id:        createdUser.ID,
+			Username:  createdUser.Username,
+			Email:     createdUser.Email,
+			Role:      pb.Role(createdUser.Role),
+			AvatarURL: createdUser.AvatarURL,
+			Status:    pb.UserStatus(createdUser.Status),
+			CreatedAt: timestamppb.New(createdUser.CreatedAt),
+			UpdatedAt: timestamppb.New(createdUser.UpdatedAt),
+		}}, nil
+}
+
+func (s *UserService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginReply, error) {
+	if req.Email == "" || req.Password == "" {
+		return nil, pb.ErrorInvalidArgument("邮箱和密码不能为空")
+	}
+	accessToken, refreshToken, err := s.ac.Login(req.Email, req.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.LoginReply{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
+}
+
 func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserReply, error) {
 	u := &biz.User{
 		ID:       req.Id,

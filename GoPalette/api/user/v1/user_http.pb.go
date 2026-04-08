@@ -23,6 +23,8 @@ const OperationUserCreateUser = "/api.user.v1.User/CreateUser"
 const OperationUserDeleteUser = "/api.user.v1.User/DeleteUser"
 const OperationUserGetUser = "/api.user.v1.User/GetUser"
 const OperationUserListUser = "/api.user.v1.User/ListUser"
+const OperationUserLogin = "/api.user.v1.User/Login"
+const OperationUserRegister = "/api.user.v1.User/Register"
 const OperationUserUpdateUser = "/api.user.v1.User/UpdateUser"
 
 type UserHTTPServer interface {
@@ -34,17 +36,67 @@ type UserHTTPServer interface {
 	GetUser(context.Context, *GetUserRequest) (*GetUserReply, error)
 	// ListUser 列出用户，输入分页参数，返回用户列表和总数
 	ListUser(context.Context, *ListUserRequest) (*ListUserReply, error)
+	// Login 登录用户，输入邮箱和密码，返回用户信息和访问令牌
+	Login(context.Context, *LoginRequest) (*LoginReply, error)
+	// Register 注册用户，输入用户名、邮箱和密码，返回创建的用户信息
+	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
 	// UpdateUser 更新用户，输入用户ID、要更新的用户信息和更新字段掩码，返回更新后的用户信息
 	UpdateUser(context.Context, *UpdateUserRequest) (*UpdateUserReply, error)
 }
 
 func RegisterUserHTTPServer(s *http.Server, srv UserHTTPServer) {
 	r := s.Route("/")
+	r.POST("/v1/users/register", _User_Register0_HTTP_Handler(srv))
+	r.POST("/v1/users/login", _User_Login0_HTTP_Handler(srv))
 	r.POST("/v1/users", _User_CreateUser0_HTTP_Handler(srv))
 	r.PATCH("/v1/users/{id}", _User_UpdateUser0_HTTP_Handler(srv))
 	r.DELETE("/v1/users/{id}", _User_DeleteUser0_HTTP_Handler(srv))
 	r.GET("/v1/users/{id}", _User_GetUser0_HTTP_Handler(srv))
 	r.GET("/v1/users", _User_ListUser0_HTTP_Handler(srv))
+}
+
+func _User_Register0_HTTP_Handler(srv UserHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in RegisterRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationUserRegister)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.Register(ctx, req.(*RegisterRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*RegisterReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _User_Login0_HTTP_Handler(srv UserHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in LoginRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationUserLogin)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.Login(ctx, req.(*LoginRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*LoginReply)
+		return ctx.Result(200, reply)
+	}
 }
 
 func _User_CreateUser0_HTTP_Handler(srv UserHTTPServer) func(ctx http.Context) error {
@@ -166,6 +218,10 @@ type UserHTTPClient interface {
 	GetUser(ctx context.Context, req *GetUserRequest, opts ...http.CallOption) (rsp *GetUserReply, err error)
 	// ListUser 列出用户，输入分页参数，返回用户列表和总数
 	ListUser(ctx context.Context, req *ListUserRequest, opts ...http.CallOption) (rsp *ListUserReply, err error)
+	// Login 登录用户，输入邮箱和密码，返回用户信息和访问令牌
+	Login(ctx context.Context, req *LoginRequest, opts ...http.CallOption) (rsp *LoginReply, err error)
+	// Register 注册用户，输入用户名、邮箱和密码，返回创建的用户信息
+	Register(ctx context.Context, req *RegisterRequest, opts ...http.CallOption) (rsp *RegisterReply, err error)
 	// UpdateUser 更新用户，输入用户ID、要更新的用户信息和更新字段掩码，返回更新后的用户信息
 	UpdateUser(ctx context.Context, req *UpdateUserRequest, opts ...http.CallOption) (rsp *UpdateUserReply, err error)
 }
@@ -228,6 +284,34 @@ func (c *UserHTTPClientImpl) ListUser(ctx context.Context, in *ListUserRequest, 
 	opts = append(opts, http.Operation(OperationUserListUser))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Login 登录用户，输入邮箱和密码，返回用户信息和访问令牌
+func (c *UserHTTPClientImpl) Login(ctx context.Context, in *LoginRequest, opts ...http.CallOption) (*LoginReply, error) {
+	var out LoginReply
+	pattern := "/v1/users/login"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationUserLogin))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Register 注册用户，输入用户名、邮箱和密码，返回创建的用户信息
+func (c *UserHTTPClientImpl) Register(ctx context.Context, in *RegisterRequest, opts ...http.CallOption) (*RegisterReply, error) {
+	var out RegisterReply
+	pattern := "/v1/users/register"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationUserRegister))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

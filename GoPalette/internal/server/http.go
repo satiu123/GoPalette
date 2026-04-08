@@ -5,20 +5,41 @@ import (
 	u "GoPalette/api/user/v1"
 	"GoPalette/internal/conf"
 	"GoPalette/internal/service"
+	"context"
 
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
+	"github.com/go-kratos/kratos/v2/middleware/selector"
 	"github.com/go-kratos/kratos/v2/transport/http"
+	jwtv5 "github.com/golang-jwt/jwt/v5"
 )
 
+func NewWhiteListMatcher() selector.MatchFunc {
+	whiteList := make(map[string]struct{})
+	whiteList["/api.user.v1.User/Register"] = struct{}{}
+	whiteList["/api.user.v1.User/Login"] = struct{}{}
+	return func(ctx context.Context, operation string) bool {
+		if _, ok := whiteList[operation]; ok {
+			return false
+		}
+		return true
+	}
+}
+
 // NewHTTPServer new an HTTP server.
-func NewHTTPServer(c *conf.Server, greeter *service.GreeterService, user *service.UserService, logger log.Logger) *http.Server {
+func NewHTTPServer(c *conf.Server, ca *conf.Auth, greeter *service.GreeterService, user *service.UserService, logger log.Logger) *http.Server {
 
 	var opts = []http.ServerOption{
 		http.Middleware(
+			logging.Server(logger),
+			selector.Server(
+				jwt.Server(func(token *jwtv5.Token) (any, error) {
+					return []byte(ca.JwtAccessSecret), nil
+				}),
+			).Match(NewWhiteListMatcher()).Build(),
 			recovery.Recovery(),
-			logging.Server(log.DefaultLogger),
 		),
 	}
 	if c.Http.Network != "" {

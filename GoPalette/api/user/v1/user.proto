@@ -23,6 +23,21 @@ enum UserStatus {
 
 // 用户服务，提供了创建、更新、删除、获取和列出用户的接口
 service User {
+  // 注册用户，输入用户名、邮箱和密码，返回创建的用户信息
+  rpc Register (RegisterRequest) returns (RegisterReply){
+    option (google.api.http) = {
+      post: "/v1/users/register"
+      body: "*"
+    };
+  };
+  // 登录用户，输入邮箱和密码，返回用户信息和访问令牌
+  rpc Login (LoginRequest) returns (LoginReply){
+    option (google.api.http) = {
+      post: "/v1/users/login"
+      body: "*"
+    };
+  };
+
   // 创建用户，输入用户名、邮箱、密码和角色，返回创建的用户信息
   rpc CreateUser (CreateUserRequest) returns (CreateUserReply){
     option (google.api.http) = {
@@ -68,6 +83,27 @@ message UserInfo {
   google.protobuf.Timestamp created_at   = 7;
   google.protobuf.Timestamp updated_at   = 8;
 }
+
+message RegisterRequest {
+  string username = 1;
+  string email    = 2;
+  string password = 3;
+}
+
+message RegisterReply {
+  UserInfo user = 1;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginReply {
+  string   access_token  = 1;
+  string   refresh_token = 2;
+}
+
 
 message CreateUserRequest {
   string username = 1;
