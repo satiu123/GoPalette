@@ -11,6 +11,7 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/logging"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/middleware/selector"
+	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	jwtv5 "github.com/golang-jwt/jwt/v5"
 )
@@ -19,6 +20,7 @@ import (
 func NewGRPCServer(c *conf.Server, ca *conf.Auth, greeter *service.GreeterService, user *service.UserService, logger log.Logger) *grpc.Server {
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
+			tracing.Server(),
 			logging.Server(logger),
 			selector.Server(
 				jwt.Server(func(token *jwtv5.Token) (any, error) {

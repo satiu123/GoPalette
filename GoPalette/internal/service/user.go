@@ -6,20 +6,23 @@ import (
 	pb "GoPalette/api/user/v1"
 	"GoPalette/internal/biz"
 
+	"github.com/go-kratos/kratos/v2/log"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type UserService struct {
 	pb.UnimplementedUserServer
 
-	uc *biz.UserUsecase
-	ac *biz.AuthUsecase
+	uc  *biz.UserUsecase
+	ac  *biz.AuthUsecase
+	log *log.Helper
 }
 
-func NewUserService(uc *biz.UserUsecase, ac *biz.AuthUsecase) *UserService {
+func NewUserService(uc *biz.UserUsecase, ac *biz.AuthUsecase, logger log.Logger) *UserService {
 	return &UserService{
-		uc: uc,
-		ac: ac,
+		uc:  uc,
+		ac:  ac,
+		log: log.NewHelper(log.With(logger, "module", "service/user")),
 	}
 }
 
@@ -80,7 +83,7 @@ func (s *UserService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 	if req.Email == "" || req.Password == "" {
 		return nil, pb.ErrorInvalidArgument("邮箱和密码不能为空")
 	}
-	accessToken, refreshToken, err := s.ac.Login(req.Email, req.Password)
+	accessToken, refreshToken, err := s.ac.Login(ctx, req.Email, req.Password)
 	if err != nil {
 		return nil, err
 	}

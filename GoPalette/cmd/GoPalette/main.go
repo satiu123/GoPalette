@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"os"
 
 	"GoPalette/internal/conf"
+	"GoPalette/pkg/opentelemetry"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"
@@ -58,6 +61,7 @@ func main() {
 		"trace.id", tracing.TraceID(),
 		"span.id", tracing.SpanID(),
 	)
+	logHelper := log.NewHelper(log.With(logger, "module", "main"))
 	c := config.New(
 		config.WithSource(
 			file.NewSource(flagconf),
@@ -68,6 +72,17 @@ func main() {
 	if err := c.Load(); err != nil {
 		panic(err)
 	}
+
+	// 设置并初始化 OpenTelemetry SDK
+	otelShutdown, err := opentelemetry.SetupOTelSDK(context.Background())
+	if err != nil {
+		logHelper.Errorf("初始化 OpenTelemetry SDK 失败: %v", err)
+	}
+
+	// 确保在 main 函数退出时正确关闭 OpenTelemetry SDK
+	defer func() {
+		err = errors.Join(err, otelShutdown(context.Background()))
+	}()
 
 	var bc conf.Bootstrap
 	if err := c.Scan(&bc); err != nil {

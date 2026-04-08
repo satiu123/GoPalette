@@ -6,6 +6,8 @@ import (
 
 	pb "GoPalette/api/user/v1"
 	"GoPalette/internal/pkg/util"
+
+	"github.com/go-kratos/kratos/v2/log"
 )
 
 type User struct {
@@ -31,11 +33,15 @@ type UserRepo interface {
 }
 
 type UserUsecase struct {
-	repo UserRepo
+	repo   UserRepo
+	logger *log.Helper
 }
 
-func NewUserUsecase(repo UserRepo) *UserUsecase {
-	return &UserUsecase{repo: repo}
+func NewUserUsecase(repo UserRepo, logger log.Logger) *UserUsecase {
+	return &UserUsecase{
+		repo:   repo,
+		logger: log.NewHelper(log.With(logger, "module", "usecase/user")),
+	}
 }
 
 func (uc *UserUsecase) CreateUser(ctx context.Context, u *User) (*User, error) {

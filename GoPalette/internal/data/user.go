@@ -28,7 +28,7 @@ type userRepo struct {
 func NewUserRepo(data *Data, logger log.Logger) biz.UserRepo {
 	return &userRepo{
 		data: data,
-		log:  log.NewHelper(logger),
+		log:  log.NewHelper(log.With(logger, "module", "repo/user")),
 	}
 }
 
@@ -79,8 +79,10 @@ func (r *userRepo) Get(ctx context.Context, id int64) (*biz.User, error) {
 	return &biz.User{
 		ID:        int64(po.ID),
 		Username:  po.Username,
+		Email:     po.Email,
 		Password:  po.Password,
 		Role:      po.Role,
+		AvatarURL: po.AvatarURL,
 		Status:    po.Status,
 		CreatedAt: po.CreatedAt,
 		UpdatedAt: po.UpdatedAt,
@@ -114,8 +116,10 @@ func (r *userRepo) List(ctx context.Context, page, pageSize int32) ([]*biz.User,
 		users[i] = &biz.User{
 			ID:        int64(po.ID),
 			Username:  po.Username,
+			Email:     po.Email,
 			Password:  po.Password,
 			Role:      po.Role,
+			AvatarURL: po.AvatarURL,
 			Status:    po.Status,
 			CreatedAt: po.CreatedAt,
 			UpdatedAt: po.UpdatedAt,
@@ -132,8 +136,10 @@ func (r *userRepo) FindByEmail(ctx context.Context, email string) (*biz.User, er
 	return &biz.User{
 		ID:        int64(po.ID),
 		Username:  po.Username,
+		Email:     po.Email,
 		Password:  po.Password,
 		Role:      po.Role,
+		AvatarURL: po.AvatarURL,
 		Status:    po.Status,
 		CreatedAt: po.CreatedAt,
 		UpdatedAt: po.UpdatedAt,

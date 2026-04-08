@@ -35,7 +35,7 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 		log.Errorf("自动迁移数据库结构失败: %v", err)
 		return nil, nil, err
 	}
-	log.Info("message", "database connected successfully")
+	log.Info("数据库连接成功并完成自动迁移")
 
 	rdb := redis.NewClient(&redis.Options{
 		Addr:         c.Redis.Addr,
