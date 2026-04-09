@@ -3,6 +3,7 @@ package server
 import (
 	hw "GoPalette/api/helloworld/v1"
 	u "GoPalette/api/user/v1"
+	"GoPalette/internal/biz"
 	"GoPalette/internal/conf"
 	"GoPalette/internal/service"
 
@@ -25,7 +26,9 @@ func NewGRPCServer(c *conf.Server, ca *conf.Auth, greeter *service.GreeterServic
 			selector.Server(
 				jwt.Server(func(token *jwtv5.Token) (any, error) {
 					return []byte(ca.JwtAccessSecret), nil
-				}),
+				}, jwt.WithClaims(func() jwtv5.Claims {
+					return &biz.AuthClaims{}
+				})),
 			).Match(NewWhiteListMatcher()).Build(),
 			recovery.Recovery(),
 		),

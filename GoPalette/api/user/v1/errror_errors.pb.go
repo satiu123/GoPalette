@@ -109,6 +109,20 @@ func ErrorAccountDisabled(format string, args ...interface{}) *errors.Error {
 	return errors.New(403, ErrorReason_ACCOUNT_DISABLED.String(), fmt.Sprintf(format, args...))
 }
 
+// 未认证 (HTTP 401 Unauthorized)
+func IsUnauthenticated(err error) bool {
+	if err == nil {
+		return false
+	}
+	e := errors.FromError(err)
+	return e.Reason == ErrorReason_UNAUTHENTICATED.String() && e.Code == 401
+}
+
+// 未认证 (HTTP 401 Unauthorized)
+func ErrorUnauthenticated(format string, args ...interface{}) *errors.Error {
+	return errors.New(401, ErrorReason_UNAUTHENTICATED.String(), fmt.Sprintf(format, args...))
+}
+
 // 用户不存在
 func IsUserNotFound(err error) bool {
 	if err == nil {

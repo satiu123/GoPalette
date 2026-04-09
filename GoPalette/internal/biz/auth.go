@@ -10,13 +10,14 @@ import (
 	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
+	jwtv5 "github.com/golang-jwt/jwt/v5"
 )
 
 type AuthClaims struct {
 	UserID int64 `json:"user_id"`
 	Role   int32 `json:"role"`
-	jwt.RegisteredClaims
+	jwtv5.RegisteredClaims
 }
 
 type AuthUsecase struct {
@@ -69,13 +70,13 @@ func (uc *AuthUsecase) generateToken(user *User) (string, string, error) {
 	accessClaims := &AuthClaims{
 		UserID: user.ID,
 		Role:   user.Role,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(t.Add(uc.authConf.JwtAccessExpire.AsDuration())),
-			IssuedAt:  jwt.NewNumericDate(t),
+		RegisteredClaims: jwtv5.RegisteredClaims{
+			ExpiresAt: jwtv5.NewNumericDate(t.Add(uc.authConf.JwtAccessExpire.AsDuration())),
+			IssuedAt:  jwtv5.NewNumericDate(t),
 			Issuer:    uc.authConf.Issuer,
 		},
 	}
-	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims).SignedString([]byte(uc.authConf.JwtAccessSecret))
+	accessToken, err := jwtv5.NewWithClaims(jwtv5.SigningMethodHS256, accessClaims).SignedString([]byte(uc.authConf.JwtAccessSecret))
 	if err != nil {
 		uc.logger.Errorf("签发 access token 失败: user_id=%d err=%v", user.ID, err)
 		return "", "", err
@@ -84,13 +85,13 @@ func (uc *AuthUsecase) generateToken(user *User) (string, string, error) {
 	refreshClaims := &AuthClaims{
 		UserID: user.ID,
 		Role:   user.Role,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(t.Add(uc.authConf.JwtRefreshExpire.AsDuration())),
-			IssuedAt:  jwt.NewNumericDate(t),
+		RegisteredClaims: jwtv5.RegisteredClaims{
+			ExpiresAt: jwtv5.NewNumericDate(t.Add(uc.authConf.JwtRefreshExpire.AsDuration())),
+			IssuedAt:  jwtv5.NewNumericDate(t),
 			Issuer:    uc.authConf.Issuer,
 		},
 	}
-	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(uc.authConf.JwtRefreshSecret))
+	refreshToken, err := jwtv5.NewWithClaims(jwtv5.SigningMethodHS256, refreshClaims).SignedString([]byte(uc.authConf.JwtRefreshSecret))
 	if err != nil {
 		uc.logger.Errorf("签发 refresh token 失败: user_id=%d err=%v", user.ID, err)
 		return "", "", err
@@ -101,9 +102,9 @@ func (uc *AuthUsecase) generateToken(user *User) (string, string, error) {
 
 func (uc *AuthUsecase) ParseToken(tokenStr, secret string) (*AuthClaims, error) {
 	// 解析 JWT token
-	token, err := jwt.ParseWithClaims(tokenStr, &AuthClaims{}, func(token *jwt.Token) (any, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, jwt.ErrSignatureInvalid
+	token, err := jwtv5.ParseWithClaims(tokenStr, &AuthClaims{}, func(token *jwtv5.Token) (any, error) {
+		if _, ok := token.Method.(*jwtv5.SigningMethodHMAC); !ok {
+			return nil, jwtv5.ErrSignatureInvalid
 		}
 		return []byte(secret), nil
 	})
@@ -116,7 +117,7 @@ func (uc *AuthUsecase) ParseToken(tokenStr, secret string) (*AuthClaims, error) 
 		return claims, nil
 	} else {
 		uc.logger.Warn("token 校验失败: claims 无效或 token 不合法")
-		return nil, jwt.ErrInvalidKey
+		return nil, jwtv5.ErrInvalidKey
 	}
 }
 func (uc *AuthUsecase) RefreshToken(ctx context.Context, refreshToken string) (string, string, error) {
@@ -146,15 +147,52 @@ func (uc *AuthUsecase) RefreshToken(ctx context.Context, refreshToken string) (s
 	return accessToken, newRefreshToken, nil
 }
 
+// FromContext 封装获取 Claims 的逻辑
+func FromContext(ctx context.Context) (*AuthClaims, error) {
+	claims, ok := jwt.FromContext(ctx)
+	if !ok {
+		return nil, pb.ErrorUnauthenticated("未认证的请求")
+	}
+	res, ok := claims.(*AuthClaims)
+	if !ok {
+		return nil, pb.ErrorUnauthenticated("非法的 Token 格式")
+	}
+	return res, nil
+}
+
+// CheckOwner 检查用户是否是资源的所有者
+func CheckOwner(ctx context.Context, targetID int64) error {
+	claims, err := FromContext(ctx)
+	if err != nil {
+		return err
+	}
+	if claims.UserID != targetID && claims.Role != int32(pb.Role_ROLE_ADMIN) {
+		return pb.ErrorAccessDenied("无权限访问")
+	}
+	return nil
+}
+
+// CheckAdmin 检查用户是否具有管理员权限
+func CheckAdmin(ctx context.Context) error {
+	claims, err := FromContext(ctx)
+	if err != nil {
+		return err
+	}
+	if claims.Role != int32(pb.Role_ROLE_ADMIN) {
+		return pb.ErrorAccessDenied("无权限访问")
+	}
+	return nil
+}
+
 func classifyTokenError(err error) string {
 	switch {
-	case errors.Is(err, jwt.ErrTokenExpired):
+	case errors.Is(err, jwtv5.ErrTokenExpired):
 		return "expired"
-	case errors.Is(err, jwt.ErrSignatureInvalid):
+	case errors.Is(err, jwtv5.ErrSignatureInvalid):
 		return "signature_invalid"
-	case errors.Is(err, jwt.ErrTokenMalformed):
+	case errors.Is(err, jwtv5.ErrTokenMalformed):
 		return "malformed"
-	case errors.Is(err, jwt.ErrTokenNotValidYet):
+	case errors.Is(err, jwtv5.ErrTokenNotValidYet):
 		return "not_valid_yet"
 	default:
 		return "other"

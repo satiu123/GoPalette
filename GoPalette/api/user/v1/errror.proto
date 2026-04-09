@@ -26,6 +26,8 @@ enum ErrorReason {
   ACCESS_DENIED = 5 [(errors.code) = 403];
   // 账号被禁用
   ACCOUNT_DISABLED = 6 [(errors.code) = 403];
+  // 未认证 (HTTP 401 Unauthorized)
+  UNAUTHENTICATED = 7 [(errors.code) = 401];
 
   // 用户不存在
   USER_NOT_FOUND = 10 [(errors.code) = 404];

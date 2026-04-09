@@ -144,11 +144,14 @@ func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 		}}, nil
 }
 func (s *UserService) ListUser(ctx context.Context, req *pb.ListUserRequest) (*pb.ListUserReply, error) {
-	users, total, err := s.uc.ListUser(ctx, req.Page, req.PageSize)
+	res, err := s.uc.ListUser(ctx, req.Page, req.PageSize)
 	if err != nil {
 		return nil, err
 	}
+	users := res.List
+	total := res.Total
 
+	// 将 biz.User 切片转换为 pb.UserInfo 切片
 	pbUsers := make([]*pb.UserInfo, len(users))
 	for _, user := range users {
 		// 处理 UpdatedAt 字段，确保它不是零值

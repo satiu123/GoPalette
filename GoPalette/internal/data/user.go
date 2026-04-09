@@ -2,6 +2,7 @@ package data
 
 import (
 	"GoPalette/internal/biz"
+	"GoPalette/pkg/pagination"
 	"context"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -56,8 +57,6 @@ func (r *userRepo) Update(ctx context.Context, u *biz.User) (*biz.User, error) {
 			ID: uint(u.ID),
 		},
 		Username: u.Username,
-		Password: u.Password,
-		Role:     u.Role,
 		Status:   u.Status,
 	}
 
@@ -89,12 +88,17 @@ func (r *userRepo) Get(ctx context.Context, id int64) (*biz.User, error) {
 	}, nil
 }
 
-func (r *userRepo) List(ctx context.Context, page, pageSize int32) ([]*biz.User, int32, error) {
+func (r *userRepo) List(ctx context.Context, page, pageSize int64) ([]*biz.User, int64, error) {
+	// 初始化分页参数
+	p := pagination.NewPagingParam(page, pageSize)
+
 	var pos []User
 	var total int64
 
+	db := r.data.db.WithContext(ctx).Model(&User{})
+
 	// 统计总记录数
-	if err := r.data.db.WithContext(ctx).Model(&User{}).Count(&total).Error; err != nil {
+	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -103,10 +107,7 @@ func (r *userRepo) List(ctx context.Context, page, pageSize int32) ([]*biz.User,
 		return []*biz.User{}, 0, nil
 	}
 
-	// 计算分页参数并查分页数据
-	offset := (page - 1) * pageSize
-	limit := pageSize
-	if err := r.data.db.WithContext(ctx).Limit(int(limit)).Offset(int(offset)).Find(&pos).Error; err != nil {
+	if err := db.Scopes(pagination.Paginate(p)).Find(&pos).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -125,7 +126,7 @@ func (r *userRepo) List(ctx context.Context, page, pageSize int32) ([]*biz.User,
 			UpdatedAt: po.UpdatedAt,
 		}
 	}
-	return users, int32(total), nil
+	return users, total, nil
 }
 
 func (r *userRepo) FindByEmail(ctx context.Context, email string) (*biz.User, error) {

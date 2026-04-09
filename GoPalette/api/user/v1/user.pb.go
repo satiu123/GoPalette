@@ -821,8 +821,8 @@ func (x *GetUserReply) GetUser() *UserInfo {
 
 type ListUserRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
-	PageSize      int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	Page          int64                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int64                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -857,14 +857,14 @@ func (*ListUserRequest) Descriptor() ([]byte, []int) {
 	return file_user_v1_user_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *ListUserRequest) GetPage() int32 {
+func (x *ListUserRequest) GetPage() int64 {
 	if x != nil {
 		return x.Page
 	}
 	return 0
 }
 
-func (x *ListUserRequest) GetPageSize() int32 {
+func (x *ListUserRequest) GetPageSize() int64 {
 	if x != nil {
 		return x.PageSize
 	}
@@ -874,7 +874,7 @@ func (x *ListUserRequest) GetPageSize() int32 {
 type ListUserReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Users         []*UserInfo            `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
-	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -916,7 +916,7 @@ func (x *ListUserReply) GetUsers() []*UserInfo {
 	return nil
 }
 
-func (x *ListUserReply) GetTotal() int32 {
+func (x *ListUserReply) GetTotal() int64 {
 	if x != nil {
 		return x.Total
 	}
@@ -975,11 +975,11 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\fGetUserReply\x12)\n" +
 	"\x04user\x18\x01 \x01(\v2\x15.api.user.v1.UserInfoR\x04user\"B\n" +
 	"\x0fListUserRequest\x12\x12\n" +
-	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"R\n" +
+	"\x04page\x18\x01 \x01(\x03R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\x03R\bpageSize\"R\n" +
 	"\rListUserReply\x12+\n" +
 	"\x05users\x18\x01 \x03(\v2\x15.api.user.v1.UserInfoR\x05users\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total*%\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total*%\n" +
 	"\x04Role\x12\x0e\n" +
 	"\n" +
 	"ROLE_ADMIN\x10\x00\x12\r\n" +

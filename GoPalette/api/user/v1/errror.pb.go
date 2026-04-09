@@ -39,6 +39,8 @@ const (
 	ErrorReason_ACCESS_DENIED ErrorReason = 5
 	// 账号被禁用
 	ErrorReason_ACCOUNT_DISABLED ErrorReason = 6
+	// 未认证 (HTTP 401 Unauthorized)
+	ErrorReason_UNAUTHENTICATED ErrorReason = 7
 	// 用户不存在
 	ErrorReason_USER_NOT_FOUND ErrorReason = 10
 	// 邮箱冲突/已被注册
@@ -61,6 +63,7 @@ var (
 		4:  "REFRESH_TOKEN_EXPIRED",
 		5:  "ACCESS_DENIED",
 		6:  "ACCOUNT_DISABLED",
+		7:  "UNAUTHENTICATED",
 		10: "USER_NOT_FOUND",
 		11: "EMAIL_CONFLICT",
 		12: "INVALID_ARGUMENT",
@@ -75,6 +78,7 @@ var (
 		"REFRESH_TOKEN_EXPIRED": 4,
 		"ACCESS_DENIED":         5,
 		"ACCOUNT_DISABLED":      6,
+		"UNAUTHENTICATED":       7,
 		"USER_NOT_FOUND":        10,
 		"EMAIL_CONFLICT":        11,
 		"INVALID_ARGUMENT":      12,
@@ -114,7 +118,7 @@ var File_user_v1_errror_proto protoreflect.FileDescriptor
 
 const file_user_v1_errror_proto_rawDesc = "" +
 	"\n" +
-	"\x14user/v1/errror.proto\x12\vapi.user.v1\x1a\x13errors/errors.proto*\xdd\x02\n" +
+	"\x14user/v1/errror.proto\x12\vapi.user.v1\x1a\x13errors/errors.proto*\xf8\x02\n" +
 	"\vErrorReason\x12\x17\n" +
 	"\rUNKNOWN_ERROR\x10\x00\x1a\x04\xa8E\xf4\x03\x12\x1c\n" +
 	"\x12PASSWORD_INCORRECT\x10\x01\x1a\x04\xa8E\x91\x03\x12\x17\n" +
@@ -122,7 +126,8 @@ const file_user_v1_errror_proto_rawDesc = "" +
 	"\rTOKEN_INVALID\x10\x03\x1a\x04\xa8E\x91\x03\x12\x1f\n" +
 	"\x15REFRESH_TOKEN_EXPIRED\x10\x04\x1a\x04\xa8E\x91\x03\x12\x17\n" +
 	"\rACCESS_DENIED\x10\x05\x1a\x04\xa8E\x93\x03\x12\x1a\n" +
-	"\x10ACCOUNT_DISABLED\x10\x06\x1a\x04\xa8E\x93\x03\x12\x18\n" +
+	"\x10ACCOUNT_DISABLED\x10\x06\x1a\x04\xa8E\x93\x03\x12\x19\n" +
+	"\x0fUNAUTHENTICATED\x10\a\x1a\x04\xa8E\x91\x03\x12\x18\n" +
 	"\x0eUSER_NOT_FOUND\x10\n" +
 	"\x1a\x04\xa8E\x94\x03\x12\x18\n" +
 	"\x0eEMAIL_CONFLICT\x10\v\x1a\x04\xa8E\x99\x03\x12\x1a\n" +
