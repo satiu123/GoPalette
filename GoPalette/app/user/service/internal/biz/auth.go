@@ -2,8 +2,8 @@ package biz
 
 import (
 	pb "GoPalette/api/user/v1"
-	"GoPalette/internal/conf"
-	"GoPalette/internal/pkg/util"
+	"GoPalette/app/user/service/internal/conf"
+	"GoPalette/app/user/service/internal/pkg/util"
 	"context"
 	"errors"
 	"strings"

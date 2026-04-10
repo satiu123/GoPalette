@@ -1,7 +1,7 @@
 package data
 
 import (
-	"GoPalette/internal/biz"
+	"GoPalette/app/user/service/internal/biz"
 	"GoPalette/pkg/pagination"
 	"context"
 

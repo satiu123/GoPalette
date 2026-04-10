@@ -7,11 +7,11 @@
 package main
 
 import (
-	"GoPalette/internal/biz"
-	"GoPalette/internal/conf"
-	"GoPalette/internal/data"
-	"GoPalette/internal/server"
-	"GoPalette/internal/service"
+	"GoPalette/app/user/service/internal/biz"
+	"GoPalette/app/user/service/internal/conf"
+	"GoPalette/app/user/service/internal/data"
+	"GoPalette/app/user/service/internal/server"
+	"GoPalette/app/user/service/internal/service"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 )

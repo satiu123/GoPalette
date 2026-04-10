@@ -4,7 +4,7 @@ import (
 	"context"
 
 	pb "GoPalette/api/user/v1"
-	"GoPalette/internal/biz"
+	"GoPalette/app/user/service/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"google.golang.org/protobuf/types/known/timestamppb"

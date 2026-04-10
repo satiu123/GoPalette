@@ -5,7 +5,7 @@ import (
 	"time"
 
 	pb "GoPalette/api/user/v1"
-	"GoPalette/internal/pkg/util"
+	"GoPalette/app/user/service/internal/pkg/util"
 	"GoPalette/pkg/pagination"
 
 	"github.com/go-kratos/kratos/v2/log"

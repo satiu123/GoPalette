@@ -4,7 +4,7 @@ import (
 	"context"
 
 	v1 "GoPalette/api/helloworld/v1"
-	"GoPalette/internal/biz"
+	"GoPalette/app/user/service/internal/biz"
 )
 
 // GreeterService is a greeter service.

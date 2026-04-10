@@ -3,9 +3,9 @@ package server
 import (
 	hw "GoPalette/api/helloworld/v1"
 	u "GoPalette/api/user/v1"
-	"GoPalette/internal/biz"
-	"GoPalette/internal/conf"
-	"GoPalette/internal/service"
+	"GoPalette/app/user/service/internal/biz"
+	"GoPalette/app/user/service/internal/conf"
+	"GoPalette/app/user/service/internal/service"
 	"context"
 
 	"github.com/go-kratos/kratos/v2/log"
