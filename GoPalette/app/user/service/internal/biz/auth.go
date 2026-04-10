@@ -4,6 +4,7 @@ import (
 	pb "GoPalette/api/user/v1"
 	"GoPalette/app/user/service/internal/conf"
 	"GoPalette/app/user/service/internal/pkg/util"
+	"GoPalette/pkg/auth"
 	"context"
 	"errors"
 	"strings"
@@ -13,12 +14,6 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
 	jwtv5 "github.com/golang-jwt/jwt/v5"
 )
-
-type AuthClaims struct {
-	UserID int64 `json:"user_id"`
-	Role   int32 `json:"role"`
-	jwtv5.RegisteredClaims
-}
 
 type AuthUsecase struct {
 	authConf *conf.Auth
@@ -67,7 +62,7 @@ func (uc *AuthUsecase) Login(ctx context.Context, email, password string) (strin
 
 func (uc *AuthUsecase) generateToken(user *User) (string, string, error) {
 	t := time.Now()
-	accessClaims := &AuthClaims{
+	accessClaims := &auth.AuthClaims{
 		UserID: user.ID,
 		Role:   user.Role,
 		RegisteredClaims: jwtv5.RegisteredClaims{
@@ -82,7 +77,7 @@ func (uc *AuthUsecase) generateToken(user *User) (string, string, error) {
 		return "", "", err
 	}
 
-	refreshClaims := &AuthClaims{
+	refreshClaims := &auth.AuthClaims{
 		UserID: user.ID,
 		Role:   user.Role,
 		RegisteredClaims: jwtv5.RegisteredClaims{
@@ -100,9 +95,9 @@ func (uc *AuthUsecase) generateToken(user *User) (string, string, error) {
 	return accessToken, refreshToken, nil
 }
 
-func (uc *AuthUsecase) ParseToken(tokenStr, secret string) (*AuthClaims, error) {
+func (uc *AuthUsecase) ParseToken(tokenStr, secret string) (*auth.AuthClaims, error) {
 	// 解析 JWT token
-	token, err := jwtv5.ParseWithClaims(tokenStr, &AuthClaims{}, func(token *jwtv5.Token) (any, error) {
+	token, err := jwtv5.ParseWithClaims(tokenStr, &auth.AuthClaims{}, func(token *jwtv5.Token) (any, error) {
 		if _, ok := token.Method.(*jwtv5.SigningMethodHMAC); !ok {
 			return nil, jwtv5.ErrSignatureInvalid
 		}
@@ -113,7 +108,7 @@ func (uc *AuthUsecase) ParseToken(tokenStr, secret string) (*AuthClaims, error) 
 		return nil, err
 	}
 	// 验证 token 是否有效
-	if claims, ok := token.Claims.(*AuthClaims); ok && token.Valid {
+	if claims, ok := token.Claims.(*auth.AuthClaims); ok && token.Valid {
 		return claims, nil
 	} else {
 		uc.logger.Warn("token 校验失败: claims 无效或 token 不合法")
@@ -148,12 +143,12 @@ func (uc *AuthUsecase) RefreshToken(ctx context.Context, refreshToken string) (s
 }
 
 // FromContext 封装获取 Claims 的逻辑
-func FromContext(ctx context.Context) (*AuthClaims, error) {
+func FromContext(ctx context.Context) (*auth.AuthClaims, error) {
 	claims, ok := jwt.FromContext(ctx)
 	if !ok {
 		return nil, pb.ErrorUnauthenticated("未认证的请求")
 	}
-	res, ok := claims.(*AuthClaims)
+	res, ok := claims.(*auth.AuthClaims)
 	if !ok {
 		return nil, pb.ErrorUnauthenticated("非法的 Token 格式")
 	}

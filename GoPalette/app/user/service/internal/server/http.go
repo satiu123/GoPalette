@@ -3,9 +3,9 @@ package server
 import (
 	hw "GoPalette/api/helloworld/v1"
 	u "GoPalette/api/user/v1"
-	"GoPalette/app/user/service/internal/biz"
 	"GoPalette/app/user/service/internal/conf"
 	"GoPalette/app/user/service/internal/service"
+	"GoPalette/pkg/auth"
 	"context"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -41,7 +41,7 @@ func NewHTTPServer(c *conf.Server, ca *conf.Auth, greeter *service.GreeterServic
 				jwt.Server(func(token *jwtv5.Token) (any, error) {
 					return []byte(ca.JwtAccessSecret), nil
 				}, jwt.WithClaims(func() jwtv5.Claims {
-					return &biz.AuthClaims{}
+					return &auth.AuthClaims{}
 				})),
 			).Match(NewWhiteListMatcher()).Build(),
 			recovery.Recovery(),
