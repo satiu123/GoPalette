@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
-	"strings"
 
 	pb "GoPalette/api/user/v1"
 	"GoPalette/app/user/service/internal/biz"
+	"GoPalette/pkg/util"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -114,10 +114,7 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 		Status:   int32(req.User.Status),
 	}
 	// 清洗update_mask
-	var updateFields []string
-	for _, path := range req.UpdateMask.Paths {
-		updateFields = append(updateFields, strings.TrimPrefix(path, "user."))
-	}
+	updateFields := util.CleanUpdateMask(req.UpdateMask.Paths, "users.")
 
 	updatedUser, err := s.uc.UpdateUser(ctx, u, updateFields)
 	if err != nil {

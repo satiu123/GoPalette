@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
 	jwtv5 "github.com/golang-jwt/jwt/v5"
 )
 
@@ -81,9 +80,9 @@ func (uc *AuthUsecase) Login(ctx context.Context, email, password string) (strin
 }
 
 func (uc *AuthUsecase) Logout(ctx context.Context, userID int64) error {
-	claims, err := FromContext(ctx)
-	if err != nil {
-		return err
+	claims, ok := auth.FromContext(ctx)
+	if !ok {
+		return pb.ErrorUnauthenticated("未认证")
 	}
 	// 删除所有会话
 	return uc.sessionRepo.DeleteRefreshSession(ctx, claims.UserID, claims.SID)
@@ -181,24 +180,11 @@ func (uc *AuthUsecase) RefreshToken(ctx context.Context, refreshToken string) (s
 	return accessToken, newRefreshToken, nil
 }
 
-// FromContext 封装获取 Claims 的逻辑
-func FromContext(ctx context.Context) (*auth.AuthClaims, error) {
-	claims, ok := jwt.FromContext(ctx)
-	if !ok {
-		return nil, pb.ErrorUnauthenticated("未认证的请求")
-	}
-	res, ok := claims.(*auth.AuthClaims)
-	if !ok {
-		return nil, pb.ErrorUnauthenticated("非法的 Token 格式")
-	}
-	return res, nil
-}
-
 // CheckOwner 检查用户是否是资源的所有者
 func CheckOwner(ctx context.Context, targetID int64) error {
-	claims, err := FromContext(ctx)
-	if err != nil {
-		return err
+	claims, ok := auth.FromContext(ctx)
+	if !ok {
+		return pb.ErrorUnauthenticated("未认证")
 	}
 	if claims.UserID != targetID && claims.Role != int32(pb.Role_ROLE_ADMIN) {
 		return pb.ErrorAccessDenied("无权限访问")
@@ -208,9 +194,9 @@ func CheckOwner(ctx context.Context, targetID int64) error {
 
 // CheckAdmin 检查用户是否具有管理员权限
 func CheckAdmin(ctx context.Context) error {
-	claims, err := FromContext(ctx)
-	if err != nil {
-		return err
+	claims, ok := auth.FromContext(ctx)
+	if !ok {
+		return pb.ErrorUnauthenticated("未认证")
 	}
 	if claims.Role != int32(pb.Role_ROLE_ADMIN) {
 		return pb.ErrorAccessDenied("无权限访问")

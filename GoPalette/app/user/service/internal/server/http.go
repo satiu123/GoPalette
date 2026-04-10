@@ -1,7 +1,6 @@
 package server
 
 import (
-	hw "GoPalette/api/helloworld/v1"
 	u "GoPalette/api/user/v1"
 	"GoPalette/app/user/service/internal/conf"
 	"GoPalette/app/user/service/internal/service"
@@ -32,7 +31,7 @@ func NewWhiteListMatcher() selector.MatchFunc {
 }
 
 // NewHTTPServer new an HTTP server.
-func NewHTTPServer(c *conf.Server, ca *conf.Auth, greeter *service.GreeterService, user *service.UserService, logger log.Logger) *http.Server {
+func NewHTTPServer(c *conf.Server, ca *conf.Auth, user *service.UserService, logger log.Logger) *http.Server {
 
 	var opts = []http.ServerOption{
 		http.Middleware(
@@ -58,7 +57,7 @@ func NewHTTPServer(c *conf.Server, ca *conf.Auth, greeter *service.GreeterServic
 		opts = append(opts, http.Timeout(c.Http.Timeout.AsDuration()))
 	}
 	srv := http.NewServer(opts...)
-	hw.RegisterGreeterHTTPServer(srv, greeter)
+
 	u.RegisterUserHTTPServer(srv, user)
 	return srv
 }

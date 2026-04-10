@@ -1,7 +1,6 @@
 package server
 
 import (
-	hw "GoPalette/api/helloworld/v1"
 	u "GoPalette/api/user/v1"
 	"GoPalette/app/user/service/internal/conf"
 	"GoPalette/app/user/service/internal/service"
@@ -18,7 +17,7 @@ import (
 )
 
 // NewGRPCServer new a gRPC server.
-func NewGRPCServer(c *conf.Server, ca *conf.Auth, greeter *service.GreeterService, user *service.UserService, logger log.Logger) *grpc.Server {
+func NewGRPCServer(c *conf.Server, ca *conf.Auth, user *service.UserService, logger log.Logger) *grpc.Server {
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			tracing.Server(),
@@ -43,7 +42,6 @@ func NewGRPCServer(c *conf.Server, ca *conf.Auth, greeter *service.GreeterServic
 		opts = append(opts, grpc.Timeout(c.Grpc.Timeout.AsDuration()))
 	}
 	srv := grpc.NewServer(opts...)
-	hw.RegisterGreeterServer(srv, greeter)
 	u.RegisterUserServer(srv, user)
 	return srv
 }
