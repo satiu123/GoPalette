@@ -24,23 +24,23 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// 用户角色，管理员和普通用户
+// 用户角色，普通用户和管理员
 type Role int32
 
 const (
-	Role_ROLE_ADMIN Role = 0
-	Role_ROLE_USER  Role = 1
+	Role_ROLE_USER  Role = 0
+	Role_ROLE_ADMIN Role = 1
 )
 
 // Enum value maps for Role.
 var (
 	Role_name = map[int32]string{
-		0: "ROLE_ADMIN",
-		1: "ROLE_USER",
+		0: "ROLE_USER",
+		1: "ROLE_ADMIN",
 	}
 	Role_value = map[string]int32{
-		"ROLE_ADMIN": 0,
-		"ROLE_USER":  1,
+		"ROLE_USER":  0,
+		"ROLE_ADMIN": 1,
 	}
 )
 
@@ -188,7 +188,7 @@ func (x *UserInfo) GetRole() Role {
 	if x != nil {
 		return x.Role
 	}
-	return Role_ROLE_ADMIN
+	return Role_ROLE_USER
 }
 
 func (x *UserInfo) GetAvatarURL() string {
@@ -580,7 +580,7 @@ func (x *CreateUserRequest) GetRole() Role {
 	if x != nil {
 		return x.Role
 	}
-	return Role_ROLE_ADMIN
+	return Role_ROLE_USER
 }
 
 type CreateUserReply struct {
@@ -1173,10 +1173,10 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\x11RefreshTokenReply\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12#\n" +
 	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken*%\n" +
-	"\x04Role\x12\x0e\n" +
+	"\x04Role\x12\r\n" +
+	"\tROLE_USER\x10\x00\x12\x0e\n" +
 	"\n" +
-	"ROLE_ADMIN\x10\x00\x12\r\n" +
-	"\tROLE_USER\x10\x01*>\n" +
+	"ROLE_ADMIN\x10\x01*>\n" +
 	"\n" +
 	"UserStatus\x12\x16\n" +
 	"\x12USER_STATUS_ACTIVE\x10\x00\x12\x18\n" +

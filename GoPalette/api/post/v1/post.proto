@@ -1,0 +1,150 @@
+syntax = "proto3";
+
+package api.post.v1;
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/field_mask.proto";
+
+option go_package = "GoPalette/api/post/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.post.v1";
+
+enum PostStatus {
+  DRAFT     = 0; // 草稿
+  PUBLISHED = 1; // 已发布
+  ARCHIVED  = 2; // 已归档
+}
+
+// Post服务定义了标准的CRUD接口，用于创建、更新、删除、获取和列出帖子
+service Post {
+  // CreatePost 创建帖子，输入帖子标题、摘要、正文内容、状态、作者ID、分类ID和标签列表，返回创建的帖子详细信息
+  rpc CreatePost (CreatePostRequest) returns (CreatePostReply){
+    option (google.api.http) = {
+      post: "/v1/posts"
+      body: "*"
+    };
+  };
+  // UpdatePost 更新帖子，输入帖子ID和要更新的字段列表，返回更新后的帖子详细信息
+  rpc UpdatePost (UpdatePostRequest) returns (UpdatePostReply){
+    option (google.api.http) = {
+      patch: "/v1/posts/{id}"
+      body : "*"
+    };
+  };
+  // DeletePost 删除帖子，输入帖子ID，返回删除是否成功
+  rpc DeletePost (DeletePostRequest) returns (DeletePostReply){
+    option (google.api.http) = {
+      delete: "/v1/posts/{id}"
+    };
+  };
+  // GetPost 获取帖子，输入帖子ID或slug，返回帖子详细信息
+  rpc GetPost (GetPostRequest) returns (GetPostReply){
+    option (google.api.http) = {
+      get: "/v1/posts/{id}"
+    };
+  };
+  // ListPost 列出帖子，输入分页参数，返回帖子列表
+  rpc ListPost (ListPostRequest) returns (ListPostReply){
+    option (google.api.http) = {
+      get: "/v1/posts"
+    };
+  };
+}
+
+message AuthorInfo {
+  int64  id         = 1; // 作者ID
+  string name       = 2; // 作者姓名
+  string avatar_url = 3; // 作者头像URL
+}
+
+message CategoryInfo {
+  int64  id   = 1; // 分类ID
+  string name = 2; // 分类名称
+}
+
+// PostInfo 包含了帖子的基本信息
+message PostInfo {
+  int64      id      = 1; // 帖子ID
+  string     title   = 2; // 帖子标题
+  string     summary = 3; // 帖子摘要
+  string     slug    = 4; // 帖子URL友好标识
+  PostStatus status  = 5; // 帖子状态
+
+  int64 view_count    = 6; // 浏览量
+  int64 like_count    = 7; // 点赞量
+  int64 comment_count = 8; // 评论量
+
+  AuthorInfo      author   = 9; // 作者信息
+  CategoryInfo    category = 10; // 分类信息
+  repeated string tags     = 11; // 标签列表
+
+  google.protobuf.Timestamp created_at = 12; // 创建时间
+  google.protobuf.Timestamp updated_at = 13; // 更新时间
+
+}
+
+// PostDetail 包含了帖子的详细信息，在PostInfo的基础上增加了正文内容字段content
+message PostDetail {
+  PostInfo info             = 1; // 帖子基本信息
+  string   content          = 2; // 帖子正文
+  string   original_content = 3; // 帖子原始内容（Markdown格式）
+}
+
+message CreatePostRequest {
+  string          title       = 1; // 帖子标题
+  string          summary     = 2; // 帖子摘要
+  string          content     = 3; // 帖子正文
+  PostStatus      status      = 4; // 帖子状态
+  int64           category_id = 5; // 分类ID
+  repeated string tags        = 6; // 标签列表
+}
+
+message CreatePostReply {
+  PostDetail post = 1; // 创建成功后返回的帖子详细信息
+}
+
+message UpdatePostRequest {
+  int64           id          = 1; // 帖子ID
+  string          title       = 2; // 帖子标题
+  string          summary     = 3; // 帖子摘要
+  string          content     = 4; // 帖子正文
+  PostStatus      status      = 5; // 帖子状态
+  int64           category_id = 6; // 分类ID
+  repeated string tags        = 7; // 标签列表
+
+  google.protobuf.FieldMask update_mask = 8; // 指定要更新的字段列表，例如 "title,summary,content" 表示只更新标题、摘要和正文内容，其他字段保持不变
+
+}
+
+message UpdatePostReply {
+  PostDetail post = 1; // 更新成功后返回的帖子详细信息
+}
+
+message DeletePostRequest {
+  int64 id = 1; // 帖子ID
+}
+
+message DeletePostReply {
+  bool success = 1; // 删除是否成功
+}
+
+message GetPostRequest {
+  oneof query {
+    int64  id   = 1; // 通过帖子ID查询
+    string slug = 2; // 通过帖子slug查询
+  }
+}
+
+message GetPostReply {
+  PostDetail post = 1;
+}
+
+message ListPostRequest {
+  int64 page      = 1;
+  int64 page_size = 2;
+}
+
+message ListPostReply {
+  repeated PostInfo posts = 1; // 帖子列表
+  int64             total = 2; // 总帖子数
+}

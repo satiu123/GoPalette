@@ -14,7 +14,7 @@ type User struct {
 	Username  string `gorm:"type:varchar(50);uniqueIndex;not null"`
 	Email     string `gorm:"type:varchar(100);uniqueIndex;not null"`
 	Password  string `gorm:"type:varchar(255);not null"`
-	Role      int32  `gorm:"type:int;default:1"` // 0: admin, 1: user
+	Role      int32  `gorm:"type:int;default:0"` // 0: user, 1: admin
 	AvatarURL string `gorm:"type:varchar(255)"`
 	Status    int32  `gorm:"type:int;default:0"` // 0: active, 1: inactive
 }

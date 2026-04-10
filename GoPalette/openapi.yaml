@@ -25,6 +25,111 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/helloworld.v1.HelloReply'
+    /v1/posts:
+        get:
+            tags:
+                - Post
+            description: ListPost 列出帖子，输入分页参数，返回帖子列表
+            operationId: Post_ListPost
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.ListPostReply'
+        post:
+            tags:
+                - Post
+            description: CreatePost 创建帖子，输入帖子标题、摘要、正文内容、状态、作者ID、分类ID和标签列表，返回创建的帖子详细信息
+            operationId: Post_CreatePost
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.post.v1.CreatePostRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.CreatePostReply'
+    /v1/posts/{id}:
+        get:
+            tags:
+                - Post
+            description: GetPost 获取帖子，输入帖子ID或slug，返回帖子详细信息
+            operationId: Post_GetPost
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: slug
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.GetPostReply'
+        delete:
+            tags:
+                - Post
+            description: DeletePost 删除帖子，输入帖子ID，返回删除是否成功
+            operationId: Post_DeletePost
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.DeletePostReply'
+        patch:
+            tags:
+                - Post
+            description: UpdatePost 更新帖子，输入帖子ID和要更新的字段列表，返回更新后的帖子详细信息
+            operationId: Post_UpdatePost
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.post.v1.UpdatePostRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.UpdatePostReply'
     /v1/users:
         get:
             tags:
@@ -209,6 +314,137 @@ paths:
                                 $ref: '#/components/schemas/api.user.v1.UpdateUserReply'
 components:
     schemas:
+        api.post.v1.AuthorInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                avatarUrl:
+                    type: string
+        api.post.v1.CategoryInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+        api.post.v1.CreatePostReply:
+            type: object
+            properties:
+                post:
+                    $ref: '#/components/schemas/api.post.v1.PostDetail'
+        api.post.v1.CreatePostRequest:
+            type: object
+            properties:
+                title:
+                    type: string
+                summary:
+                    type: string
+                content:
+                    type: string
+                status:
+                    type: integer
+                    format: enum
+                categoryId:
+                    type: string
+                tags:
+                    type: array
+                    items:
+                        type: string
+        api.post.v1.DeletePostReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        api.post.v1.GetPostReply:
+            type: object
+            properties:
+                post:
+                    $ref: '#/components/schemas/api.post.v1.PostDetail'
+        api.post.v1.ListPostReply:
+            type: object
+            properties:
+                posts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.post.v1.PostInfo'
+                total:
+                    type: string
+        api.post.v1.PostDetail:
+            type: object
+            properties:
+                info:
+                    $ref: '#/components/schemas/api.post.v1.PostInfo'
+                content:
+                    type: string
+                originalContent:
+                    type: string
+            description: PostDetail 包含了帖子的详细信息，在PostInfo的基础上增加了正文内容字段content
+        api.post.v1.PostInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                title:
+                    type: string
+                summary:
+                    type: string
+                slug:
+                    type: string
+                status:
+                    type: integer
+                    format: enum
+                viewCount:
+                    type: string
+                likeCount:
+                    type: string
+                commentCount:
+                    type: string
+                author:
+                    $ref: '#/components/schemas/api.post.v1.AuthorInfo'
+                category:
+                    $ref: '#/components/schemas/api.post.v1.CategoryInfo'
+                tags:
+                    type: array
+                    items:
+                        type: string
+                createdAt:
+                    type: string
+                    format: date-time
+                updatedAt:
+                    type: string
+                    format: date-time
+            description: PostInfo 包含了帖子的基本信息
+        api.post.v1.UpdatePostReply:
+            type: object
+            properties:
+                post:
+                    $ref: '#/components/schemas/api.post.v1.PostDetail'
+        api.post.v1.UpdatePostRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                title:
+                    type: string
+                summary:
+                    type: string
+                content:
+                    type: string
+                status:
+                    type: integer
+                    format: enum
+                categoryId:
+                    type: string
+                tags:
+                    type: array
+                    items:
+                        type: string
+                updateMask:
+                    type: string
+                    format: field-mask
         api.user.v1.CreateUserReply:
             type: object
             properties:
@@ -333,5 +569,7 @@ components:
 tags:
     - name: Greeter
       description: The greeting service definition.
+    - name: Post
+      description: Post服务定义了标准的CRUD接口，用于创建、更新、删除、获取和列出帖子
     - name: User
       description: 用户服务，提供了创建、更新、删除、获取和列出用户的接口
