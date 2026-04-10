@@ -24,6 +24,7 @@ const OperationUserDeleteUser = "/api.user.v1.User/DeleteUser"
 const OperationUserGetUser = "/api.user.v1.User/GetUser"
 const OperationUserListUser = "/api.user.v1.User/ListUser"
 const OperationUserLogin = "/api.user.v1.User/Login"
+const OperationUserRefreshToken = "/api.user.v1.User/RefreshToken"
 const OperationUserRegister = "/api.user.v1.User/Register"
 const OperationUserUpdateUser = "/api.user.v1.User/UpdateUser"
 
@@ -38,6 +39,8 @@ type UserHTTPServer interface {
 	ListUser(context.Context, *ListUserRequest) (*ListUserReply, error)
 	// Login 登录用户，输入邮箱和密码，返回用户信息和访问令牌
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
+	// RefreshToken 刷新令牌，输入刷新令牌，返回新的访问令牌和刷新令牌
+	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenReply, error)
 	// Register 注册用户，输入用户名、邮箱和密码，返回创建的用户信息
 	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
 	// UpdateUser 更新用户，输入用户ID、要更新的用户信息和更新字段掩码，返回更新后的用户信息
@@ -53,6 +56,7 @@ func RegisterUserHTTPServer(s *http.Server, srv UserHTTPServer) {
 	r.DELETE("/v1/users/{id}", _User_DeleteUser0_HTTP_Handler(srv))
 	r.GET("/v1/users/{id}", _User_GetUser0_HTTP_Handler(srv))
 	r.GET("/v1/users", _User_ListUser0_HTTP_Handler(srv))
+	r.POST("/v1/users/refresh", _User_RefreshToken0_HTTP_Handler(srv))
 }
 
 func _User_Register0_HTTP_Handler(srv UserHTTPServer) func(ctx http.Context) error {
@@ -209,6 +213,28 @@ func _User_ListUser0_HTTP_Handler(srv UserHTTPServer) func(ctx http.Context) err
 	}
 }
 
+func _User_RefreshToken0_HTTP_Handler(srv UserHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in RefreshTokenRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationUserRefreshToken)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.RefreshToken(ctx, req.(*RefreshTokenRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*RefreshTokenReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type UserHTTPClient interface {
 	// CreateUser 创建用户，输入用户名、邮箱、密码和角色，返回创建的用户信息
 	CreateUser(ctx context.Context, req *CreateUserRequest, opts ...http.CallOption) (rsp *CreateUserReply, err error)
@@ -220,6 +246,8 @@ type UserHTTPClient interface {
 	ListUser(ctx context.Context, req *ListUserRequest, opts ...http.CallOption) (rsp *ListUserReply, err error)
 	// Login 登录用户，输入邮箱和密码，返回用户信息和访问令牌
 	Login(ctx context.Context, req *LoginRequest, opts ...http.CallOption) (rsp *LoginReply, err error)
+	// RefreshToken 刷新令牌，输入刷新令牌，返回新的访问令牌和刷新令牌
+	RefreshToken(ctx context.Context, req *RefreshTokenRequest, opts ...http.CallOption) (rsp *RefreshTokenReply, err error)
 	// Register 注册用户，输入用户名、邮箱和密码，返回创建的用户信息
 	Register(ctx context.Context, req *RegisterRequest, opts ...http.CallOption) (rsp *RegisterReply, err error)
 	// UpdateUser 更新用户，输入用户ID、要更新的用户信息和更新字段掩码，返回更新后的用户信息
@@ -296,6 +324,20 @@ func (c *UserHTTPClientImpl) Login(ctx context.Context, in *LoginRequest, opts .
 	pattern := "/v1/users/login"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationUserLogin))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// RefreshToken 刷新令牌，输入刷新令牌，返回新的访问令牌和刷新令牌
+func (c *UserHTTPClientImpl) RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...http.CallOption) (*RefreshTokenReply, error) {
+	var out RefreshTokenReply
+	pattern := "/v1/users/refresh"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationUserRefreshToken))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {

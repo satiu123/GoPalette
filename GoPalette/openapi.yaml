@@ -84,6 +84,25 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.user.v1.LoginReply'
+    /v1/users/refresh:
+        post:
+            tags:
+                - User
+            description: 刷新令牌，输入刷新令牌，返回新的访问令牌和刷新令牌
+            operationId: User_RefreshToken
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.user.v1.RefreshTokenRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.user.v1.RefreshTokenReply'
     /v1/users/register:
         post:
             tags:
@@ -220,6 +239,18 @@ components:
                 email:
                     type: string
                 password:
+                    type: string
+        api.user.v1.RefreshTokenReply:
+            type: object
+            properties:
+                accessToken:
+                    type: string
+                refreshToken:
+                    type: string
+        api.user.v1.RefreshTokenRequest:
+            type: object
+            properties:
+                refreshToken:
                     type: string
         api.user.v1.RegisterReply:
             type: object

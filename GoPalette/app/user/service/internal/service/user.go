@@ -178,3 +178,15 @@ func (s *UserService) ListUser(ctx context.Context, req *pb.ListUserRequest) (*p
 		Total: total,
 	}, nil
 }
+
+func (s *UserService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenReply, error) {
+	accessToken, refreshToken, err := s.ac.RefreshToken(ctx, req.RefreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.RefreshTokenReply{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
+}

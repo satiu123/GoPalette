@@ -70,6 +70,13 @@ service User {
       get: "/v1/users"
     };
   };
+  // 刷新令牌，输入刷新令牌，返回新的访问令牌和刷新令牌
+  rpc RefreshToken (RefreshTokenRequest) returns (RefreshTokenReply){
+    option (google.api.http) = {
+      post: "/v1/users/refresh"
+      body: "*"
+    };
+  };
 }
 
 // 包含了用户的基本信息，如用户名、邮箱、角色、状态等
@@ -150,4 +157,13 @@ message ListUserRequest {
 message ListUserReply {
   repeated UserInfo users = 1;
   int64             total = 2;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message RefreshTokenReply {
+  string access_token  = 1;
+  string refresh_token = 2;
 }
