@@ -38,6 +38,14 @@ service User {
     };
   };
 
+  // 注销用户，输入用户ID，返回注销是否成功
+  rpc Logout (LogoutRequest) returns (LogoutReply){
+    option (google.api.http) = {
+      post: "/v1/users/logout"
+      body: "*"
+    };
+  };
+
   // 创建用户，输入用户名、邮箱、密码和角色，返回创建的用户信息
   rpc CreateUser (CreateUserRequest) returns (CreateUserReply){
     option (google.api.http) = {
@@ -109,6 +117,14 @@ message LoginRequest {
 message LoginReply {
   string   access_token  = 1;
   string   refresh_token = 2;
+}
+
+message LogoutRequest {
+  int64 user_id = 1;
+} 
+
+message LogoutReply {
+  bool success = 1;
 }
 
 

@@ -94,6 +94,13 @@ func (s *UserService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 	}, nil
 }
 
+func (s *UserService) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutReply, error) {
+	if err := s.ac.Logout(ctx, req.UserId); err != nil {
+		return nil, err
+	}
+	return &pb.LogoutReply{Success: true}, nil
+}
+
 func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserReply, error) {
 	u := &biz.User{
 		ID:       req.Id,

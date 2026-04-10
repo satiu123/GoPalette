@@ -84,6 +84,25 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.user.v1.LoginReply'
+    /v1/users/logout:
+        post:
+            tags:
+                - User
+            description: 注销用户，输入用户ID，返回注销是否成功
+            operationId: User_Logout
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.user.v1.LogoutRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.user.v1.LogoutReply'
     /v1/users/refresh:
         post:
             tags:
@@ -239,6 +258,16 @@ components:
                 email:
                     type: string
                 password:
+                    type: string
+        api.user.v1.LogoutReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        api.user.v1.LogoutRequest:
+            type: object
+            properties:
+                userId:
                     type: string
         api.user.v1.RefreshTokenReply:
             type: object

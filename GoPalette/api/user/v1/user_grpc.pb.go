@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	User_Register_FullMethodName     = "/api.user.v1.User/Register"
 	User_Login_FullMethodName        = "/api.user.v1.User/Login"
+	User_Logout_FullMethodName       = "/api.user.v1.User/Logout"
 	User_CreateUser_FullMethodName   = "/api.user.v1.User/CreateUser"
 	User_UpdateUser_FullMethodName   = "/api.user.v1.User/UpdateUser"
 	User_DeleteUser_FullMethodName   = "/api.user.v1.User/DeleteUser"
@@ -39,6 +40,8 @@ type UserClient interface {
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterReply, error)
 	// 登录用户，输入邮箱和密码，返回用户信息和访问令牌
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginReply, error)
+	// 注销用户，输入用户ID，返回注销是否成功
+	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutReply, error)
 	// 创建用户，输入用户名、邮箱、密码和角色，返回创建的用户信息
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserReply, error)
 	// 更新用户，输入用户ID、要更新的用户信息和更新字段掩码，返回更新后的用户信息
@@ -75,6 +78,16 @@ func (c *userClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.C
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(LoginReply)
 	err := c.cc.Invoke(ctx, User_Login_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userClient) Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LogoutReply)
+	err := c.cc.Invoke(ctx, User_Logout_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -151,6 +164,8 @@ type UserServer interface {
 	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
 	// 登录用户，输入邮箱和密码，返回用户信息和访问令牌
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
+	// 注销用户，输入用户ID，返回注销是否成功
+	Logout(context.Context, *LogoutRequest) (*LogoutReply, error)
 	// 创建用户，输入用户名、邮箱、密码和角色，返回创建的用户信息
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserReply, error)
 	// 更新用户，输入用户ID、要更新的用户信息和更新字段掩码，返回更新后的用户信息
@@ -178,6 +193,9 @@ func (UnimplementedUserServer) Register(context.Context, *RegisterRequest) (*Reg
 }
 func (UnimplementedUserServer) Login(context.Context, *LoginRequest) (*LoginReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method Login not implemented")
+}
+func (UnimplementedUserServer) Logout(context.Context, *LogoutRequest) (*LogoutReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method Logout not implemented")
 }
 func (UnimplementedUserServer) CreateUser(context.Context, *CreateUserRequest) (*CreateUserReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateUser not implemented")
@@ -250,6 +268,24 @@ func _User_Login_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServer).Login(ctx, req.(*LoginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _User_Logout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LogoutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServer).Logout(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: User_Logout_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServer).Logout(ctx, req.(*LogoutRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -376,6 +412,10 @@ var User_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Login",
 			Handler:    _User_Login_Handler,
+		},
+		{
+			MethodName: "Logout",
+			Handler:    _User_Logout_Handler,
 		},
 		{
 			MethodName: "CreateUser",

@@ -24,6 +24,7 @@ const OperationUserDeleteUser = "/api.user.v1.User/DeleteUser"
 const OperationUserGetUser = "/api.user.v1.User/GetUser"
 const OperationUserListUser = "/api.user.v1.User/ListUser"
 const OperationUserLogin = "/api.user.v1.User/Login"
+const OperationUserLogout = "/api.user.v1.User/Logout"
 const OperationUserRefreshToken = "/api.user.v1.User/RefreshToken"
 const OperationUserRegister = "/api.user.v1.User/Register"
 const OperationUserUpdateUser = "/api.user.v1.User/UpdateUser"
@@ -39,6 +40,8 @@ type UserHTTPServer interface {
 	ListUser(context.Context, *ListUserRequest) (*ListUserReply, error)
 	// Login 登录用户，输入邮箱和密码，返回用户信息和访问令牌
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
+	// Logout 注销用户，输入用户ID，返回注销是否成功
+	Logout(context.Context, *LogoutRequest) (*LogoutReply, error)
 	// RefreshToken 刷新令牌，输入刷新令牌，返回新的访问令牌和刷新令牌
 	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenReply, error)
 	// Register 注册用户，输入用户名、邮箱和密码，返回创建的用户信息
@@ -51,6 +54,7 @@ func RegisterUserHTTPServer(s *http.Server, srv UserHTTPServer) {
 	r := s.Route("/")
 	r.POST("/v1/users/register", _User_Register0_HTTP_Handler(srv))
 	r.POST("/v1/users/login", _User_Login0_HTTP_Handler(srv))
+	r.POST("/v1/users/logout", _User_Logout0_HTTP_Handler(srv))
 	r.POST("/v1/users", _User_CreateUser0_HTTP_Handler(srv))
 	r.PATCH("/v1/users/{id}", _User_UpdateUser0_HTTP_Handler(srv))
 	r.DELETE("/v1/users/{id}", _User_DeleteUser0_HTTP_Handler(srv))
@@ -99,6 +103,28 @@ func _User_Login0_HTTP_Handler(srv UserHTTPServer) func(ctx http.Context) error 
 			return err
 		}
 		reply := out.(*LoginReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _User_Logout0_HTTP_Handler(srv UserHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in LogoutRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationUserLogout)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.Logout(ctx, req.(*LogoutRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*LogoutReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -246,6 +272,8 @@ type UserHTTPClient interface {
 	ListUser(ctx context.Context, req *ListUserRequest, opts ...http.CallOption) (rsp *ListUserReply, err error)
 	// Login 登录用户，输入邮箱和密码，返回用户信息和访问令牌
 	Login(ctx context.Context, req *LoginRequest, opts ...http.CallOption) (rsp *LoginReply, err error)
+	// Logout 注销用户，输入用户ID，返回注销是否成功
+	Logout(ctx context.Context, req *LogoutRequest, opts ...http.CallOption) (rsp *LogoutReply, err error)
 	// RefreshToken 刷新令牌，输入刷新令牌，返回新的访问令牌和刷新令牌
 	RefreshToken(ctx context.Context, req *RefreshTokenRequest, opts ...http.CallOption) (rsp *RefreshTokenReply, err error)
 	// Register 注册用户，输入用户名、邮箱和密码，返回创建的用户信息
@@ -324,6 +352,20 @@ func (c *UserHTTPClientImpl) Login(ctx context.Context, in *LoginRequest, opts .
 	pattern := "/v1/users/login"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationUserLogin))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Logout 注销用户，输入用户ID，返回注销是否成功
+func (c *UserHTTPClientImpl) Logout(ctx context.Context, in *LogoutRequest, opts ...http.CallOption) (*LogoutReply, error) {
+	var out LogoutReply
+	pattern := "/v1/users/logout"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationUserLogout))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
