@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 
 	pb "GoPalette/api/user/v1"
 	"GoPalette/app/user/service/internal/biz"
@@ -102,6 +103,9 @@ func (s *UserService) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.Lo
 }
 
 func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserReply, error) {
+	if req == nil || req.User == nil || req.UpdateMask == nil || len(req.UpdateMask.Paths) == 0 {
+		return nil, pb.ErrorInvalidArgument("用户信息和 update_mask 不能为空")
+	}
 	u := &biz.User{
 		ID:       req.Id,
 		Username: req.User.Username,
@@ -109,7 +113,13 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 		Role:     int32(req.User.Role),
 		Status:   int32(req.User.Status),
 	}
-	updatedUser, err := s.uc.UpdateUser(ctx, u)
+	// 清洗update_mask
+	var updateFields []string
+	for _, path := range req.UpdateMask.Paths {
+		updateFields = append(updateFields, strings.TrimPrefix(path, "user."))
+	}
+
+	updatedUser, err := s.uc.UpdateUser(ctx, u, updateFields)
 	if err != nil {
 		return nil, err
 	}

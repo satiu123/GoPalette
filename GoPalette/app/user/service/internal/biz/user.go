@@ -26,7 +26,7 @@ type User struct {
 
 type UserRepo interface {
 	Create(context.Context, *User) (*User, error)
-	Update(context.Context, *User) (*User, error)
+	Update(context.Context, *User, []string) (*User, error)
 	Delete(context.Context, int64) error
 	Get(context.Context, int64) (*User, error)
 	List(ctx context.Context, page, pageSize int64) ([]*User, int64, error)
@@ -78,11 +78,11 @@ func (uc *UserUsecase) Register(ctx context.Context, u *User) (*User, error) {
 }
 
 // UpdateUser 仅更新基本信息，不允许修改密码和角色等敏感字段
-func (uc *UserUsecase) UpdateUser(ctx context.Context, u *User) (*User, error) {
+func (uc *UserUsecase) UpdateUser(ctx context.Context, u *User, fields []string) (*User, error) {
 	if err := CheckOwner(ctx, u.ID); err != nil {
 		return nil, err
 	}
-	return uc.repo.Update(ctx, u)
+	return uc.repo.Update(ctx, u, fields)
 }
 
 // DeleteUser 只能删除自己的账号，管理员可以删除其他用户

@@ -51,19 +51,24 @@ func (r *userRepo) Create(ctx context.Context, u *biz.User) (*biz.User, error) {
 	return u, nil
 }
 
-func (r *userRepo) Update(ctx context.Context, u *biz.User) (*biz.User, error) {
+func (r *userRepo) Update(ctx context.Context, u *biz.User, fields []string) (*biz.User, error) {
+	db := r.data.db.WithContext(ctx).Model(&User{})
 	po := &User{
-		Model: gorm.Model{
-			ID: uint(u.ID),
-		},
-		Username: u.Username,
-		Status:   u.Status,
+		Model:     gorm.Model{ID: uint(u.ID)},
+		Username:  u.Username,
+		Email:     u.Email,
+		AvatarURL: u.AvatarURL,
+		Status:    u.Status,
+	}
+	// 只更新指定字段
+	if len(fields) > 0 {
+		db = db.Select(fields)
 	}
 
-	if err := r.data.db.WithContext(ctx).Model(&User{}).Where("id = ?", u.ID).Updates(po).Error; err != nil {
+	if err := db.Where("id = ?", u.ID).Updates(po).Error; err != nil {
 		return nil, err
 	}
-	return u, nil
+	return r.Get(ctx, u.ID)
 }
 
 func (r *userRepo) Delete(ctx context.Context, id int64) error {
