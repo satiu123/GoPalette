@@ -45,10 +45,7 @@ func (r *userRepo) Create(ctx context.Context, u *biz.User) (*biz.User, error) {
 	if err := r.data.db.WithContext(ctx).Create(po).Error; err != nil {
 		return nil, err
 	}
-	u.ID = int64(po.ID)
-	u.CreatedAt = po.CreatedAt
-	u.UpdatedAt = po.UpdatedAt
-	return u, nil
+	return r.Get(ctx, int64(po.ID))
 }
 
 func (r *userRepo) Update(ctx context.Context, u *biz.User, fields []string) (*biz.User, error) {
@@ -80,17 +77,7 @@ func (r *userRepo) Get(ctx context.Context, id int64) (*biz.User, error) {
 	if err := r.data.db.WithContext(ctx).First(&po, id).Error; err != nil {
 		return nil, err
 	}
-	return &biz.User{
-		ID:        int64(po.ID),
-		Username:  po.Username,
-		Email:     po.Email,
-		Password:  po.Password,
-		Role:      po.Role,
-		AvatarURL: po.AvatarURL,
-		Status:    po.Status,
-		CreatedAt: po.CreatedAt,
-		UpdatedAt: po.UpdatedAt,
-	}, nil
+	return r.toBizUser(&po), nil
 }
 
 func (r *userRepo) List(ctx context.Context, page, pageSize int64) ([]*biz.User, int64, error) {
@@ -119,17 +106,7 @@ func (r *userRepo) List(ctx context.Context, page, pageSize int64) ([]*biz.User,
 	// 将数据转换为 biz.User 切片
 	users := make([]*biz.User, len(pos))
 	for i, po := range pos {
-		users[i] = &biz.User{
-			ID:        int64(po.ID),
-			Username:  po.Username,
-			Email:     po.Email,
-			Password:  po.Password,
-			Role:      po.Role,
-			AvatarURL: po.AvatarURL,
-			Status:    po.Status,
-			CreatedAt: po.CreatedAt,
-			UpdatedAt: po.UpdatedAt,
-		}
+		users[i] = r.toBizUser(&po)
 	}
 	return users, total, nil
 }
@@ -139,6 +116,10 @@ func (r *userRepo) FindByEmail(ctx context.Context, email string) (*biz.User, er
 	if err := r.data.db.WithContext(ctx).Where("email = ?", email).First(&po).Error; err != nil {
 		return nil, err
 	}
+	return r.toBizUser(&po), nil
+}
+
+func (r *userRepo) toBizUser(po *User) *biz.User {
 	return &biz.User{
 		ID:        int64(po.ID),
 		Username:  po.Username,
@@ -149,5 +130,5 @@ func (r *userRepo) FindByEmail(ctx context.Context, email string) (*biz.User, er
 		Status:    po.Status,
 		CreatedAt: po.CreatedAt,
 		UpdatedAt: po.UpdatedAt,
-	}, nil
+	}
 }

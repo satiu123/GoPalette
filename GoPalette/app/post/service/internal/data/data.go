@@ -30,7 +30,7 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 	}
 
 	// 自动迁移数据库结构
-	if err := db.AutoMigrate(&Post{}); err != nil {
+	if err := db.AutoMigrate(&Post{}, &Category{}, &Tag{}); err != nil {
 		log.Errorf("自动迁移数据库结构失败: %v", err)
 		return nil, nil, err
 	}
