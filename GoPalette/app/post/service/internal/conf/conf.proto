@@ -1,5 +1,5 @@
 syntax = "proto3";
-package kratos.api;
+package kratos.api.post;
 
 option go_package = "GoPalette/app/post/service/internal/conf;conf";
 
@@ -8,6 +8,7 @@ import "google/protobuf/duration.proto";
 message Bootstrap {
   Server server = 1;
   Data data = 2;
+  Auth auth = 3;
 }
 
 message Server {
@@ -41,4 +42,12 @@ message Data {
   }
   Database database = 1;
   Redis    redis    = 2;
+}
+
+message Auth {
+  string                   jwt_access_secret  = 1;
+  string                   jwt_refresh_secret = 2;
+  google.protobuf.Duration jwt_access_expire  = 3;
+  google.protobuf.Duration jwt_refresh_expire = 4;
+  string                   issuer             = 5;
 }
