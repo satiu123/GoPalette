@@ -43,7 +43,8 @@ func RegisterPostHTTPServer(s *http.Server, srv PostHTTPServer) {
 	r.POST("/v1/posts", _Post_CreatePost0_HTTP_Handler(srv))
 	r.PATCH("/v1/posts/{id}", _Post_UpdatePost0_HTTP_Handler(srv))
 	r.DELETE("/v1/posts/{id}", _Post_DeletePost0_HTTP_Handler(srv))
-	r.GET("/v1/posts/{id}", _Post_GetPost0_HTTP_Handler(srv))
+	r.GET("/v1/posts/slug/{slug}", _Post_GetPost0_HTTP_Handler(srv))
+	r.GET("/v1/posts/{id}", _Post_GetPost1_HTTP_Handler(srv))
 	r.GET("/v1/posts", _Post_ListPost0_HTTP_Handler(srv))
 }
 
@@ -117,6 +118,28 @@ func _Post_DeletePost0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) e
 }
 
 func _Post_GetPost0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetPostRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPostGetPost)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetPost(ctx, req.(*GetPostRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetPostReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Post_GetPost1_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in GetPostRequest
 		if err := ctx.BindQuery(&in); err != nil {

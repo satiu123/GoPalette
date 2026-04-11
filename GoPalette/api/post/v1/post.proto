@@ -9,6 +9,7 @@ option go_package = "GoPalette/api/post/v1;v1";
 option java_multiple_files = true;
 option java_package = "api.post.v1";
 
+// PostStatus 定义了帖子的状态枚举类型，包括草稿、已发布和已归档三种状态
 enum PostStatus {
   DRAFT     = 0; // 草稿
   PUBLISHED = 1; // 已发布
@@ -41,6 +42,9 @@ service Post {
   rpc GetPost (GetPostRequest) returns (GetPostReply){
     option (google.api.http) = {
       get: "/v1/posts/{id}"
+      additional_bindings {
+        get: "/v1/posts/slug/{slug}"
+      }
     };
   };
   // ListPost 列出帖子，输入分页参数，返回帖子列表
@@ -93,10 +97,11 @@ message PostDetail {
 message CreatePostRequest {
   string          title       = 1; // 帖子标题
   string          summary     = 2; // 帖子摘要
-  string          content     = 3; // 帖子正文
-  PostStatus      status      = 4; // 帖子状态
-  int64           category_id = 5; // 分类ID
-  repeated string tags        = 6; // 标签列表
+  string          slug        = 3; // 帖子URL友好标识
+  string          content     = 4; // 帖子正文
+  PostStatus      status      = 5; // 帖子状态
+  int64           category_id = 6; // 分类ID
+  repeated string tags        = 7; // 标签列表
 }
 
 message CreatePostReply {
@@ -107,12 +112,13 @@ message UpdatePostRequest {
   int64           id          = 1; // 帖子ID
   string          title       = 2; // 帖子标题
   string          summary     = 3; // 帖子摘要
-  string          content     = 4; // 帖子正文
-  PostStatus      status      = 5; // 帖子状态
-  int64           category_id = 6; // 分类ID
-  repeated string tags        = 7; // 标签列表
+  string          slug        = 4; // 帖子URL友好标识
+  string          content     = 5; // 帖子正文
+  PostStatus      status      = 6; // 帖子状态
+  int64           category_id = 7; // 分类ID
+  repeated string tags        = 8; // 标签列表
 
-  google.protobuf.FieldMask update_mask = 8; // 指定要更新的字段列表，例如 "title,summary,content" 表示只更新标题、摘要和正文内容，其他字段保持不变
+  google.protobuf.FieldMask update_mask = 9; // 指定要更新的字段列表，例如 "title,summary,content" 表示只更新标题、摘要和正文内容，其他字段保持不变
 
 }
 

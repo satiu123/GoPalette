@@ -193,8 +193,9 @@ func (r *postRepo) toBizPost(po *Post) *biz.Post {
 		LikeCount:    po.LikeCount,
 		CommentCount: po.CommentCount,
 
-		AuthorID:   po.AuthorID,
-		CategoryID: po.CategoryID,
+		AuthorID:     po.AuthorID,
+		CategoryID:   po.CategoryID,
+		CategoryName: po.Category.Name,
 		Tags: func() []string {
 			var tagNames []string
 			for _, tag := range po.Tags {

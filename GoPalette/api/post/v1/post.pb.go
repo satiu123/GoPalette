@@ -24,6 +24,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// PostStatus 定义了帖子的状态枚举类型，包括草稿、已发布和已归档三种状态
 type PostStatus int32
 
 const (
@@ -391,10 +392,11 @@ type CreatePostRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`                                // 帖子标题
 	Summary       string                 `protobuf:"bytes,2,opt,name=summary,proto3" json:"summary,omitempty"`                            // 帖子摘要
-	Content       string                 `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`                            // 帖子正文
-	Status        PostStatus             `protobuf:"varint,4,opt,name=status,proto3,enum=api.post.v1.PostStatus" json:"status,omitempty"` // 帖子状态
-	CategoryId    int64                  `protobuf:"varint,5,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`   // 分类ID
-	Tags          []string               `protobuf:"bytes,6,rep,name=tags,proto3" json:"tags,omitempty"`                                  // 标签列表
+	Slug          string                 `protobuf:"bytes,3,opt,name=slug,proto3" json:"slug,omitempty"`                                  // 帖子URL友好标识
+	Content       string                 `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`                            // 帖子正文
+	Status        PostStatus             `protobuf:"varint,5,opt,name=status,proto3,enum=api.post.v1.PostStatus" json:"status,omitempty"` // 帖子状态
+	CategoryId    int64                  `protobuf:"varint,6,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`   // 分类ID
+	Tags          []string               `protobuf:"bytes,7,rep,name=tags,proto3" json:"tags,omitempty"`                                  // 标签列表
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -439,6 +441,13 @@ func (x *CreatePostRequest) GetTitle() string {
 func (x *CreatePostRequest) GetSummary() string {
 	if x != nil {
 		return x.Summary
+	}
+	return ""
+}
+
+func (x *CreatePostRequest) GetSlug() string {
+	if x != nil {
+		return x.Slug
 	}
 	return ""
 }
@@ -520,11 +529,12 @@ type UpdatePostRequest struct {
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`                                     // 帖子ID
 	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`                                // 帖子标题
 	Summary       string                 `protobuf:"bytes,3,opt,name=summary,proto3" json:"summary,omitempty"`                            // 帖子摘要
-	Content       string                 `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`                            // 帖子正文
-	Status        PostStatus             `protobuf:"varint,5,opt,name=status,proto3,enum=api.post.v1.PostStatus" json:"status,omitempty"` // 帖子状态
-	CategoryId    int64                  `protobuf:"varint,6,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`   // 分类ID
-	Tags          []string               `protobuf:"bytes,7,rep,name=tags,proto3" json:"tags,omitempty"`                                  // 标签列表
-	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,8,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`    // 指定要更新的字段列表，例如 "title,summary,content" 表示只更新标题、摘要和正文内容，其他字段保持不变
+	Slug          string                 `protobuf:"bytes,4,opt,name=slug,proto3" json:"slug,omitempty"`                                  // 帖子URL友好标识
+	Content       string                 `protobuf:"bytes,5,opt,name=content,proto3" json:"content,omitempty"`                            // 帖子正文
+	Status        PostStatus             `protobuf:"varint,6,opt,name=status,proto3,enum=api.post.v1.PostStatus" json:"status,omitempty"` // 帖子状态
+	CategoryId    int64                  `protobuf:"varint,7,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`   // 分类ID
+	Tags          []string               `protobuf:"bytes,8,rep,name=tags,proto3" json:"tags,omitempty"`                                  // 标签列表
+	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,9,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`    // 指定要更新的字段列表，例如 "title,summary,content" 表示只更新标题、摘要和正文内容，其他字段保持不变
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -576,6 +586,13 @@ func (x *UpdatePostRequest) GetTitle() string {
 func (x *UpdatePostRequest) GetSummary() string {
 	if x != nil {
 		return x.Summary
+	}
+	return ""
+}
+
+func (x *UpdatePostRequest) GetSlug() string {
+	if x != nil {
+		return x.Slug
 	}
 	return ""
 }
@@ -1014,27 +1031,29 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"PostDetail\x12)\n" +
 	"\x04info\x18\x01 \x01(\v2\x15.api.post.v1.PostInfoR\x04info\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\x12)\n" +
-	"\x10original_content\x18\x03 \x01(\tR\x0foriginalContent\"\xc3\x01\n" +
+	"\x10original_content\x18\x03 \x01(\tR\x0foriginalContent\"\xd7\x01\n" +
 	"\x11CreatePostRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x18\n" +
-	"\asummary\x18\x02 \x01(\tR\asummary\x12\x18\n" +
-	"\acontent\x18\x03 \x01(\tR\acontent\x12/\n" +
-	"\x06status\x18\x04 \x01(\x0e2\x17.api.post.v1.PostStatusR\x06status\x12\x1f\n" +
-	"\vcategory_id\x18\x05 \x01(\x03R\n" +
-	"categoryId\x12\x12\n" +
-	"\x04tags\x18\x06 \x03(\tR\x04tags\">\n" +
-	"\x0fCreatePostReply\x12+\n" +
-	"\x04post\x18\x01 \x01(\v2\x17.api.post.v1.PostDetailR\x04post\"\x90\x02\n" +
-	"\x11UpdatePostRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
-	"\asummary\x18\x03 \x01(\tR\asummary\x12\x18\n" +
+	"\asummary\x18\x02 \x01(\tR\asummary\x12\x12\n" +
+	"\x04slug\x18\x03 \x01(\tR\x04slug\x12\x18\n" +
 	"\acontent\x18\x04 \x01(\tR\acontent\x12/\n" +
 	"\x06status\x18\x05 \x01(\x0e2\x17.api.post.v1.PostStatusR\x06status\x12\x1f\n" +
 	"\vcategory_id\x18\x06 \x01(\x03R\n" +
 	"categoryId\x12\x12\n" +
-	"\x04tags\x18\a \x03(\tR\x04tags\x12;\n" +
-	"\vupdate_mask\x18\b \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
+	"\x04tags\x18\a \x03(\tR\x04tags\">\n" +
+	"\x0fCreatePostReply\x12+\n" +
+	"\x04post\x18\x01 \x01(\v2\x17.api.post.v1.PostDetailR\x04post\"\xa4\x02\n" +
+	"\x11UpdatePostRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
+	"\asummary\x18\x03 \x01(\tR\asummary\x12\x12\n" +
+	"\x04slug\x18\x04 \x01(\tR\x04slug\x12\x18\n" +
+	"\acontent\x18\x05 \x01(\tR\acontent\x12/\n" +
+	"\x06status\x18\x06 \x01(\x0e2\x17.api.post.v1.PostStatusR\x06status\x12\x1f\n" +
+	"\vcategory_id\x18\a \x01(\x03R\n" +
+	"categoryId\x12\x12\n" +
+	"\x04tags\x18\b \x03(\tR\x04tags\x12;\n" +
+	"\vupdate_mask\x18\t \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
 	"updateMask\">\n" +
 	"\x0fUpdatePostReply\x12+\n" +
 	"\x04post\x18\x01 \x01(\v2\x17.api.post.v1.PostDetailR\x04post\"#\n" +
@@ -1058,15 +1077,15 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"PostStatus\x12\t\n" +
 	"\x05DRAFT\x10\x00\x12\r\n" +
 	"\tPUBLISHED\x10\x01\x12\f\n" +
-	"\bARCHIVED\x10\x022\xe7\x03\n" +
+	"\bARCHIVED\x10\x022\x80\x04\n" +
 	"\x04Post\x12`\n" +
 	"\n" +
 	"CreatePost\x12\x1e.api.post.v1.CreatePostRequest\x1a\x1c.api.post.v1.CreatePostReply\"\x14\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/posts\x12e\n" +
 	"\n" +
 	"UpdatePost\x12\x1e.api.post.v1.UpdatePostRequest\x1a\x1c.api.post.v1.UpdatePostReply\"\x19\x82\xd3\xe4\x93\x02\x13:\x01*2\x0e/v1/posts/{id}\x12b\n" +
 	"\n" +
-	"DeletePost\x12\x1e.api.post.v1.DeletePostRequest\x1a\x1c.api.post.v1.DeletePostReply\"\x16\x82\xd3\xe4\x93\x02\x10*\x0e/v1/posts/{id}\x12Y\n" +
-	"\aGetPost\x12\x1b.api.post.v1.GetPostRequest\x1a\x19.api.post.v1.GetPostReply\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/v1/posts/{id}\x12W\n" +
+	"DeletePost\x12\x1e.api.post.v1.DeletePostRequest\x1a\x1c.api.post.v1.DeletePostReply\"\x16\x82\xd3\xe4\x93\x02\x10*\x0e/v1/posts/{id}\x12r\n" +
+	"\aGetPost\x12\x1b.api.post.v1.GetPostRequest\x1a\x19.api.post.v1.GetPostReply\"/\x82\xd3\xe4\x93\x02)Z\x17\x12\x15/v1/posts/slug/{slug}\x12\x0e/v1/posts/{id}\x12W\n" +
 	"\bListPost\x12\x1c.api.post.v1.ListPostRequest\x1a\x1a.api.post.v1.ListPostReply\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/v1/postsB)\n" +
 	"\vapi.post.v1P\x01Z\x18GoPalette/api/post/v1;v1b\x06proto3"
 

@@ -22,9 +22,10 @@ type Post struct {
 	LikeCount    int64
 	CommentCount int64
 
-	AuthorID   int64
-	CategoryID int64
-	Tags       []string
+	AuthorID     int64
+	CategoryID   int64
+	CategoryName string
+	Tags         []string
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
