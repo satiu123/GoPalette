@@ -4,7 +4,11 @@ import (
 	"GoPalette/app/post/service/internal/conf"
 
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-redis/redis/extra/redisotel"
+	"github.com/go-redis/redis/v8"
 	"github.com/google/wire"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 // ProviderSet is data providers.
@@ -12,13 +16,51 @@ var ProviderSet = wire.NewSet(NewData, NewPostRepo)
 
 // Data .
 type Data struct {
-	// TODO wrapped database client
+	db  *gorm.DB
+	rdb *redis.Client
 }
 
 // NewData .
-func NewData(c *conf.Data) (*Data, func(), error) {
-	cleanup := func() {
-		log.Info("closing the data resources")
+func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
+	log := log.NewHelper(logger)
+	db, err := gorm.Open(mysql.Open(c.Database.Source), &gorm.Config{})
+	if err != nil {
+		log.Errorf("无法连接数据库: %v", err)
+		return nil, nil, err
 	}
-	return &Data{}, cleanup, nil
+
+	// 自动迁移数据库结构
+	if err := db.AutoMigrate(&Post{}); err != nil {
+		log.Errorf("自动迁移数据库结构失败: %v", err)
+		return nil, nil, err
+	}
+	log.Info("数据库连接成功并完成自动迁移")
+
+	rdb := redis.NewClient(&redis.Options{
+		Addr:         c.Redis.Addr,
+		Password:     c.Redis.Password,
+		DB:           int(c.Redis.Db),
+		DialTimeout:  c.Redis.DialTimeout.AsDuration(),
+		ReadTimeout:  c.Redis.ReadTimeout.AsDuration(),
+		WriteTimeout: c.Redis.WriteTimeout.AsDuration(),
+	})
+	rdb.AddHook(redisotel.TracingHook{})
+	d := &Data{
+		db:  db,
+		rdb: rdb,
+	}
+	return d, func() {
+		log.Info("message", "close the data resource")
+		if sqlDB, err := db.DB(); err != nil {
+			log.Errorf("failed to get sqlDB: %v", err)
+		} else {
+			if err := sqlDB.Close(); err != nil {
+				log.Errorf("failed to close database: %v", err)
+			}
+		}
+		if err := d.rdb.Close(); err != nil {
+			log.Errorf("failed to close redis: %v", err)
+		}
+
+	}, nil
 }
