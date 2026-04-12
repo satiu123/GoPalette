@@ -186,7 +186,7 @@ func CheckOwner(ctx context.Context, targetID int64) error {
 	if !ok {
 		return pb.ErrorUnauthenticated("未认证")
 	}
-	if claims.UserID != targetID && claims.Role != int32(pb.Role_ROLE_ADMIN) {
+	if claims.UserID != targetID && claims.Role != int32(pb.Role_ADMIN) {
 		return pb.ErrorAccessDenied("无权限访问")
 	}
 	return nil
@@ -198,7 +198,7 @@ func CheckAdmin(ctx context.Context) error {
 	if !ok {
 		return pb.ErrorUnauthenticated("未认证")
 	}
-	if claims.Role != int32(pb.Role_ROLE_ADMIN) {
+	if claims.Role != int32(pb.Role_ADMIN) {
 		return pb.ErrorAccessDenied("无权限访问")
 	}
 	return nil

@@ -82,6 +82,20 @@ func (uc *UserUsecase) UpdateUser(ctx context.Context, u *User, fields []string)
 	if err := CheckOwner(ctx, u.ID); err != nil {
 		return nil, err
 	}
+
+	// 如果不是管理员，强制移除敏感字段
+	if err := CheckAdmin(ctx); err != nil {
+		u.Password = ""
+		u.Role = 0
+
+		// 从更新字段中移除敏感字段
+		fields = filterSensitiveFields(fields)
+	}
+
+	if len(fields) == 0 {
+		return nil, pb.ErrorInvalidArgument("没有可更新字段")
+	}
+
 	return uc.repo.Update(ctx, u, fields)
 }
 
@@ -118,4 +132,14 @@ func (uc *UserUsecase) ListUser(ctx context.Context, page, pageSize int64) (*pag
 
 func (uc *UserUsecase) FindByEmail(ctx context.Context, email string) (*User, error) {
 	return uc.repo.FindByEmail(ctx, email)
+}
+
+func filterSensitiveFields(fields []string) []string {
+	filtered := make([]string, 0)
+	for _, f := range fields {
+		if f != "password" && f != "role" {
+			filtered = append(filtered, f)
+		}
+	}
+	return filtered
 }

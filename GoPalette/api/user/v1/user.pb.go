@@ -28,19 +28,19 @@ const (
 type Role int32
 
 const (
-	Role_ROLE_USER  Role = 0
-	Role_ROLE_ADMIN Role = 1
+	Role_USER  Role = 0
+	Role_ADMIN Role = 1
 )
 
 // Enum value maps for Role.
 var (
 	Role_name = map[int32]string{
-		0: "ROLE_USER",
-		1: "ROLE_ADMIN",
+		0: "USER",
+		1: "ADMIN",
 	}
 	Role_value = map[string]int32{
-		"ROLE_USER":  0,
-		"ROLE_ADMIN": 1,
+		"USER":  0,
+		"ADMIN": 1,
 	}
 )
 
@@ -75,19 +75,19 @@ func (Role) EnumDescriptor() ([]byte, []int) {
 type UserStatus int32
 
 const (
-	UserStatus_USER_STATUS_ACTIVE   UserStatus = 0
-	UserStatus_USER_STATUS_INACTIVE UserStatus = 1
+	UserStatus_ACTIVE   UserStatus = 0
+	UserStatus_INACTIVE UserStatus = 1
 )
 
 // Enum value maps for UserStatus.
 var (
 	UserStatus_name = map[int32]string{
-		0: "USER_STATUS_ACTIVE",
-		1: "USER_STATUS_INACTIVE",
+		0: "ACTIVE",
+		1: "INACTIVE",
 	}
 	UserStatus_value = map[string]int32{
-		"USER_STATUS_ACTIVE":   0,
-		"USER_STATUS_INACTIVE": 1,
+		"ACTIVE":   0,
+		"INACTIVE": 1,
 	}
 )
 
@@ -188,7 +188,7 @@ func (x *UserInfo) GetRole() Role {
 	if x != nil {
 		return x.Role
 	}
-	return Role_ROLE_USER
+	return Role_USER
 }
 
 func (x *UserInfo) GetAvatarURL() string {
@@ -202,7 +202,7 @@ func (x *UserInfo) GetStatus() UserStatus {
 	if x != nil {
 		return x.Status
 	}
-	return UserStatus_USER_STATUS_ACTIVE
+	return UserStatus_ACTIVE
 }
 
 func (x *UserInfo) GetCreatedAt() *timestamppb.Timestamp {
@@ -580,7 +580,7 @@ func (x *CreateUserRequest) GetRole() Role {
 	if x != nil {
 		return x.Role
 	}
-	return Role_ROLE_USER
+	return Role_USER
 }
 
 type CreateUserReply struct {
@@ -1172,15 +1172,15 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"[\n" +
 	"\x11RefreshTokenReply\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12#\n" +
-	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken*%\n" +
-	"\x04Role\x12\r\n" +
-	"\tROLE_USER\x10\x00\x12\x0e\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken*\x1b\n" +
+	"\x04Role\x12\b\n" +
+	"\x04USER\x10\x00\x12\t\n" +
+	"\x05ADMIN\x10\x01*&\n" +
 	"\n" +
-	"ROLE_ADMIN\x10\x01*>\n" +
+	"UserStatus\x12\n" +
 	"\n" +
-	"UserStatus\x12\x16\n" +
-	"\x12USER_STATUS_ACTIVE\x10\x00\x12\x18\n" +
-	"\x14USER_STATUS_INACTIVE\x10\x012\xf5\x06\n" +
+	"\x06ACTIVE\x10\x00\x12\f\n" +
+	"\bINACTIVE\x10\x012\xf5\x06\n" +
 	"\x04User\x12c\n" +
 	"\bRegister\x12\x1c.api.user.v1.RegisterRequest\x1a\x1a.api.user.v1.RegisterReply\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/v1/users/register\x12W\n" +
 	"\x05Login\x12\x19.api.user.v1.LoginRequest\x1a\x17.api.user.v1.LoginReply\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/v1/users/login\x12[\n" +

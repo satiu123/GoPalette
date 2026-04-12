@@ -6,25 +6,6 @@ info:
     title: ""
     version: 0.0.1
 paths:
-    /helloworld/{name}:
-        get:
-            tags:
-                - Greeter
-            description: Sends a greeting
-            operationId: Greeter_SayHello
-            parameters:
-                - name: name
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/helloworld.v1.HelloReply'
     /v1/posts:
         get:
             tags:
@@ -587,15 +568,7 @@ components:
                     type: string
                     format: date-time
             description: 包含了用户的基本信息，如用户名、邮箱、角色、状态等
-        helloworld.v1.HelloReply:
-            type: object
-            properties:
-                message:
-                    type: string
-            description: The response message containing the greetings
 tags:
-    - name: Greeter
-      description: The greeting service definition.
     - name: Post
       description: Post服务定义了标准的CRUD接口，用于创建、更新、删除、获取和列出帖子
     - name: User

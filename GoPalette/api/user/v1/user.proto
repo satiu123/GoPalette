@@ -11,14 +11,14 @@ option java_package = "api.user.v1";
 
 // 用户角色，普通用户和管理员
 enum Role {
-  ROLE_USER  = 0;
-  ROLE_ADMIN = 1;
+  USER  = 0;
+  ADMIN = 1;
 }
 
 // 用户状态，活跃和非活跃
 enum UserStatus {
-  USER_STATUS_ACTIVE   = 0;
-  USER_STATUS_INACTIVE = 1;
+  ACTIVE   = 0;
+  INACTIVE = 1;
 }
 
 // 用户服务，提供了创建、更新、删除、获取和列出用户的接口

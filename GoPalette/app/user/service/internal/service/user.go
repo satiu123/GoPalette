@@ -60,7 +60,7 @@ func (s *UserService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 		Username: req.Username,
 		Email:    req.Email,
 		Password: req.Password,
-		Role:     int32(pb.Role_ROLE_USER), // 注册用户默认角色为 USER
+		Role:     int32(pb.Role_USER), // 注册用户默认角色为 USER
 	}
 	createdUser, err := s.uc.Register(ctx, u)
 	if err != nil {
@@ -110,7 +110,6 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 		ID:       req.Id,
 		Username: req.User.Username,
 		Email:    req.User.Email,
-		Role:     int32(req.User.Role),
 		Status:   int32(req.User.Status),
 	}
 	// 清洗update_mask

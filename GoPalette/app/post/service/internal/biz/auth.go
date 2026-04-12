@@ -16,7 +16,7 @@ func (uc *PostUsecase) CheckOwner(ctx context.Context, authorID int64) error {
 
 	// 作者本人，或者是管理员
 	isOwner := claims.UserID == authorID
-	isAdmin := claims.Role == int32(userPb.Role_ROLE_ADMIN)
+	isAdmin := claims.Role == int32(userPb.Role_ADMIN)
 
 	if !isOwner && !isAdmin {
 		return postPb.ErrorAccessDenied("无权限操作该文章")
@@ -30,7 +30,7 @@ func (uc *PostUsecase) CheckAdmin(ctx context.Context) error {
 		return postPb.ErrorUnauthenticated("未认证")
 	}
 
-	if claims.Role != int32(userPb.Role_ROLE_ADMIN) {
+	if claims.Role != int32(userPb.Role_ADMIN) {
 		return postPb.ErrorAccessDenied("无权限操作")
 	}
 	return nil
