@@ -5,11 +5,13 @@ import (
 	"errors"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 )
 
-func SetupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
+func SetupOTelSDK(ctx context.Context, serviceName string) (func(context.Context) error, error) {
 	var shutdownFuncs []func(context.Context) error
 	var err error
 
@@ -31,7 +33,7 @@ func SetupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
 	}
 
 	// 设置 TracerProvider
-	tp, err := newTracerProvider()
+	tp, err := newTracerProvider(ctx, serviceName)
 	if err != nil {
 		handleErr(err)
 		return shutdown, err
@@ -43,15 +45,20 @@ func SetupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
 
 }
 
-func newTracerProvider() (*trace.TracerProvider, error) {
-	traceExporter, err := stdouttrace.New(
-		stdouttrace.WithPrettyPrint(),
+func newTracerProvider(ctx context.Context, serviceName string) (*trace.TracerProvider, error) {
+	traceExporter, err := otlptracehttp.New(ctx,
+		otlptracehttp.WithInsecure(),
 	)
 	if err != nil {
 		return nil, err
 	}
 	tp := trace.NewTracerProvider(
+		// 采样器：父级基础采样器，基于 TraceID 比例的采样器，采样率为 100%。
+		trace.WithSampler(trace.ParentBased(trace.TraceIDRatioBased(1.0))),
 		trace.WithBatcher(traceExporter),
+		trace.WithResource(resource.NewSchemaless(
+			semconv.ServiceNameKey.String(serviceName),
+		)),
 	)
 	return tp, nil
 }

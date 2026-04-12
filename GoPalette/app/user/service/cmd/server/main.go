@@ -23,9 +23,9 @@ import (
 // go build -ldflags "-X main.Version=x.y.z"
 var (
 	// Name is the name of the compiled software.
-	Name string
+	Name = "GoPalette.user.service"
 	// Version is the version of the compiled software.
-	Version string
+	Version = "0.1.0"
 	// flagconf is the config flag.
 	flagconf string
 
@@ -61,7 +61,7 @@ func main() {
 		"trace.id", tracing.TraceID(),
 		"span.id", tracing.SpanID(),
 	)
-	logHelper := log.NewHelper(log.With(logger, "module", "main"))
+	logHelper := log.NewHelper(log.With(logger, "module", "main/user"))
 	c := config.New(
 		config.WithSource(
 			file.NewSource(flagconf),
@@ -74,7 +74,7 @@ func main() {
 	}
 
 	// 设置并初始化 OpenTelemetry SDK
-	otelShutdown, err := opentelemetry.SetupOTelSDK(context.Background())
+	otelShutdown, err := opentelemetry.SetupOTelSDK(context.Background(), Name)
 	if err != nil {
 		logHelper.Errorf("初始化 OpenTelemetry SDK 失败: %v", err)
 	}

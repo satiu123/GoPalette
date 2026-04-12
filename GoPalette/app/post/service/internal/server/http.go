@@ -12,6 +12,7 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/logging"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/middleware/selector"
+	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/http"
 	jwtv5 "github.com/golang-jwt/jwt/v5"
 )
@@ -32,6 +33,7 @@ func NewWhiteListMatcher() selector.MatchFunc {
 func NewHTTPServer(c *conf.Server, ca *conf.Auth, post *service.PostService, logger log.Logger) *http.Server {
 	var opts = []http.ServerOption{
 		http.Middleware(
+			tracing.Server(),
 			logging.Server(logger),
 			selector.Server(
 				jwt.Server(func(token *jwtv5.Token) (any, error) {
