@@ -29,8 +29,8 @@ paths:
         get:
             tags:
                 - Post
-            description: ListPost 列出帖子，输入分页参数，返回帖子列表
-            operationId: Post_ListPost
+            description: ListPosts 列出帖子，输入分页参数，返回帖子列表
+            operationId: Post_ListPosts
             parameters:
                 - name: page
                   in: query
@@ -46,7 +46,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/api.post.v1.ListPostReply'
+                                $ref: '#/components/schemas/api.post.v1.ListPostsReply'
         post:
             tags:
                 - Post
@@ -388,7 +388,7 @@ components:
             properties:
                 post:
                     $ref: '#/components/schemas/api.post.v1.PostDetail'
-        api.post.v1.ListPostReply:
+        api.post.v1.ListPostsReply:
             type: object
             properties:
                 posts:

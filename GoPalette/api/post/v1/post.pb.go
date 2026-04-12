@@ -890,7 +890,7 @@ func (x *GetPostReply) GetPost() *PostDetail {
 	return nil
 }
 
-type ListPostRequest struct {
+type ListPostsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Page          int64                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
 	PageSize      int64                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
@@ -898,20 +898,20 @@ type ListPostRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListPostRequest) Reset() {
-	*x = ListPostRequest{}
+func (x *ListPostsRequest) Reset() {
+	*x = ListPostsRequest{}
 	mi := &file_post_v1_post_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListPostRequest) String() string {
+func (x *ListPostsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListPostRequest) ProtoMessage() {}
+func (*ListPostsRequest) ProtoMessage() {}
 
-func (x *ListPostRequest) ProtoReflect() protoreflect.Message {
+func (x *ListPostsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_post_v1_post_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -923,26 +923,26 @@ func (x *ListPostRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListPostRequest.ProtoReflect.Descriptor instead.
-func (*ListPostRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListPostsRequest.ProtoReflect.Descriptor instead.
+func (*ListPostsRequest) Descriptor() ([]byte, []int) {
 	return file_post_v1_post_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *ListPostRequest) GetPage() int64 {
+func (x *ListPostsRequest) GetPage() int64 {
 	if x != nil {
 		return x.Page
 	}
 	return 0
 }
 
-func (x *ListPostRequest) GetPageSize() int64 {
+func (x *ListPostsRequest) GetPageSize() int64 {
 	if x != nil {
 		return x.PageSize
 	}
 	return 0
 }
 
-type ListPostReply struct {
+type ListPostsReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Posts         []*PostInfo            `protobuf:"bytes,1,rep,name=posts,proto3" json:"posts,omitempty"`  // 帖子列表
 	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"` // 总帖子数
@@ -950,20 +950,20 @@ type ListPostReply struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListPostReply) Reset() {
-	*x = ListPostReply{}
+func (x *ListPostsReply) Reset() {
+	*x = ListPostsReply{}
 	mi := &file_post_v1_post_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListPostReply) String() string {
+func (x *ListPostsReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListPostReply) ProtoMessage() {}
+func (*ListPostsReply) ProtoMessage() {}
 
-func (x *ListPostReply) ProtoReflect() protoreflect.Message {
+func (x *ListPostsReply) ProtoReflect() protoreflect.Message {
 	mi := &file_post_v1_post_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -975,19 +975,19 @@ func (x *ListPostReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListPostReply.ProtoReflect.Descriptor instead.
-func (*ListPostReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListPostsReply.ProtoReflect.Descriptor instead.
+func (*ListPostsReply) Descriptor() ([]byte, []int) {
 	return file_post_v1_post_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *ListPostReply) GetPosts() []*PostInfo {
+func (x *ListPostsReply) GetPosts() []*PostInfo {
 	if x != nil {
 		return x.Posts
 	}
 	return nil
 }
 
-func (x *ListPostReply) GetTotal() int64 {
+func (x *ListPostsReply) GetTotal() int64 {
 	if x != nil {
 		return x.Total
 	}
@@ -1066,18 +1066,18 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\x04slug\x18\x02 \x01(\tH\x00R\x04slugB\a\n" +
 	"\x05query\";\n" +
 	"\fGetPostReply\x12+\n" +
-	"\x04post\x18\x01 \x01(\v2\x17.api.post.v1.PostDetailR\x04post\"B\n" +
-	"\x0fListPostRequest\x12\x12\n" +
+	"\x04post\x18\x01 \x01(\v2\x17.api.post.v1.PostDetailR\x04post\"C\n" +
+	"\x10ListPostsRequest\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x03R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x03R\bpageSize\"R\n" +
-	"\rListPostReply\x12+\n" +
+	"\tpage_size\x18\x02 \x01(\x03R\bpageSize\"S\n" +
+	"\x0eListPostsReply\x12+\n" +
 	"\x05posts\x18\x01 \x03(\v2\x15.api.post.v1.PostInfoR\x05posts\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total*4\n" +
 	"\n" +
 	"PostStatus\x12\t\n" +
 	"\x05DRAFT\x10\x00\x12\r\n" +
 	"\tPUBLISHED\x10\x01\x12\f\n" +
-	"\bARCHIVED\x10\x022\x80\x04\n" +
+	"\bARCHIVED\x10\x022\x83\x04\n" +
 	"\x04Post\x12`\n" +
 	"\n" +
 	"CreatePost\x12\x1e.api.post.v1.CreatePostRequest\x1a\x1c.api.post.v1.CreatePostReply\"\x14\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/posts\x12e\n" +
@@ -1085,8 +1085,8 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"UpdatePost\x12\x1e.api.post.v1.UpdatePostRequest\x1a\x1c.api.post.v1.UpdatePostReply\"\x19\x82\xd3\xe4\x93\x02\x13:\x01*2\x0e/v1/posts/{id}\x12b\n" +
 	"\n" +
 	"DeletePost\x12\x1e.api.post.v1.DeletePostRequest\x1a\x1c.api.post.v1.DeletePostReply\"\x16\x82\xd3\xe4\x93\x02\x10*\x0e/v1/posts/{id}\x12r\n" +
-	"\aGetPost\x12\x1b.api.post.v1.GetPostRequest\x1a\x19.api.post.v1.GetPostReply\"/\x82\xd3\xe4\x93\x02)Z\x17\x12\x15/v1/posts/slug/{slug}\x12\x0e/v1/posts/{id}\x12W\n" +
-	"\bListPost\x12\x1c.api.post.v1.ListPostRequest\x1a\x1a.api.post.v1.ListPostReply\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/v1/postsB)\n" +
+	"\aGetPost\x12\x1b.api.post.v1.GetPostRequest\x1a\x19.api.post.v1.GetPostReply\"/\x82\xd3\xe4\x93\x02)Z\x17\x12\x15/v1/posts/slug/{slug}\x12\x0e/v1/posts/{id}\x12Z\n" +
+	"\tListPosts\x12\x1d.api.post.v1.ListPostsRequest\x1a\x1b.api.post.v1.ListPostsReply\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/v1/postsB)\n" +
 	"\vapi.post.v1P\x01Z\x18GoPalette/api/post/v1;v1b\x06proto3"
 
 var (
@@ -1117,8 +1117,8 @@ var file_post_v1_post_proto_goTypes = []any{
 	(*DeletePostReply)(nil),       // 10: api.post.v1.DeletePostReply
 	(*GetPostRequest)(nil),        // 11: api.post.v1.GetPostRequest
 	(*GetPostReply)(nil),          // 12: api.post.v1.GetPostReply
-	(*ListPostRequest)(nil),       // 13: api.post.v1.ListPostRequest
-	(*ListPostReply)(nil),         // 14: api.post.v1.ListPostReply
+	(*ListPostsRequest)(nil),      // 13: api.post.v1.ListPostsRequest
+	(*ListPostsReply)(nil),        // 14: api.post.v1.ListPostsReply
 	(*timestamppb.Timestamp)(nil), // 15: google.protobuf.Timestamp
 	(*fieldmaskpb.FieldMask)(nil), // 16: google.protobuf.FieldMask
 }
@@ -1135,17 +1135,17 @@ var file_post_v1_post_proto_depIdxs = []int32{
 	16, // 9: api.post.v1.UpdatePostRequest.update_mask:type_name -> google.protobuf.FieldMask
 	4,  // 10: api.post.v1.UpdatePostReply.post:type_name -> api.post.v1.PostDetail
 	4,  // 11: api.post.v1.GetPostReply.post:type_name -> api.post.v1.PostDetail
-	3,  // 12: api.post.v1.ListPostReply.posts:type_name -> api.post.v1.PostInfo
+	3,  // 12: api.post.v1.ListPostsReply.posts:type_name -> api.post.v1.PostInfo
 	5,  // 13: api.post.v1.Post.CreatePost:input_type -> api.post.v1.CreatePostRequest
 	7,  // 14: api.post.v1.Post.UpdatePost:input_type -> api.post.v1.UpdatePostRequest
 	9,  // 15: api.post.v1.Post.DeletePost:input_type -> api.post.v1.DeletePostRequest
 	11, // 16: api.post.v1.Post.GetPost:input_type -> api.post.v1.GetPostRequest
-	13, // 17: api.post.v1.Post.ListPost:input_type -> api.post.v1.ListPostRequest
+	13, // 17: api.post.v1.Post.ListPosts:input_type -> api.post.v1.ListPostsRequest
 	6,  // 18: api.post.v1.Post.CreatePost:output_type -> api.post.v1.CreatePostReply
 	8,  // 19: api.post.v1.Post.UpdatePost:output_type -> api.post.v1.UpdatePostReply
 	10, // 20: api.post.v1.Post.DeletePost:output_type -> api.post.v1.DeletePostReply
 	12, // 21: api.post.v1.Post.GetPost:output_type -> api.post.v1.GetPostReply
-	14, // 22: api.post.v1.Post.ListPost:output_type -> api.post.v1.ListPostReply
+	14, // 22: api.post.v1.Post.ListPosts:output_type -> api.post.v1.ListPostsReply
 	18, // [18:23] is the sub-list for method output_type
 	13, // [13:18] is the sub-list for method input_type
 	13, // [13:13] is the sub-list for extension type_name

@@ -22,7 +22,7 @@ const _ = http.SupportPackageIsVersion1
 const OperationPostCreatePost = "/api.post.v1.Post/CreatePost"
 const OperationPostDeletePost = "/api.post.v1.Post/DeletePost"
 const OperationPostGetPost = "/api.post.v1.Post/GetPost"
-const OperationPostListPost = "/api.post.v1.Post/ListPost"
+const OperationPostListPosts = "/api.post.v1.Post/ListPosts"
 const OperationPostUpdatePost = "/api.post.v1.Post/UpdatePost"
 
 type PostHTTPServer interface {
@@ -32,8 +32,8 @@ type PostHTTPServer interface {
 	DeletePost(context.Context, *DeletePostRequest) (*DeletePostReply, error)
 	// GetPost GetPost 获取帖子，输入帖子ID或slug，返回帖子详细信息
 	GetPost(context.Context, *GetPostRequest) (*GetPostReply, error)
-	// ListPost ListPost 列出帖子，输入分页参数，返回帖子列表
-	ListPost(context.Context, *ListPostRequest) (*ListPostReply, error)
+	// ListPosts ListPosts 列出帖子，输入分页参数，返回帖子列表
+	ListPosts(context.Context, *ListPostsRequest) (*ListPostsReply, error)
 	// UpdatePost UpdatePost 更新帖子，输入帖子ID和要更新的字段列表，返回更新后的帖子详细信息
 	UpdatePost(context.Context, *UpdatePostRequest) (*UpdatePostReply, error)
 }
@@ -45,7 +45,7 @@ func RegisterPostHTTPServer(s *http.Server, srv PostHTTPServer) {
 	r.DELETE("/v1/posts/{id}", _Post_DeletePost0_HTTP_Handler(srv))
 	r.GET("/v1/posts/slug/{slug}", _Post_GetPost0_HTTP_Handler(srv))
 	r.GET("/v1/posts/{id}", _Post_GetPost1_HTTP_Handler(srv))
-	r.GET("/v1/posts", _Post_ListPost0_HTTP_Handler(srv))
+	r.GET("/v1/posts", _Post_ListPosts0_HTTP_Handler(srv))
 }
 
 func _Post_CreatePost0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
@@ -161,21 +161,21 @@ func _Post_GetPost1_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) erro
 	}
 }
 
-func _Post_ListPost0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
+func _Post_ListPosts0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
-		var in ListPostRequest
+		var in ListPostsRequest
 		if err := ctx.BindQuery(&in); err != nil {
 			return err
 		}
-		http.SetOperation(ctx, OperationPostListPost)
+		http.SetOperation(ctx, OperationPostListPosts)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.ListPost(ctx, req.(*ListPostRequest))
+			return srv.ListPosts(ctx, req.(*ListPostsRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
 			return err
 		}
-		reply := out.(*ListPostReply)
+		reply := out.(*ListPostsReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -187,8 +187,8 @@ type PostHTTPClient interface {
 	DeletePost(ctx context.Context, req *DeletePostRequest, opts ...http.CallOption) (rsp *DeletePostReply, err error)
 	// GetPost GetPost 获取帖子，输入帖子ID或slug，返回帖子详细信息
 	GetPost(ctx context.Context, req *GetPostRequest, opts ...http.CallOption) (rsp *GetPostReply, err error)
-	// ListPost ListPost 列出帖子，输入分页参数，返回帖子列表
-	ListPost(ctx context.Context, req *ListPostRequest, opts ...http.CallOption) (rsp *ListPostReply, err error)
+	// ListPosts ListPosts 列出帖子，输入分页参数，返回帖子列表
+	ListPosts(ctx context.Context, req *ListPostsRequest, opts ...http.CallOption) (rsp *ListPostsReply, err error)
 	// UpdatePost UpdatePost 更新帖子，输入帖子ID和要更新的字段列表，返回更新后的帖子详细信息
 	UpdatePost(ctx context.Context, req *UpdatePostRequest, opts ...http.CallOption) (rsp *UpdatePostReply, err error)
 }
@@ -243,12 +243,12 @@ func (c *PostHTTPClientImpl) GetPost(ctx context.Context, in *GetPostRequest, op
 	return &out, nil
 }
 
-// ListPost ListPost 列出帖子，输入分页参数，返回帖子列表
-func (c *PostHTTPClientImpl) ListPost(ctx context.Context, in *ListPostRequest, opts ...http.CallOption) (*ListPostReply, error) {
-	var out ListPostReply
+// ListPosts ListPosts 列出帖子，输入分页参数，返回帖子列表
+func (c *PostHTTPClientImpl) ListPosts(ctx context.Context, in *ListPostsRequest, opts ...http.CallOption) (*ListPostsReply, error) {
+	var out ListPostsReply
 	pattern := "/v1/posts"
 	path := binding.EncodeURL(pattern, in, true)
-	opts = append(opts, http.Operation(OperationPostListPost))
+	opts = append(opts, http.Operation(OperationPostListPosts))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {

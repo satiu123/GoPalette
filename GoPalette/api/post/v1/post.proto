@@ -47,8 +47,8 @@ service Post {
       }
     };
   };
-  // ListPost 列出帖子，输入分页参数，返回帖子列表
-  rpc ListPost (ListPostRequest) returns (ListPostReply){
+  // ListPosts 列出帖子，输入分页参数，返回帖子列表
+  rpc ListPosts (ListPostsRequest) returns (ListPostsReply){
     option (google.api.http) = {
       get: "/v1/posts"
     };
@@ -145,12 +145,12 @@ message GetPostReply {
   PostDetail post = 1;
 }
 
-message ListPostRequest {
+message ListPostsRequest {
   int64 page      = 1;
   int64 page_size = 2;
 }
 
-message ListPostReply {
+message ListPostsReply {
   repeated PostInfo posts = 1; // 帖子列表
   int64             total = 2; // 总帖子数
 }

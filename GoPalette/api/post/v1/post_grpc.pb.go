@@ -23,7 +23,7 @@ const (
 	Post_UpdatePost_FullMethodName = "/api.post.v1.Post/UpdatePost"
 	Post_DeletePost_FullMethodName = "/api.post.v1.Post/DeletePost"
 	Post_GetPost_FullMethodName    = "/api.post.v1.Post/GetPost"
-	Post_ListPost_FullMethodName   = "/api.post.v1.Post/ListPost"
+	Post_ListPosts_FullMethodName  = "/api.post.v1.Post/ListPosts"
 )
 
 // PostClient is the client API for Post service.
@@ -40,8 +40,8 @@ type PostClient interface {
 	DeletePost(ctx context.Context, in *DeletePostRequest, opts ...grpc.CallOption) (*DeletePostReply, error)
 	// GetPost 获取帖子，输入帖子ID或slug，返回帖子详细信息
 	GetPost(ctx context.Context, in *GetPostRequest, opts ...grpc.CallOption) (*GetPostReply, error)
-	// ListPost 列出帖子，输入分页参数，返回帖子列表
-	ListPost(ctx context.Context, in *ListPostRequest, opts ...grpc.CallOption) (*ListPostReply, error)
+	// ListPosts 列出帖子，输入分页参数，返回帖子列表
+	ListPosts(ctx context.Context, in *ListPostsRequest, opts ...grpc.CallOption) (*ListPostsReply, error)
 }
 
 type postClient struct {
@@ -92,10 +92,10 @@ func (c *postClient) GetPost(ctx context.Context, in *GetPostRequest, opts ...gr
 	return out, nil
 }
 
-func (c *postClient) ListPost(ctx context.Context, in *ListPostRequest, opts ...grpc.CallOption) (*ListPostReply, error) {
+func (c *postClient) ListPosts(ctx context.Context, in *ListPostsRequest, opts ...grpc.CallOption) (*ListPostsReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListPostReply)
-	err := c.cc.Invoke(ctx, Post_ListPost_FullMethodName, in, out, cOpts...)
+	out := new(ListPostsReply)
+	err := c.cc.Invoke(ctx, Post_ListPosts_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -116,8 +116,8 @@ type PostServer interface {
 	DeletePost(context.Context, *DeletePostRequest) (*DeletePostReply, error)
 	// GetPost 获取帖子，输入帖子ID或slug，返回帖子详细信息
 	GetPost(context.Context, *GetPostRequest) (*GetPostReply, error)
-	// ListPost 列出帖子，输入分页参数，返回帖子列表
-	ListPost(context.Context, *ListPostRequest) (*ListPostReply, error)
+	// ListPosts 列出帖子，输入分页参数，返回帖子列表
+	ListPosts(context.Context, *ListPostsRequest) (*ListPostsReply, error)
 	mustEmbedUnimplementedPostServer()
 }
 
@@ -140,8 +140,8 @@ func (UnimplementedPostServer) DeletePost(context.Context, *DeletePostRequest) (
 func (UnimplementedPostServer) GetPost(context.Context, *GetPostRequest) (*GetPostReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPost not implemented")
 }
-func (UnimplementedPostServer) ListPost(context.Context, *ListPostRequest) (*ListPostReply, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListPost not implemented")
+func (UnimplementedPostServer) ListPosts(context.Context, *ListPostsRequest) (*ListPostsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPosts not implemented")
 }
 func (UnimplementedPostServer) mustEmbedUnimplementedPostServer() {}
 func (UnimplementedPostServer) testEmbeddedByValue()              {}
@@ -236,20 +236,20 @@ func _Post_GetPost_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Post_ListPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListPostRequest)
+func _Post_ListPosts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPostsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PostServer).ListPost(ctx, in)
+		return srv.(PostServer).ListPosts(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Post_ListPost_FullMethodName,
+		FullMethod: Post_ListPosts_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PostServer).ListPost(ctx, req.(*ListPostRequest))
+		return srv.(PostServer).ListPosts(ctx, req.(*ListPostsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -278,8 +278,8 @@ var Post_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Post_GetPost_Handler,
 		},
 		{
-			MethodName: "ListPost",
-			Handler:    _Post_ListPost_Handler,
+			MethodName: "ListPosts",
+			Handler:    _Post_ListPosts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

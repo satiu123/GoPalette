@@ -96,7 +96,7 @@ func (s *PostService) GetPost(ctx context.Context, req *pb.GetPostRequest) (*pb.
 		Post: s.toPBDetail(post),
 	}, nil
 }
-func (s *PostService) ListPost(ctx context.Context, req *pb.ListPostRequest) (*pb.ListPostReply, error) {
+func (s *PostService) ListPosts(ctx context.Context, req *pb.ListPostsRequest) (*pb.ListPostsReply, error) {
 	res, total, err := s.uc.ListPosts(ctx, req.Page, req.PageSize)
 	if err != nil {
 		return nil, err
@@ -107,7 +107,7 @@ func (s *PostService) ListPost(ctx context.Context, req *pb.ListPostRequest) (*p
 		posts[i] = s.toPBInfo(p)
 	}
 
-	return &pb.ListPostReply{
+	return &pb.ListPostsReply{
 		Posts: posts,
 		Total: total,
 	}, nil
