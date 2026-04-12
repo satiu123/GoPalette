@@ -48,7 +48,7 @@ func (uc *AuthUsecase) Login(ctx context.Context, email, password string) (strin
 	user, err := uc.userRepo.FindByEmail(ctx, email)
 	if err != nil {
 		uc.logger.WithContext(ctx).Errorf("查询用户失败: email=%s err=%v", email, err)
-		return "", "", err
+		return "", "", pb.ErrorInternalServerError("%s", "服务器开小差了，请稍后再试")
 	}
 	if user == nil {
 		uc.logger.WithContext(ctx).Warnf("登录失败: 用户不存在 email=%s", email)

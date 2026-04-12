@@ -4,6 +4,7 @@ import (
 	"GoPalette/app/user/service/internal/biz"
 	"GoPalette/pkg/pagination"
 	"context"
+	"errors"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"gorm.io/gorm"
@@ -114,6 +115,9 @@ func (r *userRepo) List(ctx context.Context, page, pageSize int64) ([]*biz.User,
 func (r *userRepo) FindByEmail(ctx context.Context, email string) (*biz.User, error) {
 	var po User
 	if err := r.data.db.WithContext(ctx).Where("email = ?", email).First(&po).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return r.toBizUser(&po), nil
