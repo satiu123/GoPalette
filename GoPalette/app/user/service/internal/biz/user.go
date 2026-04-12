@@ -108,9 +108,7 @@ func (uc *UserUsecase) DeleteUser(ctx context.Context, id int64) error {
 }
 
 func (uc *UserUsecase) GetUser(ctx context.Context, id int64) (*User, error) {
-	if err := CheckOwner(ctx, id); err != nil {
-		return nil, err
-	}
+
 	user, err := uc.repo.Get(ctx, id)
 	if err != nil {
 		return nil, pb.ErrorUserNotFound("用户 ID %d 不存在", id)
