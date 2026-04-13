@@ -21,6 +21,10 @@ func NewWhiteListMatcher() selector.MatchFunc {
 	whiteList := make(map[string]struct{})
 	whiteList["/api.post.v1.Post/GetPost"] = struct{}{}
 	whiteList["/api.post.v1.Post/ListPosts"] = struct{}{}
+	whiteList["/api.post.v1.Category/GetCategory"] = struct{}{}
+	whiteList["/api.post.v1.Category/ListCategories"] = struct{}{}
+	whiteList["/api.post.v1.Tag/GetTag"] = struct{}{}
+	whiteList["/api.post.v1.Tag/ListTags"] = struct{}{}
 	return func(ctx context.Context, operation string) bool {
 		if _, ok := whiteList[operation]; ok {
 			return false
@@ -30,7 +34,7 @@ func NewWhiteListMatcher() selector.MatchFunc {
 }
 
 // NewHTTPServer new an HTTP server.
-func NewHTTPServer(c *conf.Server, ca *conf.Auth, post *service.PostService, logger log.Logger) *http.Server {
+func NewHTTPServer(c *conf.Server, ca *conf.Auth, post *service.PostService, category *service.CategoryService, tag *service.TagService, logger log.Logger) *http.Server {
 	var opts = []http.ServerOption{
 		http.Middleware(
 			tracing.Server(),
@@ -56,5 +60,7 @@ func NewHTTPServer(c *conf.Server, ca *conf.Auth, post *service.PostService, log
 	}
 	srv := http.NewServer(opts...)
 	p.RegisterPostHTTPServer(srv, post)
+	p.RegisterCategoryHTTPServer(srv, category)
+	p.RegisterTagHTTPServer(srv, tag)
 	return srv
 }

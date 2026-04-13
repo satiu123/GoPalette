@@ -80,3 +80,31 @@ func IsAccessDenied(err error) bool {
 func ErrorAccessDenied(format string, args ...interface{}) *errors.Error {
 	return errors.New(403, ErrorReason_ACCESS_DENIED.String(), fmt.Sprintf(format, args...))
 }
+
+// 分类未找到
+func IsCategoryNotFound(err error) bool {
+	if err == nil {
+		return false
+	}
+	e := errors.FromError(err)
+	return e.Reason == ErrorReason_CATEGORY_NOT_FOUND.String() && e.Code == 404
+}
+
+// 分类未找到
+func ErrorCategoryNotFound(format string, args ...interface{}) *errors.Error {
+	return errors.New(404, ErrorReason_CATEGORY_NOT_FOUND.String(), fmt.Sprintf(format, args...))
+}
+
+// 标签未找到
+func IsTagNotFound(err error) bool {
+	if err == nil {
+		return false
+	}
+	e := errors.FromError(err)
+	return e.Reason == ErrorReason_TAG_NOT_FOUND.String() && e.Code == 404
+}
+
+// 标签未找到
+func ErrorTagNotFound(format string, args ...interface{}) *errors.Error {
+	return errors.New(404, ErrorReason_TAG_NOT_FOUND.String(), fmt.Sprintf(format, args...))
+}

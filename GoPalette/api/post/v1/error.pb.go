@@ -35,6 +35,10 @@ const (
 	ErrorReason_SLUG_CONFLICT ErrorReason = 3
 	// 访问被拒绝
 	ErrorReason_ACCESS_DENIED ErrorReason = 4
+	// 分类未找到
+	ErrorReason_CATEGORY_NOT_FOUND ErrorReason = 5
+	// 标签未找到
+	ErrorReason_TAG_NOT_FOUND ErrorReason = 6
 )
 
 // Enum value maps for ErrorReason.
@@ -45,13 +49,17 @@ var (
 		2: "UNAUTHENTICATED",
 		3: "SLUG_CONFLICT",
 		4: "ACCESS_DENIED",
+		5: "CATEGORY_NOT_FOUND",
+		6: "TAG_NOT_FOUND",
 	}
 	ErrorReason_value = map[string]int32{
-		"POST_NOT_FOUND":   0,
-		"INVALID_ARGUMENT": 1,
-		"UNAUTHENTICATED":  2,
-		"SLUG_CONFLICT":    3,
-		"ACCESS_DENIED":    4,
+		"POST_NOT_FOUND":     0,
+		"INVALID_ARGUMENT":   1,
+		"UNAUTHENTICATED":    2,
+		"SLUG_CONFLICT":      3,
+		"ACCESS_DENIED":      4,
+		"CATEGORY_NOT_FOUND": 5,
+		"TAG_NOT_FOUND":      6,
 	}
 )
 
@@ -86,13 +94,15 @@ var File_post_v1_error_proto protoreflect.FileDescriptor
 
 const file_post_v1_error_proto_rawDesc = "" +
 	"\n" +
-	"\x13post/v1/error.proto\x12\vapi.post.v1\x1a\x13errors/errors.proto*\x96\x01\n" +
+	"\x13post/v1/error.proto\x12\vapi.post.v1\x1a\x13errors/errors.proto*\xcd\x01\n" +
 	"\vErrorReason\x12\x18\n" +
 	"\x0ePOST_NOT_FOUND\x10\x00\x1a\x04\xa8E\x94\x03\x12\x1a\n" +
 	"\x10INVALID_ARGUMENT\x10\x01\x1a\x04\xa8E\x90\x03\x12\x19\n" +
 	"\x0fUNAUTHENTICATED\x10\x02\x1a\x04\xa8E\x91\x03\x12\x17\n" +
 	"\rSLUG_CONFLICT\x10\x03\x1a\x04\xa8E\x99\x03\x12\x17\n" +
-	"\rACCESS_DENIED\x10\x04\x1a\x04\xa8E\x93\x03\x1a\x04\xa0E\xf4\x03B)\n" +
+	"\rACCESS_DENIED\x10\x04\x1a\x04\xa8E\x93\x03\x12\x1c\n" +
+	"\x12CATEGORY_NOT_FOUND\x10\x05\x1a\x04\xa8E\x94\x03\x12\x17\n" +
+	"\rTAG_NOT_FOUND\x10\x06\x1a\x04\xa8E\x94\x03\x1a\x04\xa0E\xf4\x03B)\n" +
 	"\vapi.post.v1P\x01Z\x18GoPalette/api/post/v1;v1b\x06proto3"
 
 var (

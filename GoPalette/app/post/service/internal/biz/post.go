@@ -85,7 +85,7 @@ func (uc *PostUsecase) UpdatePost(ctx context.Context, p *Post, fields []string)
 		return nil, pb.ErrorPostNotFound("文章未找到")
 	}
 
-	if err := uc.CheckOwner(ctx, oldPost.AuthorID); err != nil {
+	if err := CheckOwner(ctx, oldPost.AuthorID); err != nil {
 		return nil, err
 	}
 	uc.logger.WithContext(ctx).Infof("%s 正在更新文章: %s", p.AuthorID, p.Title)
@@ -114,7 +114,7 @@ func (uc *PostUsecase) DeletePost(ctx context.Context, id int64) error {
 		return pb.ErrorPostNotFound("文章未找到")
 	}
 
-	if err := uc.CheckOwner(ctx, post.AuthorID); err != nil {
+	if err := CheckOwner(ctx, post.AuthorID); err != nil {
 		return err
 	}
 	return uc.repo.Delete(ctx, id)

@@ -17,7 +17,7 @@ import (
 )
 
 // NewGRPCServer new a gRPC server.
-func NewGRPCServer(c *conf.Server, ca *conf.Auth, post *service.PostService, logger log.Logger) *grpc.Server {
+func NewGRPCServer(c *conf.Server, ca *conf.Auth, post *service.PostService, category *service.CategoryService, tag *service.TagService, logger log.Logger) *grpc.Server {
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			tracing.Server(),
@@ -43,5 +43,7 @@ func NewGRPCServer(c *conf.Server, ca *conf.Auth, post *service.PostService, log
 	}
 	srv := grpc.NewServer(opts...)
 	p.RegisterPostServer(srv, post)
+	p.RegisterCategoryServer(srv, category)
+	p.RegisterTagServer(srv, tag)
 	return srv
 }

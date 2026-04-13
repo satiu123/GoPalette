@@ -8,7 +8,8 @@ import (
 )
 
 // CheckOwner 检查当前用户是否是文章的作者或者管理员
-func (uc *PostUsecase) CheckOwner(ctx context.Context, authorID int64) error {
+
+func CheckOwner(ctx context.Context, authorID int64) error {
 	claims, ok := auth.FromContext(ctx)
 	if !ok {
 		return postPb.ErrorUnauthenticated("未认证")
@@ -24,7 +25,7 @@ func (uc *PostUsecase) CheckOwner(ctx context.Context, authorID int64) error {
 	return nil
 }
 
-func (uc *PostUsecase) CheckAdmin(ctx context.Context) error {
+func CheckAdmin(ctx context.Context) error {
 	claims, ok := auth.FromContext(ctx)
 	if !ok {
 		return postPb.ErrorUnauthenticated("未认证")

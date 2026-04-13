@@ -6,6 +6,107 @@ info:
     title: ""
     version: 0.0.1
 paths:
+    /v1/categories:
+        get:
+            tags:
+                - Category
+            description: ListCategories 列出分类，输入分页参数，返回分类列表
+            operationId: Category_ListCategories
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.ListCategoriesReply'
+        post:
+            tags:
+                - Category
+            description: CreateCategory 创建分类
+            operationId: Category_CreateCategory
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.post.v1.CreateCategoryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.CreateCategoryReply'
+    /v1/categories/{id}:
+        get:
+            tags:
+                - Category
+            description: GetCategory 获取分类详情
+            operationId: Category_GetCategory
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.GetCategoryReply'
+        delete:
+            tags:
+                - Category
+            description: DeleteCategory 删除分类
+            operationId: Category_DeleteCategory
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.DeleteCategoryReply'
+        patch:
+            tags:
+                - Category
+            description: UpdateCategory 更新分类
+            operationId: Category_UpdateCategory
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.post.v1.UpdateCategoryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.UpdateCategoryReply'
     /v1/posts:
         get:
             tags:
@@ -134,6 +235,107 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.post.v1.UpdatePostReply'
+    /v1/tags:
+        get:
+            tags:
+                - Tag
+            description: ListTags 列出标签，输入分页参数，返回标签列表
+            operationId: Tag_ListTags
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.ListTagsReply'
+        post:
+            tags:
+                - Tag
+            description: CreateTag 创建标签
+            operationId: Tag_CreateTag
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.post.v1.CreateTagRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.CreateTagReply'
+    /v1/tags/{id}:
+        get:
+            tags:
+                - Tag
+            description: GetTag 获取标签详情
+            operationId: Tag_GetTag
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.GetTagReply'
+        delete:
+            tags:
+                - Tag
+            description: DeleteTag 删除标签
+            operationId: Tag_DeleteTag
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.DeleteTagReply'
+        patch:
+            tags:
+                - Tag
+            description: UpdateTag 更新标签
+            operationId: Tag_UpdateTag
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.post.v1.UpdateTagRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.UpdateTagReply'
     /v1/users:
         get:
             tags:
@@ -327,12 +529,37 @@ components:
                     type: string
                 avatarUrl:
                     type: string
+        api.post.v1.CategoryDetail:
+            type: object
+            properties:
+                info:
+                    $ref: '#/components/schemas/api.post.v1.CategoryInfo'
+                slug:
+                    type: string
+                description:
+                    type: string
+                postCount:
+                    type: string
         api.post.v1.CategoryInfo:
             type: object
             properties:
                 id:
                     type: string
                 name:
+                    type: string
+        api.post.v1.CreateCategoryReply:
+            type: object
+            properties:
+                category:
+                    $ref: '#/components/schemas/api.post.v1.CategoryDetail'
+        api.post.v1.CreateCategoryRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                slug:
+                    type: string
+                description:
                     type: string
         api.post.v1.CreatePostReply:
             type: object
@@ -359,16 +586,57 @@ components:
                     type: array
                     items:
                         type: string
+        api.post.v1.CreateTagReply:
+            type: object
+            properties:
+                tag:
+                    $ref: '#/components/schemas/api.post.v1.TagDetail'
+        api.post.v1.CreateTagRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                slug:
+                    type: string
+        api.post.v1.DeleteCategoryReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
         api.post.v1.DeletePostReply:
             type: object
             properties:
                 success:
                     type: boolean
+        api.post.v1.DeleteTagReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        api.post.v1.GetCategoryReply:
+            type: object
+            properties:
+                category:
+                    $ref: '#/components/schemas/api.post.v1.CategoryDetail'
         api.post.v1.GetPostReply:
             type: object
             properties:
                 post:
                     $ref: '#/components/schemas/api.post.v1.PostDetail'
+        api.post.v1.GetTagReply:
+            type: object
+            properties:
+                tag:
+                    $ref: '#/components/schemas/api.post.v1.TagDetail'
+        api.post.v1.ListCategoriesReply:
+            type: object
+            properties:
+                categories:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.post.v1.CategoryInfo'
+                total:
+                    type: string
         api.post.v1.ListPostsReply:
             type: object
             properties:
@@ -376,6 +644,15 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/api.post.v1.PostInfo'
+                total:
+                    type: string
+        api.post.v1.ListTagsReply:
+            type: object
+            properties:
+                tags:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.post.v1.TagInfo'
                 total:
                     type: string
         api.post.v1.PostDetail:
@@ -423,6 +700,41 @@ components:
                     type: string
                     format: date-time
             description: PostInfo 包含了帖子的基本信息
+        api.post.v1.TagDetail:
+            type: object
+            properties:
+                info:
+                    $ref: '#/components/schemas/api.post.v1.TagInfo'
+                slug:
+                    type: string
+                postCount:
+                    type: string
+        api.post.v1.TagInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+        api.post.v1.UpdateCategoryReply:
+            type: object
+            properties:
+                category:
+                    $ref: '#/components/schemas/api.post.v1.CategoryDetail'
+        api.post.v1.UpdateCategoryRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                slug:
+                    type: string
+                description:
+                    type: string
+                updateMask:
+                    type: string
+                    format: field-mask
         api.post.v1.UpdatePostReply:
             type: object
             properties:
@@ -450,6 +762,23 @@ components:
                     type: array
                     items:
                         type: string
+                updateMask:
+                    type: string
+                    format: field-mask
+        api.post.v1.UpdateTagReply:
+            type: object
+            properties:
+                tag:
+                    $ref: '#/components/schemas/api.post.v1.TagDetail'
+        api.post.v1.UpdateTagRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                slug:
+                    type: string
                 updateMask:
                     type: string
                     format: field-mask
@@ -569,7 +898,11 @@ components:
                     format: date-time
             description: 包含了用户的基本信息，如用户名、邮箱、角色、状态等
 tags:
+    - name: Category
+      description: 分类管理服务
     - name: Post
       description: Post服务定义了标准的CRUD接口，用于创建、更新、删除、获取和列出帖子
+    - name: Tag
+      description: 标签管理服务
     - name: User
       description: 用户服务，提供了创建、更新、删除、获取和列出用户的接口

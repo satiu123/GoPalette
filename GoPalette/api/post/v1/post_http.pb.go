@@ -270,3 +270,461 @@ func (c *PostHTTPClientImpl) UpdatePost(ctx context.Context, in *UpdatePostReque
 	}
 	return &out, nil
 }
+
+const OperationCategoryCreateCategory = "/api.post.v1.Category/CreateCategory"
+const OperationCategoryDeleteCategory = "/api.post.v1.Category/DeleteCategory"
+const OperationCategoryGetCategory = "/api.post.v1.Category/GetCategory"
+const OperationCategoryListCategories = "/api.post.v1.Category/ListCategories"
+const OperationCategoryUpdateCategory = "/api.post.v1.Category/UpdateCategory"
+
+type CategoryHTTPServer interface {
+	// CreateCategory CreateCategory 创建分类
+	CreateCategory(context.Context, *CreateCategoryRequest) (*CreateCategoryReply, error)
+	// DeleteCategory DeleteCategory 删除分类
+	DeleteCategory(context.Context, *DeleteCategoryRequest) (*DeleteCategoryReply, error)
+	// GetCategory GetCategory 获取分类详情
+	GetCategory(context.Context, *GetCategoryRequest) (*GetCategoryReply, error)
+	// ListCategories ListCategories 列出分类，输入分页参数，返回分类列表
+	ListCategories(context.Context, *ListCategoriesRequest) (*ListCategoriesReply, error)
+	// UpdateCategory UpdateCategory 更新分类
+	UpdateCategory(context.Context, *UpdateCategoryRequest) (*UpdateCategoryReply, error)
+}
+
+func RegisterCategoryHTTPServer(s *http.Server, srv CategoryHTTPServer) {
+	r := s.Route("/")
+	r.POST("/v1/categories", _Category_CreateCategory0_HTTP_Handler(srv))
+	r.PATCH("/v1/categories/{id}", _Category_UpdateCategory0_HTTP_Handler(srv))
+	r.DELETE("/v1/categories/{id}", _Category_DeleteCategory0_HTTP_Handler(srv))
+	r.GET("/v1/categories/{id}", _Category_GetCategory0_HTTP_Handler(srv))
+	r.GET("/v1/categories", _Category_ListCategories0_HTTP_Handler(srv))
+}
+
+func _Category_CreateCategory0_HTTP_Handler(srv CategoryHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CreateCategoryRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationCategoryCreateCategory)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateCategory(ctx, req.(*CreateCategoryRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*CreateCategoryReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Category_UpdateCategory0_HTTP_Handler(srv CategoryHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UpdateCategoryRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationCategoryUpdateCategory)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UpdateCategory(ctx, req.(*UpdateCategoryRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UpdateCategoryReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Category_DeleteCategory0_HTTP_Handler(srv CategoryHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in DeleteCategoryRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationCategoryDeleteCategory)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteCategory(ctx, req.(*DeleteCategoryRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*DeleteCategoryReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Category_GetCategory0_HTTP_Handler(srv CategoryHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetCategoryRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationCategoryGetCategory)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetCategory(ctx, req.(*GetCategoryRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetCategoryReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Category_ListCategories0_HTTP_Handler(srv CategoryHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListCategoriesRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationCategoryListCategories)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListCategories(ctx, req.(*ListCategoriesRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListCategoriesReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+type CategoryHTTPClient interface {
+	// CreateCategory CreateCategory 创建分类
+	CreateCategory(ctx context.Context, req *CreateCategoryRequest, opts ...http.CallOption) (rsp *CreateCategoryReply, err error)
+	// DeleteCategory DeleteCategory 删除分类
+	DeleteCategory(ctx context.Context, req *DeleteCategoryRequest, opts ...http.CallOption) (rsp *DeleteCategoryReply, err error)
+	// GetCategory GetCategory 获取分类详情
+	GetCategory(ctx context.Context, req *GetCategoryRequest, opts ...http.CallOption) (rsp *GetCategoryReply, err error)
+	// ListCategories ListCategories 列出分类，输入分页参数，返回分类列表
+	ListCategories(ctx context.Context, req *ListCategoriesRequest, opts ...http.CallOption) (rsp *ListCategoriesReply, err error)
+	// UpdateCategory UpdateCategory 更新分类
+	UpdateCategory(ctx context.Context, req *UpdateCategoryRequest, opts ...http.CallOption) (rsp *UpdateCategoryReply, err error)
+}
+
+type CategoryHTTPClientImpl struct {
+	cc *http.Client
+}
+
+func NewCategoryHTTPClient(client *http.Client) CategoryHTTPClient {
+	return &CategoryHTTPClientImpl{client}
+}
+
+// CreateCategory CreateCategory 创建分类
+func (c *CategoryHTTPClientImpl) CreateCategory(ctx context.Context, in *CreateCategoryRequest, opts ...http.CallOption) (*CreateCategoryReply, error) {
+	var out CreateCategoryReply
+	pattern := "/v1/categories"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationCategoryCreateCategory))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// DeleteCategory DeleteCategory 删除分类
+func (c *CategoryHTTPClientImpl) DeleteCategory(ctx context.Context, in *DeleteCategoryRequest, opts ...http.CallOption) (*DeleteCategoryReply, error) {
+	var out DeleteCategoryReply
+	pattern := "/v1/categories/{id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationCategoryDeleteCategory))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetCategory GetCategory 获取分类详情
+func (c *CategoryHTTPClientImpl) GetCategory(ctx context.Context, in *GetCategoryRequest, opts ...http.CallOption) (*GetCategoryReply, error) {
+	var out GetCategoryReply
+	pattern := "/v1/categories/{id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationCategoryGetCategory))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListCategories ListCategories 列出分类，输入分页参数，返回分类列表
+func (c *CategoryHTTPClientImpl) ListCategories(ctx context.Context, in *ListCategoriesRequest, opts ...http.CallOption) (*ListCategoriesReply, error) {
+	var out ListCategoriesReply
+	pattern := "/v1/categories"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationCategoryListCategories))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// UpdateCategory UpdateCategory 更新分类
+func (c *CategoryHTTPClientImpl) UpdateCategory(ctx context.Context, in *UpdateCategoryRequest, opts ...http.CallOption) (*UpdateCategoryReply, error) {
+	var out UpdateCategoryReply
+	pattern := "/v1/categories/{id}"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationCategoryUpdateCategory))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "PATCH", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+const OperationTagCreateTag = "/api.post.v1.Tag/CreateTag"
+const OperationTagDeleteTag = "/api.post.v1.Tag/DeleteTag"
+const OperationTagGetTag = "/api.post.v1.Tag/GetTag"
+const OperationTagListTags = "/api.post.v1.Tag/ListTags"
+const OperationTagUpdateTag = "/api.post.v1.Tag/UpdateTag"
+
+type TagHTTPServer interface {
+	// CreateTag CreateTag 创建标签
+	CreateTag(context.Context, *CreateTagRequest) (*CreateTagReply, error)
+	// DeleteTag DeleteTag 删除标签
+	DeleteTag(context.Context, *DeleteTagRequest) (*DeleteTagReply, error)
+	// GetTag GetTag 获取标签详情
+	GetTag(context.Context, *GetTagRequest) (*GetTagReply, error)
+	// ListTags ListTags 列出标签，输入分页参数，返回标签列表
+	ListTags(context.Context, *ListTagsRequest) (*ListTagsReply, error)
+	// UpdateTag UpdateTag 更新标签
+	UpdateTag(context.Context, *UpdateTagRequest) (*UpdateTagReply, error)
+}
+
+func RegisterTagHTTPServer(s *http.Server, srv TagHTTPServer) {
+	r := s.Route("/")
+	r.POST("/v1/tags", _Tag_CreateTag0_HTTP_Handler(srv))
+	r.PATCH("/v1/tags/{id}", _Tag_UpdateTag0_HTTP_Handler(srv))
+	r.DELETE("/v1/tags/{id}", _Tag_DeleteTag0_HTTP_Handler(srv))
+	r.GET("/v1/tags/{id}", _Tag_GetTag0_HTTP_Handler(srv))
+	r.GET("/v1/tags", _Tag_ListTags0_HTTP_Handler(srv))
+}
+
+func _Tag_CreateTag0_HTTP_Handler(srv TagHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CreateTagRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationTagCreateTag)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateTag(ctx, req.(*CreateTagRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*CreateTagReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Tag_UpdateTag0_HTTP_Handler(srv TagHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UpdateTagRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationTagUpdateTag)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UpdateTag(ctx, req.(*UpdateTagRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UpdateTagReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Tag_DeleteTag0_HTTP_Handler(srv TagHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in DeleteTagRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationTagDeleteTag)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteTag(ctx, req.(*DeleteTagRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*DeleteTagReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Tag_GetTag0_HTTP_Handler(srv TagHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetTagRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationTagGetTag)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetTag(ctx, req.(*GetTagRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetTagReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Tag_ListTags0_HTTP_Handler(srv TagHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListTagsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationTagListTags)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListTags(ctx, req.(*ListTagsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListTagsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+type TagHTTPClient interface {
+	// CreateTag CreateTag 创建标签
+	CreateTag(ctx context.Context, req *CreateTagRequest, opts ...http.CallOption) (rsp *CreateTagReply, err error)
+	// DeleteTag DeleteTag 删除标签
+	DeleteTag(ctx context.Context, req *DeleteTagRequest, opts ...http.CallOption) (rsp *DeleteTagReply, err error)
+	// GetTag GetTag 获取标签详情
+	GetTag(ctx context.Context, req *GetTagRequest, opts ...http.CallOption) (rsp *GetTagReply, err error)
+	// ListTags ListTags 列出标签，输入分页参数，返回标签列表
+	ListTags(ctx context.Context, req *ListTagsRequest, opts ...http.CallOption) (rsp *ListTagsReply, err error)
+	// UpdateTag UpdateTag 更新标签
+	UpdateTag(ctx context.Context, req *UpdateTagRequest, opts ...http.CallOption) (rsp *UpdateTagReply, err error)
+}
+
+type TagHTTPClientImpl struct {
+	cc *http.Client
+}
+
+func NewTagHTTPClient(client *http.Client) TagHTTPClient {
+	return &TagHTTPClientImpl{client}
+}
+
+// CreateTag CreateTag 创建标签
+func (c *TagHTTPClientImpl) CreateTag(ctx context.Context, in *CreateTagRequest, opts ...http.CallOption) (*CreateTagReply, error) {
+	var out CreateTagReply
+	pattern := "/v1/tags"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationTagCreateTag))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// DeleteTag DeleteTag 删除标签
+func (c *TagHTTPClientImpl) DeleteTag(ctx context.Context, in *DeleteTagRequest, opts ...http.CallOption) (*DeleteTagReply, error) {
+	var out DeleteTagReply
+	pattern := "/v1/tags/{id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationTagDeleteTag))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetTag GetTag 获取标签详情
+func (c *TagHTTPClientImpl) GetTag(ctx context.Context, in *GetTagRequest, opts ...http.CallOption) (*GetTagReply, error) {
+	var out GetTagReply
+	pattern := "/v1/tags/{id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationTagGetTag))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListTags ListTags 列出标签，输入分页参数，返回标签列表
+func (c *TagHTTPClientImpl) ListTags(ctx context.Context, in *ListTagsRequest, opts ...http.CallOption) (*ListTagsReply, error) {
+	var out ListTagsReply
+	pattern := "/v1/tags"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationTagListTags))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// UpdateTag UpdateTag 更新标签
+func (c *TagHTTPClientImpl) UpdateTag(ctx context.Context, in *UpdateTagRequest, opts ...http.CallOption) (*UpdateTagReply, error) {
+	var out UpdateTagReply
+	pattern := "/v1/tags/{id}"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationTagUpdateTag))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "PATCH", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}

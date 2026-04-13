@@ -55,6 +55,78 @@ service Post {
   };
 }
 
+// 分类管理服务
+service Category {
+  // CreateCategory 创建分类
+  rpc CreateCategory (CreateCategoryRequest) returns (CreateCategoryReply){
+    option (google.api.http) = {
+      post: "/v1/categories"
+      body: "*"
+    };
+  };
+  // UpdateCategory 更新分类
+  rpc UpdateCategory (UpdateCategoryRequest) returns (UpdateCategoryReply){
+    option (google.api.http) = {
+      patch: "/v1/categories/{id}"
+      body: "*"
+    };
+  };
+  // DeleteCategory 删除分类
+  rpc DeleteCategory (DeleteCategoryRequest) returns (DeleteCategoryReply){
+    option (google.api.http) = {
+      delete: "/v1/categories/{id}"
+    };
+  };
+  // GetCategory 获取分类详情
+  rpc GetCategory (GetCategoryRequest) returns (GetCategoryReply){
+    option (google.api.http) = {
+      get: "/v1/categories/{id}"
+    };
+  };
+  // ListCategories 列出分类，输入分页参数，返回分类列表
+  rpc ListCategories (ListCategoriesRequest) returns (ListCategoriesReply){
+    option (google.api.http) = {
+      get: "/v1/categories"
+    };
+  };
+}
+
+// 标签管理服务
+service Tag {
+  // CreateTag 创建标签
+  rpc CreateTag (CreateTagRequest) returns (CreateTagReply){
+    option (google.api.http) = {
+      post: "/v1/tags"
+      body: "*"
+    };
+  };
+  // UpdateTag 更新标签
+  rpc UpdateTag (UpdateTagRequest) returns (UpdateTagReply){
+    option (google.api.http) = {
+      patch: "/v1/tags/{id}"
+      body: "*"
+    };
+  };
+  // DeleteTag 删除标签
+  rpc DeleteTag (DeleteTagRequest) returns (DeleteTagReply){
+    option (google.api.http) = {
+      delete: "/v1/tags/{id}"
+    };
+  };
+  // GetTag 获取标签详情
+  rpc GetTag (GetTagRequest) returns (GetTagReply){
+    option (google.api.http) = {
+      get: "/v1/tags/{id}"
+    };
+  };
+  // ListTags 列出标签，输入分页参数，返回标签列表
+  rpc ListTags (ListTagsRequest) returns (ListTagsReply){
+    option (google.api.http) = {
+      get: "/v1/tags"
+    };
+  };
+}
+
 message AuthorInfo {
   int64  id         = 1; // 作者ID
   string name       = 2; // 作者姓名
@@ -64,6 +136,24 @@ message AuthorInfo {
 message CategoryInfo {
   int64  id   = 1; // 分类ID
   string name = 2; // 分类名称
+}
+
+message CategoryDetail {
+  CategoryInfo info        = 1; // 分类基本信息
+  string       slug        = 2; // 分类slug
+  string       description = 3; // 分类描述
+  int64        post_count  = 4; // 分类下文章数量
+}
+
+message TagInfo {
+  int64  id   = 1; // 标签ID
+  string name = 2; // 标签名称
+}
+
+message TagDetail {
+  TagInfo info       = 1; // 标签基本信息
+  string  slug       = 2; // 标签slug
+  int64   post_count = 3; // 标签下文章数量
 }
 
 // PostInfo 包含了帖子的基本信息
@@ -153,4 +243,100 @@ message ListPostsRequest {
 message ListPostsReply {
   repeated PostInfo posts = 1; // 帖子列表
   int64             total = 2; // 总帖子数
+}
+
+message ListCategoriesRequest {
+  int64 page      = 1;
+  int64 page_size = 2;
+}
+
+message CreateCategoryRequest {
+  string name        = 1; // 分类名称
+  string slug        = 2; // 分类slug
+  string description = 3; // 分类描述
+}
+
+message CreateCategoryReply {
+  CategoryDetail category = 1;
+}
+
+message UpdateCategoryRequest {
+  int64  id          = 1; // 分类ID
+  string name        = 2; // 分类名称
+  string slug        = 3; // 分类slug
+  string description = 4; // 分类描述
+
+  google.protobuf.FieldMask update_mask = 5; // 需要更新的字段
+}
+
+message UpdateCategoryReply {
+  CategoryDetail category = 1;
+}
+
+message DeleteCategoryRequest {
+  int64 id = 1; // 分类ID
+}
+
+message DeleteCategoryReply {
+  bool success = 1;
+}
+
+message GetCategoryRequest {
+  int64 id = 1; // 分类ID
+}
+
+message GetCategoryReply {
+  CategoryDetail category = 1;
+}
+
+message ListCategoriesReply {
+  repeated CategoryInfo categories = 1; // 分类列表
+  int64              total      = 2; // 总分类数
+}
+
+message ListTagsRequest {
+  int64 page      = 1;
+  int64 page_size = 2;
+}
+
+message CreateTagRequest {
+  string name = 1; // 标签名称
+  string slug = 2; // 标签slug
+}
+
+message CreateTagReply {
+  TagDetail tag = 1;
+}
+
+message UpdateTagRequest {
+  int64  id   = 1; // 标签ID
+  string name = 2; // 标签名称
+  string slug = 3; // 标签slug
+
+  google.protobuf.FieldMask update_mask = 4; // 需要更新的字段
+}
+
+message UpdateTagReply {
+  TagDetail tag = 1;
+}
+
+message DeleteTagRequest {
+  int64 id = 1; // 标签ID
+}
+
+message DeleteTagReply {
+  bool success = 1;
+}
+
+message GetTagRequest {
+  int64 id = 1; // 标签ID
+}
+
+message GetTagReply {
+  TagDetail tag = 1;
+}
+
+message ListTagsReply {
+  repeated TagInfo tags = 1; // 标签列表
+  int64            total = 2; // 总标签数
 }
