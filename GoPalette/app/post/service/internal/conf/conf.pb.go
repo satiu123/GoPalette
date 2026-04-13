@@ -138,6 +138,7 @@ type Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Database      *Data_Database         `protobuf:"bytes,1,opt,name=database,proto3" json:"database,omitempty"`
 	Redis         *Data_Redis            `protobuf:"bytes,2,opt,name=redis,proto3" json:"redis,omitempty"`
+	Clients       *Data_Clients          `protobuf:"bytes,3,opt,name=clients,proto3" json:"clients,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -182,6 +183,13 @@ func (x *Data) GetDatabase() *Data_Database {
 func (x *Data) GetRedis() *Data_Redis {
 	if x != nil {
 		return x.Redis
+	}
+	return nil
+}
+
+func (x *Data) GetClients() *Data_Clients {
+	if x != nil {
+		return x.Clients
 	}
 	return nil
 }
@@ -526,6 +534,58 @@ func (x *Data_Redis) GetWriteTimeout() *durationpb.Duration {
 	return nil
 }
 
+type Data_Clients struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserEndpoint  string                 `protobuf:"bytes,1,opt,name=user_endpoint,json=userEndpoint,proto3" json:"user_endpoint,omitempty"`
+	Timeout       *durationpb.Duration   `protobuf:"bytes,2,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Data_Clients) Reset() {
+	*x = Data_Clients{}
+	mi := &file_app_post_service_internal_conf_conf_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Data_Clients) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Data_Clients) ProtoMessage() {}
+
+func (x *Data_Clients) ProtoReflect() protoreflect.Message {
+	mi := &file_app_post_service_internal_conf_conf_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Data_Clients.ProtoReflect.Descriptor instead.
+func (*Data_Clients) Descriptor() ([]byte, []int) {
+	return file_app_post_service_internal_conf_conf_proto_rawDescGZIP(), []int{2, 2}
+}
+
+func (x *Data_Clients) GetUserEndpoint() string {
+	if x != nil {
+		return x.UserEndpoint
+	}
+	return ""
+}
+
+func (x *Data_Clients) GetTimeout() *durationpb.Duration {
+	if x != nil {
+		return x.Timeout
+	}
+	return nil
+}
+
 var File_app_post_service_internal_conf_conf_proto protoreflect.FileDescriptor
 
 const file_app_post_service_internal_conf_conf_proto_rawDesc = "" +
@@ -545,10 +605,11 @@ const file_app_post_service_internal_conf_conf_proto_rawDesc = "" +
 	"\x04GRPC\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x123\n" +
-	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\xd1\x03\n" +
+	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\xef\x04\n" +
 	"\x04Data\x12:\n" +
 	"\bdatabase\x18\x01 \x01(\v2\x1e.kratos.api.post.Data.DatabaseR\bdatabase\x121\n" +
-	"\x05redis\x18\x02 \x01(\v2\x1b.kratos.api.post.Data.RedisR\x05redis\x1a:\n" +
+	"\x05redis\x18\x02 \x01(\v2\x1b.kratos.api.post.Data.RedisR\x05redis\x127\n" +
+	"\aclients\x18\x03 \x01(\v2\x1d.kratos.api.post.Data.ClientsR\aclients\x1a:\n" +
 	"\bDatabase\x12\x16\n" +
 	"\x06driver\x18\x01 \x01(\tR\x06driver\x12\x16\n" +
 	"\x06source\x18\x02 \x01(\tR\x06source\x1a\x9d\x02\n" +
@@ -559,7 +620,10 @@ const file_app_post_service_internal_conf_conf_proto_rawDesc = "" +
 	"\x02db\x18\x04 \x01(\x05R\x02db\x12<\n" +
 	"\fdial_timeout\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\vdialTimeout\x12<\n" +
 	"\fread_timeout\x18\x06 \x01(\v2\x19.google.protobuf.DurationR\vreadTimeout\x12>\n" +
-	"\rwrite_timeout\x18\a \x01(\v2\x19.google.protobuf.DurationR\fwriteTimeout\"\x88\x02\n" +
+	"\rwrite_timeout\x18\a \x01(\v2\x19.google.protobuf.DurationR\fwriteTimeout\x1ac\n" +
+	"\aClients\x12#\n" +
+	"\ruser_endpoint\x18\x01 \x01(\tR\fuserEndpoint\x123\n" +
+	"\atimeout\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\x88\x02\n" +
 	"\x04Auth\x12*\n" +
 	"\x11jwt_access_secret\x18\x01 \x01(\tR\x0fjwtAccessSecret\x12,\n" +
 	"\x12jwt_refresh_secret\x18\x02 \x01(\tR\x10jwtRefreshSecret\x12E\n" +
@@ -579,7 +643,7 @@ func file_app_post_service_internal_conf_conf_proto_rawDescGZIP() []byte {
 	return file_app_post_service_internal_conf_conf_proto_rawDescData
 }
 
-var file_app_post_service_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_app_post_service_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_app_post_service_internal_conf_conf_proto_goTypes = []any{
 	(*Bootstrap)(nil),           // 0: kratos.api.post.Bootstrap
 	(*Server)(nil),              // 1: kratos.api.post.Server
@@ -589,7 +653,8 @@ var file_app_post_service_internal_conf_conf_proto_goTypes = []any{
 	(*Server_GRPC)(nil),         // 5: kratos.api.post.Server.GRPC
 	(*Data_Database)(nil),       // 6: kratos.api.post.Data.Database
 	(*Data_Redis)(nil),          // 7: kratos.api.post.Data.Redis
-	(*durationpb.Duration)(nil), // 8: google.protobuf.Duration
+	(*Data_Clients)(nil),        // 8: kratos.api.post.Data.Clients
+	(*durationpb.Duration)(nil), // 9: google.protobuf.Duration
 }
 var file_app_post_service_internal_conf_conf_proto_depIdxs = []int32{
 	1,  // 0: kratos.api.post.Bootstrap.server:type_name -> kratos.api.post.Server
@@ -599,18 +664,20 @@ var file_app_post_service_internal_conf_conf_proto_depIdxs = []int32{
 	5,  // 4: kratos.api.post.Server.grpc:type_name -> kratos.api.post.Server.GRPC
 	6,  // 5: kratos.api.post.Data.database:type_name -> kratos.api.post.Data.Database
 	7,  // 6: kratos.api.post.Data.redis:type_name -> kratos.api.post.Data.Redis
-	8,  // 7: kratos.api.post.Auth.jwt_access_expire:type_name -> google.protobuf.Duration
-	8,  // 8: kratos.api.post.Auth.jwt_refresh_expire:type_name -> google.protobuf.Duration
-	8,  // 9: kratos.api.post.Server.HTTP.timeout:type_name -> google.protobuf.Duration
-	8,  // 10: kratos.api.post.Server.GRPC.timeout:type_name -> google.protobuf.Duration
-	8,  // 11: kratos.api.post.Data.Redis.dial_timeout:type_name -> google.protobuf.Duration
-	8,  // 12: kratos.api.post.Data.Redis.read_timeout:type_name -> google.protobuf.Duration
-	8,  // 13: kratos.api.post.Data.Redis.write_timeout:type_name -> google.protobuf.Duration
-	14, // [14:14] is the sub-list for method output_type
-	14, // [14:14] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	8,  // 7: kratos.api.post.Data.clients:type_name -> kratos.api.post.Data.Clients
+	9,  // 8: kratos.api.post.Auth.jwt_access_expire:type_name -> google.protobuf.Duration
+	9,  // 9: kratos.api.post.Auth.jwt_refresh_expire:type_name -> google.protobuf.Duration
+	9,  // 10: kratos.api.post.Server.HTTP.timeout:type_name -> google.protobuf.Duration
+	9,  // 11: kratos.api.post.Server.GRPC.timeout:type_name -> google.protobuf.Duration
+	9,  // 12: kratos.api.post.Data.Redis.dial_timeout:type_name -> google.protobuf.Duration
+	9,  // 13: kratos.api.post.Data.Redis.read_timeout:type_name -> google.protobuf.Duration
+	9,  // 14: kratos.api.post.Data.Redis.write_timeout:type_name -> google.protobuf.Duration
+	9,  // 15: kratos.api.post.Data.Clients.timeout:type_name -> google.protobuf.Duration
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_app_post_service_internal_conf_conf_proto_init() }
@@ -624,7 +691,7 @@ func file_app_post_service_internal_conf_conf_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_app_post_service_internal_conf_conf_proto_rawDesc), len(file_app_post_service_internal_conf_conf_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

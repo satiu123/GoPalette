@@ -112,6 +112,23 @@ func (r *userRepo) List(ctx context.Context, page, pageSize int64) ([]*biz.User,
 	return users, total, nil
 }
 
+func (r *userRepo) ListByIDs(ctx context.Context, ids []int64) ([]*biz.User, error) {
+	if len(ids) == 0 {
+		return []*biz.User{}, nil
+	}
+
+	var pos []User
+	if err := r.data.db.WithContext(ctx).Where("id IN ?", ids).Find(&pos).Error; err != nil {
+		return nil, err
+	}
+
+	users := make([]*biz.User, 0, len(pos))
+	for i := range pos {
+		users = append(users, r.toBizUser(&pos[i]))
+	}
+	return users, nil
+}
+
 func (r *userRepo) FindByEmail(ctx context.Context, email string) (*biz.User, error) {
 	var po User
 	if err := r.data.db.WithContext(ctx).Where("email = ?", email).First(&po).Error; err != nil {

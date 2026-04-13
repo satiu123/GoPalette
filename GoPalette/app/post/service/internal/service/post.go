@@ -4,6 +4,7 @@ import (
 	"context"
 
 	pb "GoPalette/api/post/v1"
+	userpb "GoPalette/api/user/v1"
 	"GoPalette/app/post/service/internal/biz"
 	"GoPalette/pkg/auth"
 
@@ -15,12 +16,14 @@ type PostService struct {
 	pb.UnimplementedPostServer
 
 	uc     *biz.PostUsecase
+	userc  userpb.UserClient
 	logger *log.Helper
 }
 
-func NewPostService(uc *biz.PostUsecase, logger log.Logger) *PostService {
+func NewPostService(uc *biz.PostUsecase, userc userpb.UserClient, logger log.Logger) *PostService {
 	return &PostService{
 		uc:     uc,
+		userc:  userc,
 		logger: log.NewHelper(log.With(logger, "module", "service/post")),
 	}
 }
@@ -92,8 +95,17 @@ func (s *PostService) GetPost(ctx context.Context, req *pb.GetPostRequest) (*pb.
 	if err != nil {
 		return nil, err
 	}
+	pbDetail := s.toPBDetail(post)
+	authorsResp, err := s.userc.BatchGetUsers(ctx, &userpb.BatchGetUsersRequest{Ids: []int64{post.AuthorID}})
+	if err != nil {
+		s.logger.WithContext(ctx).Warnf("批量获取用户信息失败: %v", err)
+	} else if len(authorsResp.Users) > 0 {
+		pbDetail.Info.Author.Name = authorsResp.Users[0].Username
+		pbDetail.Info.Author.AvatarUrl = authorsResp.Users[0].AvatarUrl
+	}
+
 	return &pb.GetPostReply{
-		Post: s.toPBDetail(post),
+		Post: pbDetail,
 	}, nil
 }
 func (s *PostService) ListPosts(ctx context.Context, req *pb.ListPostsRequest) (*pb.ListPostsReply, error) {
@@ -102,9 +114,33 @@ func (s *PostService) ListPosts(ctx context.Context, req *pb.ListPostsRequest) (
 		return nil, err
 	}
 
+	authorSet := make(map[int64]struct{})
+	for _, p := range res {
+		authorSet[p.AuthorID] = struct{}{}
+	}
+	authorIDs := make([]int64, 0, len(authorSet))
+	for id := range authorSet {
+		authorIDs = append(authorIDs, id)
+	}
+	authors := make(map[int64]*userpb.UserProfile)
+	if len(authorIDs) > 0 {
+		usersResp, userErr := s.userc.BatchGetUsers(ctx, &userpb.BatchGetUsersRequest{Ids: authorIDs})
+		if userErr != nil {
+			s.logger.WithContext(ctx).Warnf("批量获取用户信息失败: %v", userErr)
+		} else {
+			for _, u := range usersResp.Users {
+				authors[u.Id] = u
+			}
+		}
+	}
+
 	posts := make([]*pb.PostInfo, len(res))
 	for i, p := range res {
 		posts[i] = s.toPBInfo(p)
+		if u, ok := authors[p.AuthorID]; ok {
+			posts[i].Author.Name = u.Username
+			posts[i].Author.AvatarUrl = u.AvatarUrl
+		}
 	}
 
 	return &pb.ListPostsReply{
@@ -112,6 +148,13 @@ func (s *PostService) ListPosts(ctx context.Context, req *pb.ListPostsRequest) (
 		Total: total,
 	}, nil
 
+}
+
+func (s *PostService) IncrCommentCount(ctx context.Context, req *pb.IncrCommentCountRequest) (*pb.IncrCommentCountReply, error) {
+	if err := s.uc.IncrCommentCount(ctx, req.Id, req.Delta); err != nil {
+		return nil, err
+	}
+	return &pb.IncrCommentCountReply{Success: true}, nil
 }
 
 func (s *PostService) toPBInfo(p *biz.Post) *pb.PostInfo {

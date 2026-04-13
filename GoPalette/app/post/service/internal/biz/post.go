@@ -38,6 +38,7 @@ type PostRepo interface {
 	GetByID(context.Context, int64) (*Post, error)
 	GetBySlug(context.Context, string) (*Post, error)
 	List(ctx context.Context, page, pageSize int64) ([]*Post, int64, error)
+	IncrCommentCount(ctx context.Context, id int64, delta int64) error
 }
 
 type PostUsecase struct {
@@ -122,4 +123,17 @@ func (uc *PostUsecase) DeletePost(ctx context.Context, id int64) error {
 
 func (uc *PostUsecase) ListPosts(ctx context.Context, page, pageSize int64) ([]*Post, int64, error) {
 	return uc.repo.List(ctx, page, pageSize)
+}
+
+func (uc *PostUsecase) IncrCommentCount(ctx context.Context, id int64, delta int64) error {
+	if id <= 0 {
+		return pb.ErrorInvalidArgument("%s", "文章ID无效")
+	}
+	if delta == 0 {
+		return nil
+	}
+	if _, err := uc.repo.GetByID(ctx, id); err != nil {
+		return pb.ErrorPostNotFound("文章未找到")
+	}
+	return uc.repo.IncrCommentCount(ctx, id, delta)
 }

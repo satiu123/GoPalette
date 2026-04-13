@@ -1107,6 +1107,154 @@ func (x *RefreshTokenReply) GetRefreshToken() string {
 	return ""
 }
 
+type UserProfile struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	AvatarUrl     string                 `protobuf:"bytes,3,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserProfile) Reset() {
+	*x = UserProfile{}
+	mi := &file_user_v1_user_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserProfile) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserProfile) ProtoMessage() {}
+
+func (x *UserProfile) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserProfile.ProtoReflect.Descriptor instead.
+func (*UserProfile) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *UserProfile) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *UserProfile) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *UserProfile) GetAvatarUrl() string {
+	if x != nil {
+		return x.AvatarUrl
+	}
+	return ""
+}
+
+type BatchGetUsersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ids           []int64                `protobuf:"varint,1,rep,packed,name=ids,proto3" json:"ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BatchGetUsersRequest) Reset() {
+	*x = BatchGetUsersRequest{}
+	mi := &file_user_v1_user_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BatchGetUsersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchGetUsersRequest) ProtoMessage() {}
+
+func (x *BatchGetUsersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BatchGetUsersRequest.ProtoReflect.Descriptor instead.
+func (*BatchGetUsersRequest) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *BatchGetUsersRequest) GetIds() []int64 {
+	if x != nil {
+		return x.Ids
+	}
+	return nil
+}
+
+type BatchGetUsersReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Users         []*UserProfile         `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BatchGetUsersReply) Reset() {
+	*x = BatchGetUsersReply{}
+	mi := &file_user_v1_user_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BatchGetUsersReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchGetUsersReply) ProtoMessage() {}
+
+func (x *BatchGetUsersReply) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BatchGetUsersReply.ProtoReflect.Descriptor instead.
+func (*BatchGetUsersReply) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *BatchGetUsersReply) GetUsers() []*UserProfile {
+	if x != nil {
+		return x.Users
+	}
+	return nil
+}
+
 var File_user_v1_user_proto protoreflect.FileDescriptor
 
 const file_user_v1_user_proto_rawDesc = "" +
@@ -1172,7 +1320,16 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"[\n" +
 	"\x11RefreshTokenReply\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12#\n" +
-	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken*\x1b\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\"X\n" +
+	"\vUserProfile\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1a\n" +
+	"\busername\x18\x02 \x01(\tR\busername\x12\x1d\n" +
+	"\n" +
+	"avatar_url\x18\x03 \x01(\tR\tavatarUrl\"(\n" +
+	"\x14BatchGetUsersRequest\x12\x10\n" +
+	"\x03ids\x18\x01 \x03(\x03R\x03ids\"D\n" +
+	"\x12BatchGetUsersReply\x12.\n" +
+	"\x05users\x18\x01 \x03(\v2\x18.api.user.v1.UserProfileR\x05users*\x1b\n" +
 	"\x04Role\x12\b\n" +
 	"\x04USER\x10\x00\x12\t\n" +
 	"\x05ADMIN\x10\x01*&\n" +
@@ -1180,7 +1337,7 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"UserStatus\x12\n" +
 	"\n" +
 	"\x06ACTIVE\x10\x00\x12\f\n" +
-	"\bINACTIVE\x10\x012\xf5\x06\n" +
+	"\bINACTIVE\x10\x012\xe9\a\n" +
 	"\x04User\x12c\n" +
 	"\bRegister\x12\x1c.api.user.v1.RegisterRequest\x1a\x1a.api.user.v1.RegisterReply\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/v1/users/register\x12W\n" +
 	"\x05Login\x12\x19.api.user.v1.LoginRequest\x1a\x17.api.user.v1.LoginReply\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/v1/users/login\x12[\n" +
@@ -1193,7 +1350,8 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"DeleteUser\x12\x1e.api.user.v1.DeleteUserRequest\x1a\x1c.api.user.v1.DeleteUserReply\"\x16\x82\xd3\xe4\x93\x02\x10*\x0e/v1/users/{id}\x12Y\n" +
 	"\aGetUser\x12\x1b.api.user.v1.GetUserRequest\x1a\x19.api.user.v1.GetUserReply\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/v1/users/{id}\x12W\n" +
 	"\bListUser\x12\x1c.api.user.v1.ListUserRequest\x1a\x1a.api.user.v1.ListUserReply\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/v1/users\x12n\n" +
-	"\fRefreshToken\x12 .api.user.v1.RefreshTokenRequest\x1a\x1e.api.user.v1.RefreshTokenReply\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/v1/users/refreshB)\n" +
+	"\fRefreshToken\x12 .api.user.v1.RefreshTokenRequest\x1a\x1e.api.user.v1.RefreshTokenReply\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/v1/users/refresh\x12r\n" +
+	"\rBatchGetUsers\x12!.api.user.v1.BatchGetUsersRequest\x1a\x1f.api.user.v1.BatchGetUsersReply\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/v1/users:batchGetB)\n" +
 	"\vapi.user.v1P\x01Z\x18GoPalette/api/user/v1;v1b\x06proto3"
 
 var (
@@ -1209,7 +1367,7 @@ func file_user_v1_user_proto_rawDescGZIP() []byte {
 }
 
 var file_user_v1_user_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_user_v1_user_proto_goTypes = []any{
 	(Role)(0),                     // 0: api.user.v1.Role
 	(UserStatus)(0),               // 1: api.user.v1.UserStatus
@@ -1232,45 +1390,51 @@ var file_user_v1_user_proto_goTypes = []any{
 	(*ListUserReply)(nil),         // 18: api.user.v1.ListUserReply
 	(*RefreshTokenRequest)(nil),   // 19: api.user.v1.RefreshTokenRequest
 	(*RefreshTokenReply)(nil),     // 20: api.user.v1.RefreshTokenReply
-	(*timestamppb.Timestamp)(nil), // 21: google.protobuf.Timestamp
-	(*fieldmaskpb.FieldMask)(nil), // 22: google.protobuf.FieldMask
+	(*UserProfile)(nil),           // 21: api.user.v1.UserProfile
+	(*BatchGetUsersRequest)(nil),  // 22: api.user.v1.BatchGetUsersRequest
+	(*BatchGetUsersReply)(nil),    // 23: api.user.v1.BatchGetUsersReply
+	(*timestamppb.Timestamp)(nil), // 24: google.protobuf.Timestamp
+	(*fieldmaskpb.FieldMask)(nil), // 25: google.protobuf.FieldMask
 }
 var file_user_v1_user_proto_depIdxs = []int32{
 	0,  // 0: api.user.v1.UserInfo.role:type_name -> api.user.v1.Role
 	1,  // 1: api.user.v1.UserInfo.status:type_name -> api.user.v1.UserStatus
-	21, // 2: api.user.v1.UserInfo.created_at:type_name -> google.protobuf.Timestamp
-	21, // 3: api.user.v1.UserInfo.updated_at:type_name -> google.protobuf.Timestamp
+	24, // 2: api.user.v1.UserInfo.created_at:type_name -> google.protobuf.Timestamp
+	24, // 3: api.user.v1.UserInfo.updated_at:type_name -> google.protobuf.Timestamp
 	2,  // 4: api.user.v1.RegisterReply.user:type_name -> api.user.v1.UserInfo
 	0,  // 5: api.user.v1.CreateUserRequest.role:type_name -> api.user.v1.Role
 	2,  // 6: api.user.v1.CreateUserReply.user:type_name -> api.user.v1.UserInfo
 	2,  // 7: api.user.v1.UpdateUserRequest.user:type_name -> api.user.v1.UserInfo
-	22, // 8: api.user.v1.UpdateUserRequest.update_mask:type_name -> google.protobuf.FieldMask
+	25, // 8: api.user.v1.UpdateUserRequest.update_mask:type_name -> google.protobuf.FieldMask
 	2,  // 9: api.user.v1.UpdateUserReply.user:type_name -> api.user.v1.UserInfo
 	2,  // 10: api.user.v1.GetUserReply.user:type_name -> api.user.v1.UserInfo
 	2,  // 11: api.user.v1.ListUserReply.users:type_name -> api.user.v1.UserInfo
-	3,  // 12: api.user.v1.User.Register:input_type -> api.user.v1.RegisterRequest
-	5,  // 13: api.user.v1.User.Login:input_type -> api.user.v1.LoginRequest
-	7,  // 14: api.user.v1.User.Logout:input_type -> api.user.v1.LogoutRequest
-	9,  // 15: api.user.v1.User.CreateUser:input_type -> api.user.v1.CreateUserRequest
-	11, // 16: api.user.v1.User.UpdateUser:input_type -> api.user.v1.UpdateUserRequest
-	13, // 17: api.user.v1.User.DeleteUser:input_type -> api.user.v1.DeleteUserRequest
-	15, // 18: api.user.v1.User.GetUser:input_type -> api.user.v1.GetUserRequest
-	17, // 19: api.user.v1.User.ListUser:input_type -> api.user.v1.ListUserRequest
-	19, // 20: api.user.v1.User.RefreshToken:input_type -> api.user.v1.RefreshTokenRequest
-	4,  // 21: api.user.v1.User.Register:output_type -> api.user.v1.RegisterReply
-	6,  // 22: api.user.v1.User.Login:output_type -> api.user.v1.LoginReply
-	8,  // 23: api.user.v1.User.Logout:output_type -> api.user.v1.LogoutReply
-	10, // 24: api.user.v1.User.CreateUser:output_type -> api.user.v1.CreateUserReply
-	12, // 25: api.user.v1.User.UpdateUser:output_type -> api.user.v1.UpdateUserReply
-	14, // 26: api.user.v1.User.DeleteUser:output_type -> api.user.v1.DeleteUserReply
-	16, // 27: api.user.v1.User.GetUser:output_type -> api.user.v1.GetUserReply
-	18, // 28: api.user.v1.User.ListUser:output_type -> api.user.v1.ListUserReply
-	20, // 29: api.user.v1.User.RefreshToken:output_type -> api.user.v1.RefreshTokenReply
-	21, // [21:30] is the sub-list for method output_type
-	12, // [12:21] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	21, // 12: api.user.v1.BatchGetUsersReply.users:type_name -> api.user.v1.UserProfile
+	3,  // 13: api.user.v1.User.Register:input_type -> api.user.v1.RegisterRequest
+	5,  // 14: api.user.v1.User.Login:input_type -> api.user.v1.LoginRequest
+	7,  // 15: api.user.v1.User.Logout:input_type -> api.user.v1.LogoutRequest
+	9,  // 16: api.user.v1.User.CreateUser:input_type -> api.user.v1.CreateUserRequest
+	11, // 17: api.user.v1.User.UpdateUser:input_type -> api.user.v1.UpdateUserRequest
+	13, // 18: api.user.v1.User.DeleteUser:input_type -> api.user.v1.DeleteUserRequest
+	15, // 19: api.user.v1.User.GetUser:input_type -> api.user.v1.GetUserRequest
+	17, // 20: api.user.v1.User.ListUser:input_type -> api.user.v1.ListUserRequest
+	19, // 21: api.user.v1.User.RefreshToken:input_type -> api.user.v1.RefreshTokenRequest
+	22, // 22: api.user.v1.User.BatchGetUsers:input_type -> api.user.v1.BatchGetUsersRequest
+	4,  // 23: api.user.v1.User.Register:output_type -> api.user.v1.RegisterReply
+	6,  // 24: api.user.v1.User.Login:output_type -> api.user.v1.LoginReply
+	8,  // 25: api.user.v1.User.Logout:output_type -> api.user.v1.LogoutReply
+	10, // 26: api.user.v1.User.CreateUser:output_type -> api.user.v1.CreateUserReply
+	12, // 27: api.user.v1.User.UpdateUser:output_type -> api.user.v1.UpdateUserReply
+	14, // 28: api.user.v1.User.DeleteUser:output_type -> api.user.v1.DeleteUserReply
+	16, // 29: api.user.v1.User.GetUser:output_type -> api.user.v1.GetUserReply
+	18, // 30: api.user.v1.User.ListUser:output_type -> api.user.v1.ListUserReply
+	20, // 31: api.user.v1.User.RefreshToken:output_type -> api.user.v1.RefreshTokenReply
+	23, // 32: api.user.v1.User.BatchGetUsers:output_type -> api.user.v1.BatchGetUsersReply
+	23, // [23:33] is the sub-list for method output_type
+	13, // [13:23] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_user_v1_user_proto_init() }
@@ -1284,7 +1448,7 @@ func file_user_v1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_v1_user_proto_rawDesc), len(file_user_v1_user_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   19,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

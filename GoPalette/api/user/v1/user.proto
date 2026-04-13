@@ -85,6 +85,13 @@ service User {
       body: "*"
     };
   };
+  // 批量获取公开用户信息（用户名、头像）
+  rpc BatchGetUsers (BatchGetUsersRequest) returns (BatchGetUsersReply){
+    option (google.api.http) = {
+      post: "/v1/users:batchGet"
+      body: "*"
+    };
+  };
 }
 
 // 包含了用户的基本信息，如用户名、邮箱、角色、状态等
@@ -181,4 +188,18 @@ message RefreshTokenRequest {
 message RefreshTokenReply {
   string access_token  = 1;
   string refresh_token = 2;
+}
+
+message UserProfile {
+  int64  id         = 1;
+  string username   = 2;
+  string avatar_url = 3;
+}
+
+message BatchGetUsersRequest {
+  repeated int64 ids = 1;
+}
+
+message BatchGetUsersReply {
+  repeated UserProfile users = 1;
 }

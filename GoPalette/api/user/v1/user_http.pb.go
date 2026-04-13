@@ -19,6 +19,7 @@ var _ = binding.EncodeURL
 
 const _ = http.SupportPackageIsVersion1
 
+const OperationUserBatchGetUsers = "/api.user.v1.User/BatchGetUsers"
 const OperationUserCreateUser = "/api.user.v1.User/CreateUser"
 const OperationUserDeleteUser = "/api.user.v1.User/DeleteUser"
 const OperationUserGetUser = "/api.user.v1.User/GetUser"
@@ -30,6 +31,8 @@ const OperationUserRegister = "/api.user.v1.User/Register"
 const OperationUserUpdateUser = "/api.user.v1.User/UpdateUser"
 
 type UserHTTPServer interface {
+	// BatchGetUsers 批量获取公开用户信息（用户名、头像）
+	BatchGetUsers(context.Context, *BatchGetUsersRequest) (*BatchGetUsersReply, error)
 	// CreateUser 创建用户，输入用户名、邮箱、密码和角色，返回创建的用户信息
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserReply, error)
 	// DeleteUser 删除用户，输入用户ID，返回删除是否成功
@@ -61,6 +64,7 @@ func RegisterUserHTTPServer(s *http.Server, srv UserHTTPServer) {
 	r.GET("/v1/users/{id}", _User_GetUser0_HTTP_Handler(srv))
 	r.GET("/v1/users", _User_ListUser0_HTTP_Handler(srv))
 	r.POST("/v1/users/refresh", _User_RefreshToken0_HTTP_Handler(srv))
+	r.POST("/v1/users:batchGet", _User_BatchGetUsers0_HTTP_Handler(srv))
 }
 
 func _User_Register0_HTTP_Handler(srv UserHTTPServer) func(ctx http.Context) error {
@@ -261,7 +265,31 @@ func _User_RefreshToken0_HTTP_Handler(srv UserHTTPServer) func(ctx http.Context)
 	}
 }
 
+func _User_BatchGetUsers0_HTTP_Handler(srv UserHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in BatchGetUsersRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationUserBatchGetUsers)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.BatchGetUsers(ctx, req.(*BatchGetUsersRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*BatchGetUsersReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type UserHTTPClient interface {
+	// BatchGetUsers 批量获取公开用户信息（用户名、头像）
+	BatchGetUsers(ctx context.Context, req *BatchGetUsersRequest, opts ...http.CallOption) (rsp *BatchGetUsersReply, err error)
 	// CreateUser 创建用户，输入用户名、邮箱、密码和角色，返回创建的用户信息
 	CreateUser(ctx context.Context, req *CreateUserRequest, opts ...http.CallOption) (rsp *CreateUserReply, err error)
 	// DeleteUser 删除用户，输入用户ID，返回删除是否成功
@@ -288,6 +316,20 @@ type UserHTTPClientImpl struct {
 
 func NewUserHTTPClient(client *http.Client) UserHTTPClient {
 	return &UserHTTPClientImpl{client}
+}
+
+// BatchGetUsers 批量获取公开用户信息（用户名、头像）
+func (c *UserHTTPClientImpl) BatchGetUsers(ctx context.Context, in *BatchGetUsersRequest, opts ...http.CallOption) (*BatchGetUsersReply, error) {
+	var out BatchGetUsersReply
+	pattern := "/v1/users:batchGet"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationUserBatchGetUsers))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 // CreateUser 创建用户，输入用户名、邮箱、密码和角色，返回创建的用户信息

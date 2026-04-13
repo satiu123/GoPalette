@@ -107,6 +107,44 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.post.v1.UpdateCategoryReply'
+    /v1/comments:
+        post:
+            tags:
+                - Comment
+            description: 发表评论/回复
+            operationId: Comment_CreateComment
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.comment.v1.CreateCommentRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.comment.v1.CommentInfo'
+    /v1/comments/{id}:
+        delete:
+            tags:
+                - Comment
+            description: 删除评论
+            operationId: Comment_DeleteComment
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.comment.v1.DeleteCommentReply'
     /v1/posts:
         get:
             tags:
@@ -235,6 +273,58 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.post.v1.UpdatePostReply'
+    /v1/posts/{id}/comment-count:incr:
+        post:
+            tags:
+                - Post
+            description: IncrCommentCount 增减文章评论数（用于评论服务回写）
+            operationId: Post_IncrCommentCount
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.post.v1.IncrCommentCountRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.IncrCommentCountReply'
+    /v1/posts/{postId}/comments:
+        get:
+            tags:
+                - Comment
+            description: 拉取文章评论列表（按一级评论分页，附带二级回复）
+            operationId: Comment_ListComments
+            parameters:
+                - name: postId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.comment.v1.ListCommentsReply'
     /v1/tags:
         get:
             tags:
@@ -518,8 +608,93 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.user.v1.UpdateUserReply'
+    /v1/users:batchGet:
+        post:
+            tags:
+                - User
+            description: 批量获取公开用户信息（用户名、头像）
+            operationId: User_BatchGetUsers
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.user.v1.BatchGetUsersRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.user.v1.BatchGetUsersReply'
 components:
     schemas:
+        api.comment.v1.AuthorInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                avatarUrl:
+                    type: string
+        api.comment.v1.CommentInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                postId:
+                    type: string
+                userId:
+                    type: string
+                content:
+                    type: string
+                parentId:
+                    type: string
+                rootId:
+                    type: string
+                likeCount:
+                    type: string
+                status:
+                    type: integer
+                    format: enum
+                author:
+                    $ref: '#/components/schemas/api.comment.v1.AuthorInfo'
+                replyToAuthor:
+                    $ref: '#/components/schemas/api.comment.v1.AuthorInfo'
+                createdAt:
+                    type: string
+                    format: date-time
+                updatedAt:
+                    type: string
+                    format: date-time
+                replies:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.comment.v1.CommentInfo'
+        api.comment.v1.CreateCommentRequest:
+            type: object
+            properties:
+                postId:
+                    type: string
+                content:
+                    type: string
+                parentId:
+                    type: string
+        api.comment.v1.DeleteCommentReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        api.comment.v1.ListCommentsReply:
+            type: object
+            properties:
+                comments:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.comment.v1.CommentInfo'
+                total:
+                    type: string
         api.post.v1.AuthorInfo:
             type: object
             properties:
@@ -628,6 +803,18 @@ components:
             properties:
                 tag:
                     $ref: '#/components/schemas/api.post.v1.TagDetail'
+        api.post.v1.IncrCommentCountReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        api.post.v1.IncrCommentCountRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                delta:
+                    type: string
         api.post.v1.ListCategoriesReply:
             type: object
             properties:
@@ -782,6 +969,20 @@ components:
                 updateMask:
                     type: string
                     format: field-mask
+        api.user.v1.BatchGetUsersReply:
+            type: object
+            properties:
+                users:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.user.v1.UserProfile'
+        api.user.v1.BatchGetUsersRequest:
+            type: object
+            properties:
+                ids:
+                    type: array
+                    items:
+                        type: string
         api.user.v1.CreateUserReply:
             type: object
             properties:
@@ -897,9 +1098,20 @@ components:
                     type: string
                     format: date-time
             description: 包含了用户的基本信息，如用户名、邮箱、角色、状态等
+        api.user.v1.UserProfile:
+            type: object
+            properties:
+                id:
+                    type: string
+                username:
+                    type: string
+                avatarUrl:
+                    type: string
 tags:
     - name: Category
       description: 分类管理服务
+    - name: Comment
+      description: 评论管理服务
     - name: Post
       description: Post服务定义了标准的CRUD接口，用于创建、更新、删除、获取和列出帖子
     - name: Tag

@@ -1174,6 +1174,102 @@ func (x *ListPostsReply) GetTotal() int64 {
 	return 0
 }
 
+type IncrCommentCountRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`       // 帖子ID
+	Delta         int64                  `protobuf:"varint,2,opt,name=delta,proto3" json:"delta,omitempty"` // 评论数增量，通常为 +1 或 -1
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IncrCommentCountRequest) Reset() {
+	*x = IncrCommentCountRequest{}
+	mi := &file_post_v1_post_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IncrCommentCountRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IncrCommentCountRequest) ProtoMessage() {}
+
+func (x *IncrCommentCountRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_post_v1_post_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IncrCommentCountRequest.ProtoReflect.Descriptor instead.
+func (*IncrCommentCountRequest) Descriptor() ([]byte, []int) {
+	return file_post_v1_post_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *IncrCommentCountRequest) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *IncrCommentCountRequest) GetDelta() int64 {
+	if x != nil {
+		return x.Delta
+	}
+	return 0
+}
+
+type IncrCommentCountReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IncrCommentCountReply) Reset() {
+	*x = IncrCommentCountReply{}
+	mi := &file_post_v1_post_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IncrCommentCountReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IncrCommentCountReply) ProtoMessage() {}
+
+func (x *IncrCommentCountReply) ProtoReflect() protoreflect.Message {
+	mi := &file_post_v1_post_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IncrCommentCountReply.ProtoReflect.Descriptor instead.
+func (*IncrCommentCountReply) Descriptor() ([]byte, []int) {
+	return file_post_v1_post_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *IncrCommentCountReply) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
 type ListCategoriesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Page          int64                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
@@ -1184,7 +1280,7 @@ type ListCategoriesRequest struct {
 
 func (x *ListCategoriesRequest) Reset() {
 	*x = ListCategoriesRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[17]
+	mi := &file_post_v1_post_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1196,7 +1292,7 @@ func (x *ListCategoriesRequest) String() string {
 func (*ListCategoriesRequest) ProtoMessage() {}
 
 func (x *ListCategoriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[17]
+	mi := &file_post_v1_post_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1209,7 +1305,7 @@ func (x *ListCategoriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCategoriesRequest.ProtoReflect.Descriptor instead.
 func (*ListCategoriesRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{17}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ListCategoriesRequest) GetPage() int64 {
@@ -1237,7 +1333,7 @@ type CreateCategoryRequest struct {
 
 func (x *CreateCategoryRequest) Reset() {
 	*x = CreateCategoryRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[18]
+	mi := &file_post_v1_post_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1249,7 +1345,7 @@ func (x *CreateCategoryRequest) String() string {
 func (*CreateCategoryRequest) ProtoMessage() {}
 
 func (x *CreateCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[18]
+	mi := &file_post_v1_post_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1262,7 +1358,7 @@ func (x *CreateCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCategoryRequest.ProtoReflect.Descriptor instead.
 func (*CreateCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{18}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *CreateCategoryRequest) GetName() string {
@@ -1295,7 +1391,7 @@ type CreateCategoryReply struct {
 
 func (x *CreateCategoryReply) Reset() {
 	*x = CreateCategoryReply{}
-	mi := &file_post_v1_post_proto_msgTypes[19]
+	mi := &file_post_v1_post_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1307,7 +1403,7 @@ func (x *CreateCategoryReply) String() string {
 func (*CreateCategoryReply) ProtoMessage() {}
 
 func (x *CreateCategoryReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[19]
+	mi := &file_post_v1_post_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1320,7 +1416,7 @@ func (x *CreateCategoryReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCategoryReply.ProtoReflect.Descriptor instead.
 func (*CreateCategoryReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{19}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *CreateCategoryReply) GetCategory() *CategoryDetail {
@@ -1343,7 +1439,7 @@ type UpdateCategoryRequest struct {
 
 func (x *UpdateCategoryRequest) Reset() {
 	*x = UpdateCategoryRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[20]
+	mi := &file_post_v1_post_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1355,7 +1451,7 @@ func (x *UpdateCategoryRequest) String() string {
 func (*UpdateCategoryRequest) ProtoMessage() {}
 
 func (x *UpdateCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[20]
+	mi := &file_post_v1_post_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1368,7 +1464,7 @@ func (x *UpdateCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCategoryRequest.ProtoReflect.Descriptor instead.
 func (*UpdateCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{20}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *UpdateCategoryRequest) GetId() int64 {
@@ -1415,7 +1511,7 @@ type UpdateCategoryReply struct {
 
 func (x *UpdateCategoryReply) Reset() {
 	*x = UpdateCategoryReply{}
-	mi := &file_post_v1_post_proto_msgTypes[21]
+	mi := &file_post_v1_post_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1427,7 +1523,7 @@ func (x *UpdateCategoryReply) String() string {
 func (*UpdateCategoryReply) ProtoMessage() {}
 
 func (x *UpdateCategoryReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[21]
+	mi := &file_post_v1_post_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1440,7 +1536,7 @@ func (x *UpdateCategoryReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCategoryReply.ProtoReflect.Descriptor instead.
 func (*UpdateCategoryReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{21}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *UpdateCategoryReply) GetCategory() *CategoryDetail {
@@ -1459,7 +1555,7 @@ type DeleteCategoryRequest struct {
 
 func (x *DeleteCategoryRequest) Reset() {
 	*x = DeleteCategoryRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[22]
+	mi := &file_post_v1_post_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1471,7 +1567,7 @@ func (x *DeleteCategoryRequest) String() string {
 func (*DeleteCategoryRequest) ProtoMessage() {}
 
 func (x *DeleteCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[22]
+	mi := &file_post_v1_post_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1484,7 +1580,7 @@ func (x *DeleteCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCategoryRequest.ProtoReflect.Descriptor instead.
 func (*DeleteCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{22}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *DeleteCategoryRequest) GetId() int64 {
@@ -1503,7 +1599,7 @@ type DeleteCategoryReply struct {
 
 func (x *DeleteCategoryReply) Reset() {
 	*x = DeleteCategoryReply{}
-	mi := &file_post_v1_post_proto_msgTypes[23]
+	mi := &file_post_v1_post_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1515,7 +1611,7 @@ func (x *DeleteCategoryReply) String() string {
 func (*DeleteCategoryReply) ProtoMessage() {}
 
 func (x *DeleteCategoryReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[23]
+	mi := &file_post_v1_post_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1528,7 +1624,7 @@ func (x *DeleteCategoryReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCategoryReply.ProtoReflect.Descriptor instead.
 func (*DeleteCategoryReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{23}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *DeleteCategoryReply) GetSuccess() bool {
@@ -1547,7 +1643,7 @@ type GetCategoryRequest struct {
 
 func (x *GetCategoryRequest) Reset() {
 	*x = GetCategoryRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[24]
+	mi := &file_post_v1_post_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1559,7 +1655,7 @@ func (x *GetCategoryRequest) String() string {
 func (*GetCategoryRequest) ProtoMessage() {}
 
 func (x *GetCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[24]
+	mi := &file_post_v1_post_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1572,7 +1668,7 @@ func (x *GetCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCategoryRequest.ProtoReflect.Descriptor instead.
 func (*GetCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{24}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *GetCategoryRequest) GetId() int64 {
@@ -1591,7 +1687,7 @@ type GetCategoryReply struct {
 
 func (x *GetCategoryReply) Reset() {
 	*x = GetCategoryReply{}
-	mi := &file_post_v1_post_proto_msgTypes[25]
+	mi := &file_post_v1_post_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1603,7 +1699,7 @@ func (x *GetCategoryReply) String() string {
 func (*GetCategoryReply) ProtoMessage() {}
 
 func (x *GetCategoryReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[25]
+	mi := &file_post_v1_post_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1616,7 +1712,7 @@ func (x *GetCategoryReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCategoryReply.ProtoReflect.Descriptor instead.
 func (*GetCategoryReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{25}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *GetCategoryReply) GetCategory() *CategoryDetail {
@@ -1636,7 +1732,7 @@ type ListCategoriesReply struct {
 
 func (x *ListCategoriesReply) Reset() {
 	*x = ListCategoriesReply{}
-	mi := &file_post_v1_post_proto_msgTypes[26]
+	mi := &file_post_v1_post_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1648,7 +1744,7 @@ func (x *ListCategoriesReply) String() string {
 func (*ListCategoriesReply) ProtoMessage() {}
 
 func (x *ListCategoriesReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[26]
+	mi := &file_post_v1_post_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1661,7 +1757,7 @@ func (x *ListCategoriesReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCategoriesReply.ProtoReflect.Descriptor instead.
 func (*ListCategoriesReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{26}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ListCategoriesReply) GetCategories() []*CategoryInfo {
@@ -1688,7 +1784,7 @@ type ListTagsRequest struct {
 
 func (x *ListTagsRequest) Reset() {
 	*x = ListTagsRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[27]
+	mi := &file_post_v1_post_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1700,7 +1796,7 @@ func (x *ListTagsRequest) String() string {
 func (*ListTagsRequest) ProtoMessage() {}
 
 func (x *ListTagsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[27]
+	mi := &file_post_v1_post_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1713,7 +1809,7 @@ func (x *ListTagsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTagsRequest.ProtoReflect.Descriptor instead.
 func (*ListTagsRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{27}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *ListTagsRequest) GetPage() int64 {
@@ -1740,7 +1836,7 @@ type CreateTagRequest struct {
 
 func (x *CreateTagRequest) Reset() {
 	*x = CreateTagRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[28]
+	mi := &file_post_v1_post_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1752,7 +1848,7 @@ func (x *CreateTagRequest) String() string {
 func (*CreateTagRequest) ProtoMessage() {}
 
 func (x *CreateTagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[28]
+	mi := &file_post_v1_post_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1765,7 +1861,7 @@ func (x *CreateTagRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTagRequest.ProtoReflect.Descriptor instead.
 func (*CreateTagRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{28}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *CreateTagRequest) GetName() string {
@@ -1791,7 +1887,7 @@ type CreateTagReply struct {
 
 func (x *CreateTagReply) Reset() {
 	*x = CreateTagReply{}
-	mi := &file_post_v1_post_proto_msgTypes[29]
+	mi := &file_post_v1_post_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1803,7 +1899,7 @@ func (x *CreateTagReply) String() string {
 func (*CreateTagReply) ProtoMessage() {}
 
 func (x *CreateTagReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[29]
+	mi := &file_post_v1_post_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1816,7 +1912,7 @@ func (x *CreateTagReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTagReply.ProtoReflect.Descriptor instead.
 func (*CreateTagReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{29}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *CreateTagReply) GetTag() *TagDetail {
@@ -1838,7 +1934,7 @@ type UpdateTagRequest struct {
 
 func (x *UpdateTagRequest) Reset() {
 	*x = UpdateTagRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[30]
+	mi := &file_post_v1_post_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1850,7 +1946,7 @@ func (x *UpdateTagRequest) String() string {
 func (*UpdateTagRequest) ProtoMessage() {}
 
 func (x *UpdateTagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[30]
+	mi := &file_post_v1_post_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1863,7 +1959,7 @@ func (x *UpdateTagRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateTagRequest.ProtoReflect.Descriptor instead.
 func (*UpdateTagRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{30}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *UpdateTagRequest) GetId() int64 {
@@ -1903,7 +1999,7 @@ type UpdateTagReply struct {
 
 func (x *UpdateTagReply) Reset() {
 	*x = UpdateTagReply{}
-	mi := &file_post_v1_post_proto_msgTypes[31]
+	mi := &file_post_v1_post_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1915,7 +2011,7 @@ func (x *UpdateTagReply) String() string {
 func (*UpdateTagReply) ProtoMessage() {}
 
 func (x *UpdateTagReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[31]
+	mi := &file_post_v1_post_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1928,7 +2024,7 @@ func (x *UpdateTagReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateTagReply.ProtoReflect.Descriptor instead.
 func (*UpdateTagReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{31}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *UpdateTagReply) GetTag() *TagDetail {
@@ -1947,7 +2043,7 @@ type DeleteTagRequest struct {
 
 func (x *DeleteTagRequest) Reset() {
 	*x = DeleteTagRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[32]
+	mi := &file_post_v1_post_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1959,7 +2055,7 @@ func (x *DeleteTagRequest) String() string {
 func (*DeleteTagRequest) ProtoMessage() {}
 
 func (x *DeleteTagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[32]
+	mi := &file_post_v1_post_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1972,7 +2068,7 @@ func (x *DeleteTagRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTagRequest.ProtoReflect.Descriptor instead.
 func (*DeleteTagRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{32}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *DeleteTagRequest) GetId() int64 {
@@ -1991,7 +2087,7 @@ type DeleteTagReply struct {
 
 func (x *DeleteTagReply) Reset() {
 	*x = DeleteTagReply{}
-	mi := &file_post_v1_post_proto_msgTypes[33]
+	mi := &file_post_v1_post_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2003,7 +2099,7 @@ func (x *DeleteTagReply) String() string {
 func (*DeleteTagReply) ProtoMessage() {}
 
 func (x *DeleteTagReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[33]
+	mi := &file_post_v1_post_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2016,7 +2112,7 @@ func (x *DeleteTagReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTagReply.ProtoReflect.Descriptor instead.
 func (*DeleteTagReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{33}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *DeleteTagReply) GetSuccess() bool {
@@ -2035,7 +2131,7 @@ type GetTagRequest struct {
 
 func (x *GetTagRequest) Reset() {
 	*x = GetTagRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[34]
+	mi := &file_post_v1_post_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2047,7 +2143,7 @@ func (x *GetTagRequest) String() string {
 func (*GetTagRequest) ProtoMessage() {}
 
 func (x *GetTagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[34]
+	mi := &file_post_v1_post_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2060,7 +2156,7 @@ func (x *GetTagRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTagRequest.ProtoReflect.Descriptor instead.
 func (*GetTagRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{34}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *GetTagRequest) GetId() int64 {
@@ -2079,7 +2175,7 @@ type GetTagReply struct {
 
 func (x *GetTagReply) Reset() {
 	*x = GetTagReply{}
-	mi := &file_post_v1_post_proto_msgTypes[35]
+	mi := &file_post_v1_post_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2091,7 +2187,7 @@ func (x *GetTagReply) String() string {
 func (*GetTagReply) ProtoMessage() {}
 
 func (x *GetTagReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[35]
+	mi := &file_post_v1_post_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2104,7 +2200,7 @@ func (x *GetTagReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTagReply.ProtoReflect.Descriptor instead.
 func (*GetTagReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{35}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *GetTagReply) GetTag() *TagDetail {
@@ -2124,7 +2220,7 @@ type ListTagsReply struct {
 
 func (x *ListTagsReply) Reset() {
 	*x = ListTagsReply{}
-	mi := &file_post_v1_post_proto_msgTypes[36]
+	mi := &file_post_v1_post_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2136,7 +2232,7 @@ func (x *ListTagsReply) String() string {
 func (*ListTagsReply) ProtoMessage() {}
 
 func (x *ListTagsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[36]
+	mi := &file_post_v1_post_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2149,7 +2245,7 @@ func (x *ListTagsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTagsReply.ProtoReflect.Descriptor instead.
 func (*ListTagsReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{36}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *ListTagsReply) GetTags() []*TagInfo {
@@ -2258,7 +2354,12 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\tpage_size\x18\x02 \x01(\x03R\bpageSize\"S\n" +
 	"\x0eListPostsReply\x12+\n" +
 	"\x05posts\x18\x01 \x03(\v2\x15.api.post.v1.PostInfoR\x05posts\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total\"H\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"?\n" +
+	"\x17IncrCommentCountRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x14\n" +
+	"\x05delta\x18\x02 \x01(\x03R\x05delta\"1\n" +
+	"\x15IncrCommentCountReply\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"H\n" +
 	"\x15ListCategoriesRequest\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x03R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x02 \x01(\x03R\bpageSize\"a\n" +
@@ -2321,7 +2422,7 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"PostStatus\x12\t\n" +
 	"\x05DRAFT\x10\x00\x12\r\n" +
 	"\tPUBLISHED\x10\x01\x12\f\n" +
-	"\bARCHIVED\x10\x022\x83\x04\n" +
+	"\bARCHIVED\x10\x022\x90\x05\n" +
 	"\x04Post\x12`\n" +
 	"\n" +
 	"CreatePost\x12\x1e.api.post.v1.CreatePostRequest\x1a\x1c.api.post.v1.CreatePostReply\"\x14\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/posts\x12e\n" +
@@ -2330,7 +2431,8 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\n" +
 	"DeletePost\x12\x1e.api.post.v1.DeletePostRequest\x1a\x1c.api.post.v1.DeletePostReply\"\x16\x82\xd3\xe4\x93\x02\x10*\x0e/v1/posts/{id}\x12r\n" +
 	"\aGetPost\x12\x1b.api.post.v1.GetPostRequest\x1a\x19.api.post.v1.GetPostReply\"/\x82\xd3\xe4\x93\x02)Z\x17\x12\x15/v1/posts/slug/{slug}\x12\x0e/v1/posts/{id}\x12Z\n" +
-	"\tListPosts\x12\x1d.api.post.v1.ListPostsRequest\x1a\x1b.api.post.v1.ListPostsReply\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/v1/posts2\xc6\x04\n" +
+	"\tListPosts\x12\x1d.api.post.v1.ListPostsRequest\x1a\x1b.api.post.v1.ListPostsReply\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/v1/posts\x12\x8a\x01\n" +
+	"\x10IncrCommentCount\x12$.api.post.v1.IncrCommentCountRequest\x1a\".api.post.v1.IncrCommentCountReply\",\x82\xd3\xe4\x93\x02&:\x01*\"!/v1/posts/{id}/comment-count:incr2\xc6\x04\n" +
 	"\bCategory\x12q\n" +
 	"\x0eCreateCategory\x12\".api.post.v1.CreateCategoryRequest\x1a .api.post.v1.CreateCategoryReply\"\x19\x82\xd3\xe4\x93\x02\x13:\x01*\"\x0e/v1/categories\x12v\n" +
 	"\x0eUpdateCategory\x12\".api.post.v1.UpdateCategoryRequest\x1a .api.post.v1.UpdateCategoryReply\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*2\x13/v1/categories/{id}\x12s\n" +
@@ -2359,48 +2461,50 @@ func file_post_v1_post_proto_rawDescGZIP() []byte {
 }
 
 var file_post_v1_post_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_post_v1_post_proto_msgTypes = make([]protoimpl.MessageInfo, 37)
+var file_post_v1_post_proto_msgTypes = make([]protoimpl.MessageInfo, 39)
 var file_post_v1_post_proto_goTypes = []any{
-	(PostStatus)(0),               // 0: api.post.v1.PostStatus
-	(*AuthorInfo)(nil),            // 1: api.post.v1.AuthorInfo
-	(*CategoryInfo)(nil),          // 2: api.post.v1.CategoryInfo
-	(*CategoryDetail)(nil),        // 3: api.post.v1.CategoryDetail
-	(*TagInfo)(nil),               // 4: api.post.v1.TagInfo
-	(*TagDetail)(nil),             // 5: api.post.v1.TagDetail
-	(*PostInfo)(nil),              // 6: api.post.v1.PostInfo
-	(*PostDetail)(nil),            // 7: api.post.v1.PostDetail
-	(*CreatePostRequest)(nil),     // 8: api.post.v1.CreatePostRequest
-	(*CreatePostReply)(nil),       // 9: api.post.v1.CreatePostReply
-	(*UpdatePostRequest)(nil),     // 10: api.post.v1.UpdatePostRequest
-	(*UpdatePostReply)(nil),       // 11: api.post.v1.UpdatePostReply
-	(*DeletePostRequest)(nil),     // 12: api.post.v1.DeletePostRequest
-	(*DeletePostReply)(nil),       // 13: api.post.v1.DeletePostReply
-	(*GetPostRequest)(nil),        // 14: api.post.v1.GetPostRequest
-	(*GetPostReply)(nil),          // 15: api.post.v1.GetPostReply
-	(*ListPostsRequest)(nil),      // 16: api.post.v1.ListPostsRequest
-	(*ListPostsReply)(nil),        // 17: api.post.v1.ListPostsReply
-	(*ListCategoriesRequest)(nil), // 18: api.post.v1.ListCategoriesRequest
-	(*CreateCategoryRequest)(nil), // 19: api.post.v1.CreateCategoryRequest
-	(*CreateCategoryReply)(nil),   // 20: api.post.v1.CreateCategoryReply
-	(*UpdateCategoryRequest)(nil), // 21: api.post.v1.UpdateCategoryRequest
-	(*UpdateCategoryReply)(nil),   // 22: api.post.v1.UpdateCategoryReply
-	(*DeleteCategoryRequest)(nil), // 23: api.post.v1.DeleteCategoryRequest
-	(*DeleteCategoryReply)(nil),   // 24: api.post.v1.DeleteCategoryReply
-	(*GetCategoryRequest)(nil),    // 25: api.post.v1.GetCategoryRequest
-	(*GetCategoryReply)(nil),      // 26: api.post.v1.GetCategoryReply
-	(*ListCategoriesReply)(nil),   // 27: api.post.v1.ListCategoriesReply
-	(*ListTagsRequest)(nil),       // 28: api.post.v1.ListTagsRequest
-	(*CreateTagRequest)(nil),      // 29: api.post.v1.CreateTagRequest
-	(*CreateTagReply)(nil),        // 30: api.post.v1.CreateTagReply
-	(*UpdateTagRequest)(nil),      // 31: api.post.v1.UpdateTagRequest
-	(*UpdateTagReply)(nil),        // 32: api.post.v1.UpdateTagReply
-	(*DeleteTagRequest)(nil),      // 33: api.post.v1.DeleteTagRequest
-	(*DeleteTagReply)(nil),        // 34: api.post.v1.DeleteTagReply
-	(*GetTagRequest)(nil),         // 35: api.post.v1.GetTagRequest
-	(*GetTagReply)(nil),           // 36: api.post.v1.GetTagReply
-	(*ListTagsReply)(nil),         // 37: api.post.v1.ListTagsReply
-	(*timestamppb.Timestamp)(nil), // 38: google.protobuf.Timestamp
-	(*fieldmaskpb.FieldMask)(nil), // 39: google.protobuf.FieldMask
+	(PostStatus)(0),                 // 0: api.post.v1.PostStatus
+	(*AuthorInfo)(nil),              // 1: api.post.v1.AuthorInfo
+	(*CategoryInfo)(nil),            // 2: api.post.v1.CategoryInfo
+	(*CategoryDetail)(nil),          // 3: api.post.v1.CategoryDetail
+	(*TagInfo)(nil),                 // 4: api.post.v1.TagInfo
+	(*TagDetail)(nil),               // 5: api.post.v1.TagDetail
+	(*PostInfo)(nil),                // 6: api.post.v1.PostInfo
+	(*PostDetail)(nil),              // 7: api.post.v1.PostDetail
+	(*CreatePostRequest)(nil),       // 8: api.post.v1.CreatePostRequest
+	(*CreatePostReply)(nil),         // 9: api.post.v1.CreatePostReply
+	(*UpdatePostRequest)(nil),       // 10: api.post.v1.UpdatePostRequest
+	(*UpdatePostReply)(nil),         // 11: api.post.v1.UpdatePostReply
+	(*DeletePostRequest)(nil),       // 12: api.post.v1.DeletePostRequest
+	(*DeletePostReply)(nil),         // 13: api.post.v1.DeletePostReply
+	(*GetPostRequest)(nil),          // 14: api.post.v1.GetPostRequest
+	(*GetPostReply)(nil),            // 15: api.post.v1.GetPostReply
+	(*ListPostsRequest)(nil),        // 16: api.post.v1.ListPostsRequest
+	(*ListPostsReply)(nil),          // 17: api.post.v1.ListPostsReply
+	(*IncrCommentCountRequest)(nil), // 18: api.post.v1.IncrCommentCountRequest
+	(*IncrCommentCountReply)(nil),   // 19: api.post.v1.IncrCommentCountReply
+	(*ListCategoriesRequest)(nil),   // 20: api.post.v1.ListCategoriesRequest
+	(*CreateCategoryRequest)(nil),   // 21: api.post.v1.CreateCategoryRequest
+	(*CreateCategoryReply)(nil),     // 22: api.post.v1.CreateCategoryReply
+	(*UpdateCategoryRequest)(nil),   // 23: api.post.v1.UpdateCategoryRequest
+	(*UpdateCategoryReply)(nil),     // 24: api.post.v1.UpdateCategoryReply
+	(*DeleteCategoryRequest)(nil),   // 25: api.post.v1.DeleteCategoryRequest
+	(*DeleteCategoryReply)(nil),     // 26: api.post.v1.DeleteCategoryReply
+	(*GetCategoryRequest)(nil),      // 27: api.post.v1.GetCategoryRequest
+	(*GetCategoryReply)(nil),        // 28: api.post.v1.GetCategoryReply
+	(*ListCategoriesReply)(nil),     // 29: api.post.v1.ListCategoriesReply
+	(*ListTagsRequest)(nil),         // 30: api.post.v1.ListTagsRequest
+	(*CreateTagRequest)(nil),        // 31: api.post.v1.CreateTagRequest
+	(*CreateTagReply)(nil),          // 32: api.post.v1.CreateTagReply
+	(*UpdateTagRequest)(nil),        // 33: api.post.v1.UpdateTagRequest
+	(*UpdateTagReply)(nil),          // 34: api.post.v1.UpdateTagReply
+	(*DeleteTagRequest)(nil),        // 35: api.post.v1.DeleteTagRequest
+	(*DeleteTagReply)(nil),          // 36: api.post.v1.DeleteTagReply
+	(*GetTagRequest)(nil),           // 37: api.post.v1.GetTagRequest
+	(*GetTagReply)(nil),             // 38: api.post.v1.GetTagReply
+	(*ListTagsReply)(nil),           // 39: api.post.v1.ListTagsReply
+	(*timestamppb.Timestamp)(nil),   // 40: google.protobuf.Timestamp
+	(*fieldmaskpb.FieldMask)(nil),   // 41: google.protobuf.FieldMask
 }
 var file_post_v1_post_proto_depIdxs = []int32{
 	2,  // 0: api.post.v1.CategoryDetail.info:type_name -> api.post.v1.CategoryInfo
@@ -2408,23 +2512,23 @@ var file_post_v1_post_proto_depIdxs = []int32{
 	0,  // 2: api.post.v1.PostInfo.status:type_name -> api.post.v1.PostStatus
 	1,  // 3: api.post.v1.PostInfo.author:type_name -> api.post.v1.AuthorInfo
 	2,  // 4: api.post.v1.PostInfo.category:type_name -> api.post.v1.CategoryInfo
-	38, // 5: api.post.v1.PostInfo.created_at:type_name -> google.protobuf.Timestamp
-	38, // 6: api.post.v1.PostInfo.updated_at:type_name -> google.protobuf.Timestamp
+	40, // 5: api.post.v1.PostInfo.created_at:type_name -> google.protobuf.Timestamp
+	40, // 6: api.post.v1.PostInfo.updated_at:type_name -> google.protobuf.Timestamp
 	6,  // 7: api.post.v1.PostDetail.info:type_name -> api.post.v1.PostInfo
 	0,  // 8: api.post.v1.CreatePostRequest.status:type_name -> api.post.v1.PostStatus
 	7,  // 9: api.post.v1.CreatePostReply.post:type_name -> api.post.v1.PostDetail
 	0,  // 10: api.post.v1.UpdatePostRequest.status:type_name -> api.post.v1.PostStatus
-	39, // 11: api.post.v1.UpdatePostRequest.update_mask:type_name -> google.protobuf.FieldMask
+	41, // 11: api.post.v1.UpdatePostRequest.update_mask:type_name -> google.protobuf.FieldMask
 	7,  // 12: api.post.v1.UpdatePostReply.post:type_name -> api.post.v1.PostDetail
 	7,  // 13: api.post.v1.GetPostReply.post:type_name -> api.post.v1.PostDetail
 	6,  // 14: api.post.v1.ListPostsReply.posts:type_name -> api.post.v1.PostInfo
 	3,  // 15: api.post.v1.CreateCategoryReply.category:type_name -> api.post.v1.CategoryDetail
-	39, // 16: api.post.v1.UpdateCategoryRequest.update_mask:type_name -> google.protobuf.FieldMask
+	41, // 16: api.post.v1.UpdateCategoryRequest.update_mask:type_name -> google.protobuf.FieldMask
 	3,  // 17: api.post.v1.UpdateCategoryReply.category:type_name -> api.post.v1.CategoryDetail
 	3,  // 18: api.post.v1.GetCategoryReply.category:type_name -> api.post.v1.CategoryDetail
 	2,  // 19: api.post.v1.ListCategoriesReply.categories:type_name -> api.post.v1.CategoryInfo
 	5,  // 20: api.post.v1.CreateTagReply.tag:type_name -> api.post.v1.TagDetail
-	39, // 21: api.post.v1.UpdateTagRequest.update_mask:type_name -> google.protobuf.FieldMask
+	41, // 21: api.post.v1.UpdateTagRequest.update_mask:type_name -> google.protobuf.FieldMask
 	5,  // 22: api.post.v1.UpdateTagReply.tag:type_name -> api.post.v1.TagDetail
 	5,  // 23: api.post.v1.GetTagReply.tag:type_name -> api.post.v1.TagDetail
 	4,  // 24: api.post.v1.ListTagsReply.tags:type_name -> api.post.v1.TagInfo
@@ -2433,33 +2537,35 @@ var file_post_v1_post_proto_depIdxs = []int32{
 	12, // 27: api.post.v1.Post.DeletePost:input_type -> api.post.v1.DeletePostRequest
 	14, // 28: api.post.v1.Post.GetPost:input_type -> api.post.v1.GetPostRequest
 	16, // 29: api.post.v1.Post.ListPosts:input_type -> api.post.v1.ListPostsRequest
-	19, // 30: api.post.v1.Category.CreateCategory:input_type -> api.post.v1.CreateCategoryRequest
-	21, // 31: api.post.v1.Category.UpdateCategory:input_type -> api.post.v1.UpdateCategoryRequest
-	23, // 32: api.post.v1.Category.DeleteCategory:input_type -> api.post.v1.DeleteCategoryRequest
-	25, // 33: api.post.v1.Category.GetCategory:input_type -> api.post.v1.GetCategoryRequest
-	18, // 34: api.post.v1.Category.ListCategories:input_type -> api.post.v1.ListCategoriesRequest
-	29, // 35: api.post.v1.Tag.CreateTag:input_type -> api.post.v1.CreateTagRequest
-	31, // 36: api.post.v1.Tag.UpdateTag:input_type -> api.post.v1.UpdateTagRequest
-	33, // 37: api.post.v1.Tag.DeleteTag:input_type -> api.post.v1.DeleteTagRequest
-	35, // 38: api.post.v1.Tag.GetTag:input_type -> api.post.v1.GetTagRequest
-	28, // 39: api.post.v1.Tag.ListTags:input_type -> api.post.v1.ListTagsRequest
-	9,  // 40: api.post.v1.Post.CreatePost:output_type -> api.post.v1.CreatePostReply
-	11, // 41: api.post.v1.Post.UpdatePost:output_type -> api.post.v1.UpdatePostReply
-	13, // 42: api.post.v1.Post.DeletePost:output_type -> api.post.v1.DeletePostReply
-	15, // 43: api.post.v1.Post.GetPost:output_type -> api.post.v1.GetPostReply
-	17, // 44: api.post.v1.Post.ListPosts:output_type -> api.post.v1.ListPostsReply
-	20, // 45: api.post.v1.Category.CreateCategory:output_type -> api.post.v1.CreateCategoryReply
-	22, // 46: api.post.v1.Category.UpdateCategory:output_type -> api.post.v1.UpdateCategoryReply
-	24, // 47: api.post.v1.Category.DeleteCategory:output_type -> api.post.v1.DeleteCategoryReply
-	26, // 48: api.post.v1.Category.GetCategory:output_type -> api.post.v1.GetCategoryReply
-	27, // 49: api.post.v1.Category.ListCategories:output_type -> api.post.v1.ListCategoriesReply
-	30, // 50: api.post.v1.Tag.CreateTag:output_type -> api.post.v1.CreateTagReply
-	32, // 51: api.post.v1.Tag.UpdateTag:output_type -> api.post.v1.UpdateTagReply
-	34, // 52: api.post.v1.Tag.DeleteTag:output_type -> api.post.v1.DeleteTagReply
-	36, // 53: api.post.v1.Tag.GetTag:output_type -> api.post.v1.GetTagReply
-	37, // 54: api.post.v1.Tag.ListTags:output_type -> api.post.v1.ListTagsReply
-	40, // [40:55] is the sub-list for method output_type
-	25, // [25:40] is the sub-list for method input_type
+	18, // 30: api.post.v1.Post.IncrCommentCount:input_type -> api.post.v1.IncrCommentCountRequest
+	21, // 31: api.post.v1.Category.CreateCategory:input_type -> api.post.v1.CreateCategoryRequest
+	23, // 32: api.post.v1.Category.UpdateCategory:input_type -> api.post.v1.UpdateCategoryRequest
+	25, // 33: api.post.v1.Category.DeleteCategory:input_type -> api.post.v1.DeleteCategoryRequest
+	27, // 34: api.post.v1.Category.GetCategory:input_type -> api.post.v1.GetCategoryRequest
+	20, // 35: api.post.v1.Category.ListCategories:input_type -> api.post.v1.ListCategoriesRequest
+	31, // 36: api.post.v1.Tag.CreateTag:input_type -> api.post.v1.CreateTagRequest
+	33, // 37: api.post.v1.Tag.UpdateTag:input_type -> api.post.v1.UpdateTagRequest
+	35, // 38: api.post.v1.Tag.DeleteTag:input_type -> api.post.v1.DeleteTagRequest
+	37, // 39: api.post.v1.Tag.GetTag:input_type -> api.post.v1.GetTagRequest
+	30, // 40: api.post.v1.Tag.ListTags:input_type -> api.post.v1.ListTagsRequest
+	9,  // 41: api.post.v1.Post.CreatePost:output_type -> api.post.v1.CreatePostReply
+	11, // 42: api.post.v1.Post.UpdatePost:output_type -> api.post.v1.UpdatePostReply
+	13, // 43: api.post.v1.Post.DeletePost:output_type -> api.post.v1.DeletePostReply
+	15, // 44: api.post.v1.Post.GetPost:output_type -> api.post.v1.GetPostReply
+	17, // 45: api.post.v1.Post.ListPosts:output_type -> api.post.v1.ListPostsReply
+	19, // 46: api.post.v1.Post.IncrCommentCount:output_type -> api.post.v1.IncrCommentCountReply
+	22, // 47: api.post.v1.Category.CreateCategory:output_type -> api.post.v1.CreateCategoryReply
+	24, // 48: api.post.v1.Category.UpdateCategory:output_type -> api.post.v1.UpdateCategoryReply
+	26, // 49: api.post.v1.Category.DeleteCategory:output_type -> api.post.v1.DeleteCategoryReply
+	28, // 50: api.post.v1.Category.GetCategory:output_type -> api.post.v1.GetCategoryReply
+	29, // 51: api.post.v1.Category.ListCategories:output_type -> api.post.v1.ListCategoriesReply
+	32, // 52: api.post.v1.Tag.CreateTag:output_type -> api.post.v1.CreateTagReply
+	34, // 53: api.post.v1.Tag.UpdateTag:output_type -> api.post.v1.UpdateTagReply
+	36, // 54: api.post.v1.Tag.DeleteTag:output_type -> api.post.v1.DeleteTagReply
+	38, // 55: api.post.v1.Tag.GetTag:output_type -> api.post.v1.GetTagReply
+	39, // 56: api.post.v1.Tag.ListTags:output_type -> api.post.v1.ListTagsReply
+	41, // [41:57] is the sub-list for method output_type
+	25, // [25:41] is the sub-list for method input_type
 	25, // [25:25] is the sub-list for extension type_name
 	25, // [25:25] is the sub-list for extension extendee
 	0,  // [0:25] is the sub-list for field type_name
@@ -2480,7 +2586,7 @@ func file_post_v1_post_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_post_v1_post_proto_rawDesc), len(file_post_v1_post_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   37,
+			NumMessages:   39,
 			NumExtensions: 0,
 			NumServices:   3,
 		},

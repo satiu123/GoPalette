@@ -236,3 +236,9 @@ func (r *postRepo) contains(slice []string, item string) bool {
 	}
 	return false
 }
+
+func (r *postRepo) IncrCommentCount(ctx context.Context, id int64, delta int64) error {
+	return r.data.db.WithContext(ctx).Model(&Post{}).
+		Where("id = ?", id).
+		Update("comment_count", gorm.Expr("GREATEST(comment_count + ?, 0)", delta)).Error
+}

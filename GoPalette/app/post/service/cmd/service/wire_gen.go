@@ -30,7 +30,8 @@ func wireApp(confServer *conf.Server, confData *conf.Data, auth *conf.Auth, logg
 	}
 	postRepo := data.NewPostRepo(dataData, logger)
 	postUsecase := biz.NewPostUsecase(postRepo, logger)
-	postService := service.NewPostService(postUsecase, logger)
+	userClient := data.NewUserClient(dataData)
+	postService := service.NewPostService(postUsecase, userClient, logger)
 	categoryRepo := data.NewCategoryRepo(dataData, logger)
 	categoryUsecase := biz.NewCategoryUsecase(categoryRepo, logger)
 	categoryService := service.NewCategoryService(categoryUsecase, logger)

@@ -378,6 +378,74 @@ func (_c *MockUserRepo_List_Call) RunAndReturn(run func(ctx context.Context, pag
 	return _c
 }
 
+// ListByIDs provides a mock function for the type MockUserRepo
+func (_mock *MockUserRepo) ListByIDs(context1 context.Context, int64s []int64) ([]*User, error) {
+	ret := _mock.Called(context1, int64s)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByIDs")
+	}
+
+	var r0 []*User
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []int64) ([]*User, error)); ok {
+		return returnFunc(context1, int64s)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []int64) []*User); ok {
+		r0 = returnFunc(context1, int64s)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*User)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []int64) error); ok {
+		r1 = returnFunc(context1, int64s)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockUserRepo_ListByIDs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListByIDs'
+type MockUserRepo_ListByIDs_Call struct {
+	*mock.Call
+}
+
+// ListByIDs is a helper method to define mock.On call
+//   - context1 context.Context
+//   - int64s []int64
+func (_e *MockUserRepo_Expecter) ListByIDs(context1 interface{}, int64s interface{}) *MockUserRepo_ListByIDs_Call {
+	return &MockUserRepo_ListByIDs_Call{Call: _e.mock.On("ListByIDs", context1, int64s)}
+}
+
+func (_c *MockUserRepo_ListByIDs_Call) Run(run func(context1 context.Context, int64s []int64)) *MockUserRepo_ListByIDs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []int64
+		if args[1] != nil {
+			arg1 = args[1].([]int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockUserRepo_ListByIDs_Call) Return(users []*User, err error) *MockUserRepo_ListByIDs_Call {
+	_c.Call.Return(users, err)
+	return _c
+}
+
+func (_c *MockUserRepo_ListByIDs_Call) RunAndReturn(run func(context1 context.Context, int64s []int64) ([]*User, error)) *MockUserRepo_ListByIDs_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Update provides a mock function for the type MockUserRepo
 func (_mock *MockUserRepo) Update(context1 context.Context, user *User, strings []string) (*User, error) {
 	ret := _mock.Called(context1, user, strings)

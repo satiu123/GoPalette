@@ -53,6 +53,13 @@ service Post {
       get: "/v1/posts"
     };
   };
+  // IncrCommentCount 增减文章评论数（用于评论服务回写）
+  rpc IncrCommentCount (IncrCommentCountRequest) returns (IncrCommentCountReply){
+    option (google.api.http) = {
+      post: "/v1/posts/{id}/comment-count:incr"
+      body: "*"
+    };
+  };
 }
 
 // 分类管理服务
@@ -243,6 +250,15 @@ message ListPostsRequest {
 message ListPostsReply {
   repeated PostInfo posts = 1; // 帖子列表
   int64             total = 2; // 总帖子数
+}
+
+message IncrCommentCountRequest {
+  int64 id = 1; // 帖子ID
+  int64 delta = 2; // 评论数增量，通常为 +1 或 -1
+}
+
+message IncrCommentCountReply {
+  bool success = 1;
 }
 
 message ListCategoriesRequest {

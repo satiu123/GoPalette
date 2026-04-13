@@ -19,15 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	User_Register_FullMethodName     = "/api.user.v1.User/Register"
-	User_Login_FullMethodName        = "/api.user.v1.User/Login"
-	User_Logout_FullMethodName       = "/api.user.v1.User/Logout"
-	User_CreateUser_FullMethodName   = "/api.user.v1.User/CreateUser"
-	User_UpdateUser_FullMethodName   = "/api.user.v1.User/UpdateUser"
-	User_DeleteUser_FullMethodName   = "/api.user.v1.User/DeleteUser"
-	User_GetUser_FullMethodName      = "/api.user.v1.User/GetUser"
-	User_ListUser_FullMethodName     = "/api.user.v1.User/ListUser"
-	User_RefreshToken_FullMethodName = "/api.user.v1.User/RefreshToken"
+	User_Register_FullMethodName      = "/api.user.v1.User/Register"
+	User_Login_FullMethodName         = "/api.user.v1.User/Login"
+	User_Logout_FullMethodName        = "/api.user.v1.User/Logout"
+	User_CreateUser_FullMethodName    = "/api.user.v1.User/CreateUser"
+	User_UpdateUser_FullMethodName    = "/api.user.v1.User/UpdateUser"
+	User_DeleteUser_FullMethodName    = "/api.user.v1.User/DeleteUser"
+	User_GetUser_FullMethodName       = "/api.user.v1.User/GetUser"
+	User_ListUser_FullMethodName      = "/api.user.v1.User/ListUser"
+	User_RefreshToken_FullMethodName  = "/api.user.v1.User/RefreshToken"
+	User_BatchGetUsers_FullMethodName = "/api.user.v1.User/BatchGetUsers"
 )
 
 // UserClient is the client API for User service.
@@ -54,6 +55,8 @@ type UserClient interface {
 	ListUser(ctx context.Context, in *ListUserRequest, opts ...grpc.CallOption) (*ListUserReply, error)
 	// 刷新令牌，输入刷新令牌，返回新的访问令牌和刷新令牌
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenReply, error)
+	// 批量获取公开用户信息（用户名、头像）
+	BatchGetUsers(ctx context.Context, in *BatchGetUsersRequest, opts ...grpc.CallOption) (*BatchGetUsersReply, error)
 }
 
 type userClient struct {
@@ -154,6 +157,16 @@ func (c *userClient) RefreshToken(ctx context.Context, in *RefreshTokenRequest, 
 	return out, nil
 }
 
+func (c *userClient) BatchGetUsers(ctx context.Context, in *BatchGetUsersRequest, opts ...grpc.CallOption) (*BatchGetUsersReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BatchGetUsersReply)
+	err := c.cc.Invoke(ctx, User_BatchGetUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServer is the server API for User service.
 // All implementations must embed UnimplementedUserServer
 // for forward compatibility.
@@ -178,6 +191,8 @@ type UserServer interface {
 	ListUser(context.Context, *ListUserRequest) (*ListUserReply, error)
 	// 刷新令牌，输入刷新令牌，返回新的访问令牌和刷新令牌
 	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenReply, error)
+	// 批量获取公开用户信息（用户名、头像）
+	BatchGetUsers(context.Context, *BatchGetUsersRequest) (*BatchGetUsersReply, error)
 	mustEmbedUnimplementedUserServer()
 }
 
@@ -214,6 +229,9 @@ func (UnimplementedUserServer) ListUser(context.Context, *ListUserRequest) (*Lis
 }
 func (UnimplementedUserServer) RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method RefreshToken not implemented")
+}
+func (UnimplementedUserServer) BatchGetUsers(context.Context, *BatchGetUsersRequest) (*BatchGetUsersReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method BatchGetUsers not implemented")
 }
 func (UnimplementedUserServer) mustEmbedUnimplementedUserServer() {}
 func (UnimplementedUserServer) testEmbeddedByValue()              {}
@@ -398,6 +416,24 @@ func _User_RefreshToken_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _User_BatchGetUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchGetUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServer).BatchGetUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: User_BatchGetUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServer).BatchGetUsers(ctx, req.(*BatchGetUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // User_ServiceDesc is the grpc.ServiceDesc for User service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -440,6 +476,10 @@ var User_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RefreshToken",
 			Handler:    _User_RefreshToken_Handler,
+		},
+		{
+			MethodName: "BatchGetUsers",
+			Handler:    _User_BatchGetUsers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

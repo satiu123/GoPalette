@@ -203,3 +203,20 @@ func (s *UserService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 		RefreshToken: refreshToken,
 	}, nil
 }
+
+func (s *UserService) BatchGetUsers(ctx context.Context, req *pb.BatchGetUsersRequest) (*pb.BatchGetUsersReply, error) {
+	users, err := s.uc.ListUsersByIDs(ctx, req.Ids)
+	if err != nil {
+		return nil, err
+	}
+
+	profiles := make([]*pb.UserProfile, 0, len(users))
+	for _, u := range users {
+		profiles = append(profiles, &pb.UserProfile{
+			Id:        u.ID,
+			Username:  u.Username,
+			AvatarUrl: u.AvatarURL,
+		})
+	}
+	return &pb.BatchGetUsersReply{Users: profiles}, nil
+}

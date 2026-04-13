@@ -1,23 +1,31 @@
 package data
 
 import (
+	userv1 "GoPalette/api/user/v1"
 	"GoPalette/app/post/service/internal/conf"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-redis/redis/extra/redisotel"
 	"github.com/go-redis/redis/v8"
 	"github.com/google/wire"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewPostRepo, NewCategoryRepo, NewTagRepo)
+var ProviderSet = wire.NewSet(NewData, NewPostRepo, NewCategoryRepo, NewTagRepo, NewUserClient)
 
 // Data .
 type Data struct {
-	db  *gorm.DB
-	rdb *redis.Client
+	db         *gorm.DB
+	rdb        *redis.Client
+	userClient userv1.UserClient
+}
+
+func NewUserClient(d *Data) userv1.UserClient {
+	return d.userClient
 }
 
 // NewData .
@@ -49,6 +57,13 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 		db:  db,
 		rdb: rdb,
 	}
+
+	userConn, err := grpc.Dial(c.Clients.UserEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, nil, err
+	}
+	d.userClient = userv1.NewUserClient(userConn)
+
 	return d, func() {
 		log.Info("message", "close the data resource")
 		if sqlDB, err := db.DB(); err != nil {
@@ -60,6 +75,9 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 		}
 		if err := d.rdb.Close(); err != nil {
 			log.Errorf("failed to close redis: %v", err)
+		}
+		if err := userConn.Close(); err != nil {
+			log.Errorf("failed to close user grpc connection: %v", err)
 		}
 
 	}, nil

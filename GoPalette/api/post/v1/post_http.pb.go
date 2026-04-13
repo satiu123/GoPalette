@@ -22,6 +22,7 @@ const _ = http.SupportPackageIsVersion1
 const OperationPostCreatePost = "/api.post.v1.Post/CreatePost"
 const OperationPostDeletePost = "/api.post.v1.Post/DeletePost"
 const OperationPostGetPost = "/api.post.v1.Post/GetPost"
+const OperationPostIncrCommentCount = "/api.post.v1.Post/IncrCommentCount"
 const OperationPostListPosts = "/api.post.v1.Post/ListPosts"
 const OperationPostUpdatePost = "/api.post.v1.Post/UpdatePost"
 
@@ -32,6 +33,8 @@ type PostHTTPServer interface {
 	DeletePost(context.Context, *DeletePostRequest) (*DeletePostReply, error)
 	// GetPost GetPost 获取帖子，输入帖子ID或slug，返回帖子详细信息
 	GetPost(context.Context, *GetPostRequest) (*GetPostReply, error)
+	// IncrCommentCount IncrCommentCount 增减文章评论数（用于评论服务回写）
+	IncrCommentCount(context.Context, *IncrCommentCountRequest) (*IncrCommentCountReply, error)
 	// ListPosts ListPosts 列出帖子，输入分页参数，返回帖子列表
 	ListPosts(context.Context, *ListPostsRequest) (*ListPostsReply, error)
 	// UpdatePost UpdatePost 更新帖子，输入帖子ID和要更新的字段列表，返回更新后的帖子详细信息
@@ -46,6 +49,7 @@ func RegisterPostHTTPServer(s *http.Server, srv PostHTTPServer) {
 	r.GET("/v1/posts/slug/{slug}", _Post_GetPost0_HTTP_Handler(srv))
 	r.GET("/v1/posts/{id}", _Post_GetPost1_HTTP_Handler(srv))
 	r.GET("/v1/posts", _Post_ListPosts0_HTTP_Handler(srv))
+	r.POST("/v1/posts/{id}/comment-count:incr", _Post_IncrCommentCount0_HTTP_Handler(srv))
 }
 
 func _Post_CreatePost0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
@@ -180,6 +184,31 @@ func _Post_ListPosts0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) er
 	}
 }
 
+func _Post_IncrCommentCount0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in IncrCommentCountRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPostIncrCommentCount)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.IncrCommentCount(ctx, req.(*IncrCommentCountRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*IncrCommentCountReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type PostHTTPClient interface {
 	// CreatePost CreatePost 创建帖子，输入帖子标题、摘要、正文内容、状态、作者ID、分类ID和标签列表，返回创建的帖子详细信息
 	CreatePost(ctx context.Context, req *CreatePostRequest, opts ...http.CallOption) (rsp *CreatePostReply, err error)
@@ -187,6 +216,8 @@ type PostHTTPClient interface {
 	DeletePost(ctx context.Context, req *DeletePostRequest, opts ...http.CallOption) (rsp *DeletePostReply, err error)
 	// GetPost GetPost 获取帖子，输入帖子ID或slug，返回帖子详细信息
 	GetPost(ctx context.Context, req *GetPostRequest, opts ...http.CallOption) (rsp *GetPostReply, err error)
+	// IncrCommentCount IncrCommentCount 增减文章评论数（用于评论服务回写）
+	IncrCommentCount(ctx context.Context, req *IncrCommentCountRequest, opts ...http.CallOption) (rsp *IncrCommentCountReply, err error)
 	// ListPosts ListPosts 列出帖子，输入分页参数，返回帖子列表
 	ListPosts(ctx context.Context, req *ListPostsRequest, opts ...http.CallOption) (rsp *ListPostsReply, err error)
 	// UpdatePost UpdatePost 更新帖子，输入帖子ID和要更新的字段列表，返回更新后的帖子详细信息
@@ -237,6 +268,20 @@ func (c *PostHTTPClientImpl) GetPost(ctx context.Context, in *GetPostRequest, op
 	opts = append(opts, http.Operation(OperationPostGetPost))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// IncrCommentCount IncrCommentCount 增减文章评论数（用于评论服务回写）
+func (c *PostHTTPClientImpl) IncrCommentCount(ctx context.Context, in *IncrCommentCountRequest, opts ...http.CallOption) (*IncrCommentCountReply, error) {
+	var out IncrCommentCountReply
+	pattern := "/v1/posts/{id}/comment-count:incr"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationPostIncrCommentCount))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

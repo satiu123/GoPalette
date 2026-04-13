@@ -19,11 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Post_CreatePost_FullMethodName = "/api.post.v1.Post/CreatePost"
-	Post_UpdatePost_FullMethodName = "/api.post.v1.Post/UpdatePost"
-	Post_DeletePost_FullMethodName = "/api.post.v1.Post/DeletePost"
-	Post_GetPost_FullMethodName    = "/api.post.v1.Post/GetPost"
-	Post_ListPosts_FullMethodName  = "/api.post.v1.Post/ListPosts"
+	Post_CreatePost_FullMethodName       = "/api.post.v1.Post/CreatePost"
+	Post_UpdatePost_FullMethodName       = "/api.post.v1.Post/UpdatePost"
+	Post_DeletePost_FullMethodName       = "/api.post.v1.Post/DeletePost"
+	Post_GetPost_FullMethodName          = "/api.post.v1.Post/GetPost"
+	Post_ListPosts_FullMethodName        = "/api.post.v1.Post/ListPosts"
+	Post_IncrCommentCount_FullMethodName = "/api.post.v1.Post/IncrCommentCount"
 )
 
 // PostClient is the client API for Post service.
@@ -42,6 +43,8 @@ type PostClient interface {
 	GetPost(ctx context.Context, in *GetPostRequest, opts ...grpc.CallOption) (*GetPostReply, error)
 	// ListPosts 列出帖子，输入分页参数，返回帖子列表
 	ListPosts(ctx context.Context, in *ListPostsRequest, opts ...grpc.CallOption) (*ListPostsReply, error)
+	// IncrCommentCount 增减文章评论数（用于评论服务回写）
+	IncrCommentCount(ctx context.Context, in *IncrCommentCountRequest, opts ...grpc.CallOption) (*IncrCommentCountReply, error)
 }
 
 type postClient struct {
@@ -102,6 +105,16 @@ func (c *postClient) ListPosts(ctx context.Context, in *ListPostsRequest, opts .
 	return out, nil
 }
 
+func (c *postClient) IncrCommentCount(ctx context.Context, in *IncrCommentCountRequest, opts ...grpc.CallOption) (*IncrCommentCountReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IncrCommentCountReply)
+	err := c.cc.Invoke(ctx, Post_IncrCommentCount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PostServer is the server API for Post service.
 // All implementations must embed UnimplementedPostServer
 // for forward compatibility.
@@ -118,6 +131,8 @@ type PostServer interface {
 	GetPost(context.Context, *GetPostRequest) (*GetPostReply, error)
 	// ListPosts 列出帖子，输入分页参数，返回帖子列表
 	ListPosts(context.Context, *ListPostsRequest) (*ListPostsReply, error)
+	// IncrCommentCount 增减文章评论数（用于评论服务回写）
+	IncrCommentCount(context.Context, *IncrCommentCountRequest) (*IncrCommentCountReply, error)
 	mustEmbedUnimplementedPostServer()
 }
 
@@ -142,6 +157,9 @@ func (UnimplementedPostServer) GetPost(context.Context, *GetPostRequest) (*GetPo
 }
 func (UnimplementedPostServer) ListPosts(context.Context, *ListPostsRequest) (*ListPostsReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListPosts not implemented")
+}
+func (UnimplementedPostServer) IncrCommentCount(context.Context, *IncrCommentCountRequest) (*IncrCommentCountReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method IncrCommentCount not implemented")
 }
 func (UnimplementedPostServer) mustEmbedUnimplementedPostServer() {}
 func (UnimplementedPostServer) testEmbeddedByValue()              {}
@@ -254,6 +272,24 @@ func _Post_ListPosts_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Post_IncrCommentCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IncrCommentCountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServer).IncrCommentCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Post_IncrCommentCount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServer).IncrCommentCount(ctx, req.(*IncrCommentCountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Post_ServiceDesc is the grpc.ServiceDesc for Post service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -280,6 +316,10 @@ var Post_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListPosts",
 			Handler:    _Post_ListPosts_Handler,
+		},
+		{
+			MethodName: "IncrCommentCount",
+			Handler:    _Post_IncrCommentCount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

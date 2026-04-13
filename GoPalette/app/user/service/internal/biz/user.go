@@ -29,6 +29,7 @@ type UserRepo interface {
 	Update(context.Context, *User, []string) (*User, error)
 	Delete(context.Context, int64) error
 	Get(context.Context, int64) (*User, error)
+	ListByIDs(context.Context, []int64) ([]*User, error)
 	List(ctx context.Context, page, pageSize int64) ([]*User, int64, error)
 	FindByEmail(context.Context, string) (*User, error)
 }
@@ -130,6 +131,13 @@ func (uc *UserUsecase) ListUser(ctx context.Context, page, pageSize int64) (*pag
 
 func (uc *UserUsecase) FindByEmail(ctx context.Context, email string) (*User, error) {
 	return uc.repo.FindByEmail(ctx, email)
+}
+
+func (uc *UserUsecase) ListUsersByIDs(ctx context.Context, ids []int64) ([]*User, error) {
+	if len(ids) == 0 {
+		return []*User{}, nil
+	}
+	return uc.repo.ListByIDs(ctx, ids)
 }
 
 func filterSensitiveFields(fields []string) []string {
