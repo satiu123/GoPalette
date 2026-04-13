@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package api.search.v1;
+
+option go_package = "GoPalette/api/search/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.search.v1";
+
+service Search {
+	rpc CreateSearch (CreateSearchRequest) returns (CreateSearchReply);
+	rpc UpdateSearch (UpdateSearchRequest) returns (UpdateSearchReply);
+	rpc DeleteSearch (DeleteSearchRequest) returns (DeleteSearchReply);
+	rpc GetSearch (GetSearchRequest) returns (GetSearchReply);
+	rpc ListSearch (ListSearchRequest) returns (ListSearchReply);
+}
+
+message CreateSearchRequest {}
+message CreateSearchReply {}
+
+message UpdateSearchRequest {}
+message UpdateSearchReply {}
+
+message DeleteSearchRequest {}
+message DeleteSearchReply {}
+
+message GetSearchRequest {}
+message GetSearchReply {}
+
+message ListSearchRequest {}
+message ListSearchReply {}
