@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"os"
 
@@ -74,9 +73,12 @@ func main() {
 	}
 
 	// 设置并初始化 OpenTelemetry SDK
-	otelShutdown, err := opentelemetry.SetupOTelSDK(context.Background(), Name)
+	otelShutdown := func(context.Context) error { return nil }
+	shutdownFn, err := opentelemetry.SetupOTelSDK(context.Background(), Name)
 	if err != nil {
 		logHelper.Errorf("初始化 OpenTelemetry SDK 失败: %v", err)
+	} else {
+		otelShutdown = shutdownFn
 	}
 
 	var bc conf.Bootstrap
@@ -86,7 +88,9 @@ func main() {
 
 	// 确保在 main 函数退出时正确关闭 OpenTelemetry SDK
 	defer func() {
-		err = errors.Join(err, otelShutdown(context.Background()))
+		if shutdownErr := otelShutdown(context.Background()); shutdownErr != nil {
+			logHelper.Errorf("关闭 OpenTelemetry SDK 失败: %v", shutdownErr)
+		}
 	}()
 
 	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Auth, logger)
