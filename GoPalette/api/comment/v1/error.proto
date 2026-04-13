@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package api.comment.v1;
+
+import "errors/errors.proto";
+
+option go_package = "GoPalette/api/comment/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.comment.v1";
+
+enum ErrorReason {
+  option (errors.default_code) = 500;
+
+  POST_NOT_FOUND = 0 [(errors.code) = 404];
+  COMMENT_NOT_FOUND = 1 [(errors.code) = 404];
+  PARENT_NOT_FOUND = 2 [(errors.code) = 400];
+  INVALID_ARGUMENT = 3 [(errors.code) = 400];
+  UNAUTHENTICATED = 4 [(errors.code) = 401];
+  ACCESS_DENIED = 5 [(errors.code) = 403];
+  RATE_LIMITED = 6 [(errors.code) = 429];
+}
