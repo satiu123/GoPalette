@@ -535,11 +535,12 @@ func (x *Data_Redis) GetWriteTimeout() *durationpb.Duration {
 }
 
 type Data_Clients struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserEndpoint  string                 `protobuf:"bytes,1,opt,name=user_endpoint,json=userEndpoint,proto3" json:"user_endpoint,omitempty"`
-	Timeout       *durationpb.Duration   `protobuf:"bytes,2,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	UserEndpoint   string                 `protobuf:"bytes,1,opt,name=user_endpoint,json=userEndpoint,proto3" json:"user_endpoint,omitempty"`
+	SearchEndpoint string                 `protobuf:"bytes,2,opt,name=search_endpoint,json=searchEndpoint,proto3" json:"search_endpoint,omitempty"`
+	Timeout        *durationpb.Duration   `protobuf:"bytes,3,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Data_Clients) Reset() {
@@ -579,6 +580,13 @@ func (x *Data_Clients) GetUserEndpoint() string {
 	return ""
 }
 
+func (x *Data_Clients) GetSearchEndpoint() string {
+	if x != nil {
+		return x.SearchEndpoint
+	}
+	return ""
+}
+
 func (x *Data_Clients) GetTimeout() *durationpb.Duration {
 	if x != nil {
 		return x.Timeout
@@ -605,7 +613,7 @@ const file_app_post_service_internal_conf_conf_proto_rawDesc = "" +
 	"\x04GRPC\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x123\n" +
-	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\xef\x04\n" +
+	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\x99\x05\n" +
 	"\x04Data\x12:\n" +
 	"\bdatabase\x18\x01 \x01(\v2\x1e.kratos.api.post.Data.DatabaseR\bdatabase\x121\n" +
 	"\x05redis\x18\x02 \x01(\v2\x1b.kratos.api.post.Data.RedisR\x05redis\x127\n" +
@@ -620,10 +628,11 @@ const file_app_post_service_internal_conf_conf_proto_rawDesc = "" +
 	"\x02db\x18\x04 \x01(\x05R\x02db\x12<\n" +
 	"\fdial_timeout\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\vdialTimeout\x12<\n" +
 	"\fread_timeout\x18\x06 \x01(\v2\x19.google.protobuf.DurationR\vreadTimeout\x12>\n" +
-	"\rwrite_timeout\x18\a \x01(\v2\x19.google.protobuf.DurationR\fwriteTimeout\x1ac\n" +
+	"\rwrite_timeout\x18\a \x01(\v2\x19.google.protobuf.DurationR\fwriteTimeout\x1a\x8c\x01\n" +
 	"\aClients\x12#\n" +
-	"\ruser_endpoint\x18\x01 \x01(\tR\fuserEndpoint\x123\n" +
-	"\atimeout\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\x88\x02\n" +
+	"\ruser_endpoint\x18\x01 \x01(\tR\fuserEndpoint\x12'\n" +
+	"\x0fsearch_endpoint\x18\x02 \x01(\tR\x0esearchEndpoint\x123\n" +
+	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\x88\x02\n" +
 	"\x04Auth\x12*\n" +
 	"\x11jwt_access_secret\x18\x01 \x01(\tR\x0fjwtAccessSecret\x12,\n" +
 	"\x12jwt_refresh_secret\x18\x02 \x01(\tR\x10jwtRefreshSecret\x12E\n" +

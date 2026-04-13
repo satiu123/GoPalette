@@ -4,6 +4,7 @@ import (
 	"context"
 
 	pb "GoPalette/api/post/v1"
+	searchpb "GoPalette/api/search/v1"
 	userpb "GoPalette/api/user/v1"
 	"GoPalette/app/post/service/internal/biz"
 	"GoPalette/pkg/auth"
@@ -15,16 +16,18 @@ import (
 type PostService struct {
 	pb.UnimplementedPostServer
 
-	uc     *biz.PostUsecase
-	userc  userpb.UserClient
-	logger *log.Helper
+	uc      *biz.PostUsecase
+	userc   userpb.UserClient
+	searchc searchpb.SearchClient
+	logger  *log.Helper
 }
 
-func NewPostService(uc *biz.PostUsecase, userc userpb.UserClient, logger log.Logger) *PostService {
+func NewPostService(uc *biz.PostUsecase, userc userpb.UserClient, searchc searchpb.SearchClient, logger log.Logger) *PostService {
 	return &PostService{
-		uc:     uc,
-		userc:  userc,
-		logger: log.NewHelper(log.With(logger, "module", "service/post")),
+		uc:      uc,
+		userc:   userc,
+		searchc: searchc,
+		logger:  log.NewHelper(log.With(logger, "module", "service/post")),
 	}
 }
 
@@ -49,6 +52,11 @@ func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest)
 	if err != nil {
 		return nil, err
 	}
+	if pb.PostStatus(createdPost.Status) == pb.PostStatus_PUBLISHED {
+		if _, syncErr := s.searchc.SyncPost(ctx, s.toSearchSyncReq(createdPost)); syncErr != nil {
+			s.logger.WithContext(ctx).Warnf("同步搜索索引失败(create): %v", syncErr)
+		}
+	}
 	return &pb.CreatePostReply{
 		Post: s.toPBDetail(createdPost),
 	}, nil
@@ -69,6 +77,15 @@ func (s *PostService) UpdatePost(ctx context.Context, req *pb.UpdatePostRequest)
 	if err != nil {
 		return nil, err
 	}
+	if pb.PostStatus(updatedPost.Status) == pb.PostStatus_PUBLISHED {
+		if _, syncErr := s.searchc.SyncPost(ctx, s.toSearchSyncReq(updatedPost)); syncErr != nil {
+			s.logger.WithContext(ctx).Warnf("同步搜索索引失败(update): %v", syncErr)
+		}
+	} else {
+		if _, delErr := s.searchc.DeleteIndex(ctx, &searchpb.DeleteIndexRequest{PostId: updatedPost.ID}); delErr != nil {
+			s.logger.WithContext(ctx).Warnf("同步删除搜索索引失败(update): %v", delErr)
+		}
+	}
 	return &pb.UpdatePostReply{
 		Post: s.toPBDetail(updatedPost),
 	}, nil
@@ -77,6 +94,9 @@ func (s *PostService) DeletePost(ctx context.Context, req *pb.DeletePostRequest)
 	err := s.uc.DeletePost(ctx, req.Id)
 	if err != nil {
 		return nil, err
+	}
+	if _, delErr := s.searchc.DeleteIndex(ctx, &searchpb.DeleteIndexRequest{PostId: req.Id}); delErr != nil {
+		s.logger.WithContext(ctx).Warnf("同步删除搜索索引失败(delete): %v", delErr)
 	}
 	return &pb.DeletePostReply{Success: true}, nil
 }
@@ -150,6 +170,36 @@ func (s *PostService) ListPosts(ctx context.Context, req *pb.ListPostsRequest) (
 
 }
 
+func (s *PostService) ListPostsForIndex(ctx context.Context, req *pb.ListPostsForIndexRequest) (*pb.ListPostsForIndexReply, error) {
+	publishedOnly := !req.IncludeNonPublished
+
+	res, total, err := s.uc.ListPostsForIndex(ctx, req.Page, req.PageSize, publishedOnly)
+	if err != nil {
+		return nil, err
+	}
+
+	posts := make([]*pb.PostIndexInfo, 0, len(res))
+	for _, p := range res {
+		content := p.Content
+		if len(content) > 500 {
+			content = content[:500]
+		}
+		posts = append(posts, &pb.PostIndexInfo{
+			Id:           p.ID,
+			Title:        p.Title,
+			Summary:      p.Summary,
+			Content:      content,
+			Slug:         p.Slug,
+			CategoryName: p.CategoryName,
+			Tags:         p.Tags,
+			CreatedAt:    timestamppb.New(p.CreatedAt),
+			Status:       pb.PostStatus(p.Status),
+		})
+	}
+
+	return &pb.ListPostsForIndexReply{Posts: posts, Total: total}, nil
+}
+
 func (s *PostService) IncrCommentCount(ctx context.Context, req *pb.IncrCommentCountRequest) (*pb.IncrCommentCountReply, error) {
 	if err := s.uc.IncrCommentCount(ctx, req.Id, req.Delta); err != nil {
 		return nil, err
@@ -186,5 +236,22 @@ func (s *PostService) toPBDetail(p *biz.Post) *pb.PostDetail {
 		Info:            s.toPBInfo(p),
 		Content:         p.Content,
 		OriginalContent: p.OriginalContent,
+	}
+}
+
+func (s *PostService) toSearchSyncReq(p *biz.Post) *searchpb.SyncPostRequest {
+	content := p.Content
+	if len(content) > 500 {
+		content = content[:500]
+	}
+	return &searchpb.SyncPostRequest{
+		Id:           p.ID,
+		Title:        p.Title,
+		Summary:      p.Summary,
+		Content:      content,
+		Slug:         p.Slug,
+		CategoryName: p.CategoryName,
+		Tags:         p.Tags,
+		CreatedAt:    timestamppb.New(p.CreatedAt),
 	}
 }

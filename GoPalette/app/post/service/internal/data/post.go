@@ -85,7 +85,7 @@ func (r *postRepo) Create(ctx context.Context, p *biz.Post) (*biz.Post, error) {
 }
 
 func (r *postRepo) Update(ctx context.Context, p *biz.Post, fields []string) (*biz.Post, error) {
-	return nil, r.data.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	err := r.data.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		po := r.toDataPost(p)
 		db := tx.Model(&Post{})
 
@@ -114,6 +114,10 @@ func (r *postRepo) Update(ctx context.Context, p *biz.Post, fields []string) (*b
 
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
+	return r.GetByID(ctx, p.ID)
 }
 
 func (r *postRepo) Delete(ctx context.Context, id int64) error {
@@ -172,6 +176,40 @@ func (r *postRepo) List(ctx context.Context, page, pageSize int64) ([]*biz.Post,
 	}
 
 	var posts []*biz.Post
+	for _, po := range pos {
+		posts = append(posts, r.toBizPost(&po))
+	}
+	return posts, total, nil
+}
+
+func (r *postRepo) ListForIndex(ctx context.Context, page, pageSize int64, publishedOnly bool) ([]*biz.Post, int64, error) {
+	p := pagination.NewPagingParam(page, pageSize)
+
+	var pos []Post
+	var total int64
+
+	db := r.data.db.WithContext(ctx).Model(&Post{})
+	if publishedOnly {
+		db = db.Where("status = ?", 1)
+	}
+
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	if total == 0 {
+		return []*biz.Post{}, 0, nil
+	}
+
+	err := db.Preload("Category").
+		Preload("Tags").
+		Order("created_at DESC").
+		Scopes(pagination.Paginate(p)).
+		Find(&pos).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	posts := make([]*biz.Post, 0, len(pos))
 	for _, po := range pos {
 		posts = append(posts, r.toBizPost(&po))
 	}

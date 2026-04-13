@@ -42,7 +42,8 @@ message Data {
   }
   message Clients {
     string user_endpoint = 1;
-    google.protobuf.Duration timeout = 2;
+    string search_endpoint = 2;
+    google.protobuf.Duration timeout = 3;
   }
   Database database = 1;
   Redis    redis    = 2;

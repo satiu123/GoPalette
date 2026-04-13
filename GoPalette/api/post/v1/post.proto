@@ -53,6 +53,8 @@ service Post {
       get: "/v1/posts"
     };
   };
+  // ListPostsForIndex 仅供搜索服务使用，返回索引所需字段
+  rpc ListPostsForIndex (ListPostsForIndexRequest) returns (ListPostsForIndexReply);
   // IncrCommentCount 增减文章评论数（用于评论服务回写）
   rpc IncrCommentCount (IncrCommentCountRequest) returns (IncrCommentCountReply){
     option (google.api.http) = {
@@ -250,6 +252,29 @@ message ListPostsRequest {
 message ListPostsReply {
   repeated PostInfo posts = 1; // 帖子列表
   int64             total = 2; // 总帖子数
+}
+
+message ListPostsForIndexRequest {
+  int64 page      = 1;
+  int64 page_size = 2;
+  bool include_non_published = 3; // 是否包含草稿/归档，默认 false（仅返回已发布）
+}
+
+message PostIndexInfo {
+  int64  id            = 1;
+  string title         = 2;
+  string summary       = 3;
+  string content       = 4;
+  string slug          = 5;
+  string category_name = 6;
+  repeated string tags = 7;
+  google.protobuf.Timestamp created_at = 8;
+  PostStatus status    = 9;
+}
+
+message ListPostsForIndexReply {
+  repeated PostIndexInfo posts = 1;
+  int64                 total = 2;
 }
 
 message IncrCommentCountRequest {

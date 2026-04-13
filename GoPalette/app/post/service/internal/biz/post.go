@@ -38,6 +38,7 @@ type PostRepo interface {
 	GetByID(context.Context, int64) (*Post, error)
 	GetBySlug(context.Context, string) (*Post, error)
 	List(ctx context.Context, page, pageSize int64) ([]*Post, int64, error)
+	ListForIndex(ctx context.Context, page, pageSize int64, publishedOnly bool) ([]*Post, int64, error)
 	IncrCommentCount(ctx context.Context, id int64, delta int64) error
 }
 
@@ -123,6 +124,10 @@ func (uc *PostUsecase) DeletePost(ctx context.Context, id int64) error {
 
 func (uc *PostUsecase) ListPosts(ctx context.Context, page, pageSize int64) ([]*Post, int64, error) {
 	return uc.repo.List(ctx, page, pageSize)
+}
+
+func (uc *PostUsecase) ListPostsForIndex(ctx context.Context, page, pageSize int64, publishedOnly bool) ([]*Post, int64, error) {
+	return uc.repo.ListForIndex(ctx, page, pageSize, publishedOnly)
 }
 
 func (uc *PostUsecase) IncrCommentCount(ctx context.Context, id int64, delta int64) error {

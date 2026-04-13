@@ -16,6 +16,7 @@ data:
     write_timeout: 0.2s
   clients:
     user_endpoint: 127.0.0.1:9000
+    search_endpoint: 127.0.0.1:9003
     timeout: 1s
 auth:
   jwt_access_secret: "GPA"

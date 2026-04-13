@@ -19,12 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Post_CreatePost_FullMethodName       = "/api.post.v1.Post/CreatePost"
-	Post_UpdatePost_FullMethodName       = "/api.post.v1.Post/UpdatePost"
-	Post_DeletePost_FullMethodName       = "/api.post.v1.Post/DeletePost"
-	Post_GetPost_FullMethodName          = "/api.post.v1.Post/GetPost"
-	Post_ListPosts_FullMethodName        = "/api.post.v1.Post/ListPosts"
-	Post_IncrCommentCount_FullMethodName = "/api.post.v1.Post/IncrCommentCount"
+	Post_CreatePost_FullMethodName        = "/api.post.v1.Post/CreatePost"
+	Post_UpdatePost_FullMethodName        = "/api.post.v1.Post/UpdatePost"
+	Post_DeletePost_FullMethodName        = "/api.post.v1.Post/DeletePost"
+	Post_GetPost_FullMethodName           = "/api.post.v1.Post/GetPost"
+	Post_ListPosts_FullMethodName         = "/api.post.v1.Post/ListPosts"
+	Post_ListPostsForIndex_FullMethodName = "/api.post.v1.Post/ListPostsForIndex"
+	Post_IncrCommentCount_FullMethodName  = "/api.post.v1.Post/IncrCommentCount"
 )
 
 // PostClient is the client API for Post service.
@@ -43,6 +44,8 @@ type PostClient interface {
 	GetPost(ctx context.Context, in *GetPostRequest, opts ...grpc.CallOption) (*GetPostReply, error)
 	// ListPosts 列出帖子，输入分页参数，返回帖子列表
 	ListPosts(ctx context.Context, in *ListPostsRequest, opts ...grpc.CallOption) (*ListPostsReply, error)
+	// ListPostsForIndex 仅供搜索服务使用，返回索引所需字段
+	ListPostsForIndex(ctx context.Context, in *ListPostsForIndexRequest, opts ...grpc.CallOption) (*ListPostsForIndexReply, error)
 	// IncrCommentCount 增减文章评论数（用于评论服务回写）
 	IncrCommentCount(ctx context.Context, in *IncrCommentCountRequest, opts ...grpc.CallOption) (*IncrCommentCountReply, error)
 }
@@ -105,6 +108,16 @@ func (c *postClient) ListPosts(ctx context.Context, in *ListPostsRequest, opts .
 	return out, nil
 }
 
+func (c *postClient) ListPostsForIndex(ctx context.Context, in *ListPostsForIndexRequest, opts ...grpc.CallOption) (*ListPostsForIndexReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPostsForIndexReply)
+	err := c.cc.Invoke(ctx, Post_ListPostsForIndex_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *postClient) IncrCommentCount(ctx context.Context, in *IncrCommentCountRequest, opts ...grpc.CallOption) (*IncrCommentCountReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IncrCommentCountReply)
@@ -131,6 +144,8 @@ type PostServer interface {
 	GetPost(context.Context, *GetPostRequest) (*GetPostReply, error)
 	// ListPosts 列出帖子，输入分页参数，返回帖子列表
 	ListPosts(context.Context, *ListPostsRequest) (*ListPostsReply, error)
+	// ListPostsForIndex 仅供搜索服务使用，返回索引所需字段
+	ListPostsForIndex(context.Context, *ListPostsForIndexRequest) (*ListPostsForIndexReply, error)
 	// IncrCommentCount 增减文章评论数（用于评论服务回写）
 	IncrCommentCount(context.Context, *IncrCommentCountRequest) (*IncrCommentCountReply, error)
 	mustEmbedUnimplementedPostServer()
@@ -157,6 +172,9 @@ func (UnimplementedPostServer) GetPost(context.Context, *GetPostRequest) (*GetPo
 }
 func (UnimplementedPostServer) ListPosts(context.Context, *ListPostsRequest) (*ListPostsReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListPosts not implemented")
+}
+func (UnimplementedPostServer) ListPostsForIndex(context.Context, *ListPostsForIndexRequest) (*ListPostsForIndexReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPostsForIndex not implemented")
 }
 func (UnimplementedPostServer) IncrCommentCount(context.Context, *IncrCommentCountRequest) (*IncrCommentCountReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method IncrCommentCount not implemented")
@@ -272,6 +290,24 @@ func _Post_ListPosts_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Post_ListPostsForIndex_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPostsForIndexRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServer).ListPostsForIndex(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Post_ListPostsForIndex_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServer).ListPostsForIndex(ctx, req.(*ListPostsForIndexRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Post_IncrCommentCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(IncrCommentCountRequest)
 	if err := dec(in); err != nil {
@@ -316,6 +352,10 @@ var Post_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListPosts",
 			Handler:    _Post_ListPosts_Handler,
+		},
+		{
+			MethodName: "ListPostsForIndex",
+			Handler:    _Post_ListPostsForIndex_Handler,
 		},
 		{
 			MethodName: "IncrCommentCount",

@@ -1,6 +1,7 @@
 package data
 
 import (
+	searchv1 "GoPalette/api/search/v1"
 	userv1 "GoPalette/api/user/v1"
 	"GoPalette/app/post/service/internal/conf"
 
@@ -15,17 +16,22 @@ import (
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewPostRepo, NewCategoryRepo, NewTagRepo, NewUserClient)
+var ProviderSet = wire.NewSet(NewData, NewPostRepo, NewCategoryRepo, NewTagRepo, NewUserClient, NewSearchClient)
 
 // Data .
 type Data struct {
-	db         *gorm.DB
-	rdb        *redis.Client
-	userClient userv1.UserClient
+	db           *gorm.DB
+	rdb          *redis.Client
+	userClient   userv1.UserClient
+	searchClient searchv1.SearchClient
 }
 
 func NewUserClient(d *Data) userv1.UserClient {
 	return d.userClient
+}
+
+func NewSearchClient(d *Data) searchv1.SearchClient {
+	return d.searchClient
 }
 
 // NewData .
@@ -64,6 +70,13 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 	}
 	d.userClient = userv1.NewUserClient(userConn)
 
+	searchConn, err := grpc.Dial(c.Clients.SearchEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		_ = userConn.Close()
+		return nil, nil, err
+	}
+	d.searchClient = searchv1.NewSearchClient(searchConn)
+
 	return d, func() {
 		log.Info("message", "close the data resource")
 		if sqlDB, err := db.DB(); err != nil {
@@ -78,6 +91,9 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 		}
 		if err := userConn.Close(); err != nil {
 			log.Errorf("failed to close user grpc connection: %v", err)
+		}
+		if err := searchConn.Close(); err != nil {
+			log.Errorf("failed to close search grpc connection: %v", err)
 		}
 
 	}, nil
