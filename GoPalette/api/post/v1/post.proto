@@ -1,0 +1,358 @@
+syntax = "proto3";
+
+package api.post.v1;
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/field_mask.proto";
+
+option go_package = "GoPalette/api/post/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.post.v1";
+
+// PostStatus 定义了帖子的状态枚举类型，包括草稿、已发布和已归档三种状态
+enum PostStatus {
+  DRAFT     = 0; // 草稿
+  PUBLISHED = 1; // 已发布
+  ARCHIVED  = 2; // 已归档
+}
+
+// Post服务定义了标准的CRUD接口，用于创建、更新、删除、获取和列出帖子
+service Post {
+  // CreatePost 创建帖子，输入帖子标题、摘要、正文内容、状态、作者ID、分类ID和标签列表，返回创建的帖子详细信息
+  rpc CreatePost (CreatePostRequest) returns (CreatePostReply){
+    option (google.api.http) = {
+      post: "/v1/posts"
+      body: "*"
+    };
+  };
+  // UpdatePost 更新帖子，输入帖子ID和要更新的字段列表，返回更新后的帖子详细信息
+  rpc UpdatePost (UpdatePostRequest) returns (UpdatePostReply){
+    option (google.api.http) = {
+      patch: "/v1/posts/{id}"
+      body : "*"
+    };
+  };
+  // DeletePost 删除帖子，输入帖子ID，返回删除是否成功
+  rpc DeletePost (DeletePostRequest) returns (DeletePostReply){
+    option (google.api.http) = {
+      delete: "/v1/posts/{id}"
+    };
+  };
+  // GetPost 获取帖子，输入帖子ID或slug，返回帖子详细信息
+  rpc GetPost (GetPostRequest) returns (GetPostReply){
+    option (google.api.http) = {
+      get: "/v1/posts/{id}"
+      additional_bindings {
+        get: "/v1/posts/slug/{slug}"
+      }
+    };
+  };
+  // ListPosts 列出帖子，输入分页参数，返回帖子列表
+  rpc ListPosts (ListPostsRequest) returns (ListPostsReply){
+    option (google.api.http) = {
+      get: "/v1/posts"
+    };
+  };
+  // IncrCommentCount 增减文章评论数（用于评论服务回写）
+  rpc IncrCommentCount (IncrCommentCountRequest) returns (IncrCommentCountReply){
+    option (google.api.http) = {
+      post: "/v1/posts/{id}/comment-count:incr"
+      body: "*"
+    };
+  };
+}
+
+// 分类管理服务
+service Category {
+  // CreateCategory 创建分类
+  rpc CreateCategory (CreateCategoryRequest) returns (CreateCategoryReply){
+    option (google.api.http) = {
+      post: "/v1/categories"
+      body: "*"
+    };
+  };
+  // UpdateCategory 更新分类
+  rpc UpdateCategory (UpdateCategoryRequest) returns (UpdateCategoryReply){
+    option (google.api.http) = {
+      patch: "/v1/categories/{id}"
+      body: "*"
+    };
+  };
+  // DeleteCategory 删除分类
+  rpc DeleteCategory (DeleteCategoryRequest) returns (DeleteCategoryReply){
+    option (google.api.http) = {
+      delete: "/v1/categories/{id}"
+    };
+  };
+  // GetCategory 获取分类详情
+  rpc GetCategory (GetCategoryRequest) returns (GetCategoryReply){
+    option (google.api.http) = {
+      get: "/v1/categories/{id}"
+    };
+  };
+  // ListCategories 列出分类，输入分页参数，返回分类列表
+  rpc ListCategories (ListCategoriesRequest) returns (ListCategoriesReply){
+    option (google.api.http) = {
+      get: "/v1/categories"
+    };
+  };
+}
+
+// 标签管理服务
+service Tag {
+  // CreateTag 创建标签
+  rpc CreateTag (CreateTagRequest) returns (CreateTagReply){
+    option (google.api.http) = {
+      post: "/v1/tags"
+      body: "*"
+    };
+  };
+  // UpdateTag 更新标签
+  rpc UpdateTag (UpdateTagRequest) returns (UpdateTagReply){
+    option (google.api.http) = {
+      patch: "/v1/tags/{id}"
+      body: "*"
+    };
+  };
+  // DeleteTag 删除标签
+  rpc DeleteTag (DeleteTagRequest) returns (DeleteTagReply){
+    option (google.api.http) = {
+      delete: "/v1/tags/{id}"
+    };
+  };
+  // GetTag 获取标签详情
+  rpc GetTag (GetTagRequest) returns (GetTagReply){
+    option (google.api.http) = {
+      get: "/v1/tags/{id}"
+    };
+  };
+  // ListTags 列出标签，输入分页参数，返回标签列表
+  rpc ListTags (ListTagsRequest) returns (ListTagsReply){
+    option (google.api.http) = {
+      get: "/v1/tags"
+    };
+  };
+}
+
+message AuthorInfo {
+  int64  id         = 1; // 作者ID
+  string name       = 2; // 作者姓名
+  string avatar_url = 3; // 作者头像URL
+}
+
+message CategoryInfo {
+  int64  id   = 1; // 分类ID
+  string name = 2; // 分类名称
+}
+
+message CategoryDetail {
+  CategoryInfo info        = 1; // 分类基本信息
+  string       slug        = 2; // 分类slug
+  string       description = 3; // 分类描述
+  int64        post_count  = 4; // 分类下文章数量
+}
+
+message TagInfo {
+  int64  id   = 1; // 标签ID
+  string name = 2; // 标签名称
+}
+
+message TagDetail {
+  TagInfo info       = 1; // 标签基本信息
+  string  slug       = 2; // 标签slug
+  int64   post_count = 3; // 标签下文章数量
+}
+
+// PostInfo 包含了帖子的基本信息
+message PostInfo {
+  int64      id      = 1; // 帖子ID
+  string     title   = 2; // 帖子标题
+  string     summary = 3; // 帖子摘要
+  string     slug    = 4; // 帖子URL友好标识
+  PostStatus status  = 5; // 帖子状态
+
+  int64 view_count    = 6; // 浏览量
+  int64 like_count    = 7; // 点赞量
+  int64 comment_count = 8; // 评论量
+
+  AuthorInfo      author   = 9; // 作者信息
+  CategoryInfo    category = 10; // 分类信息
+  repeated string tags     = 11; // 标签列表
+
+  google.protobuf.Timestamp created_at = 12; // 创建时间
+  google.protobuf.Timestamp updated_at = 13; // 更新时间
+
+}
+
+// PostDetail 包含了帖子的详细信息，在PostInfo的基础上增加了正文内容字段content
+message PostDetail {
+  PostInfo info             = 1; // 帖子基本信息
+  string   content          = 2; // 帖子正文
+  string   original_content = 3; // 帖子原始内容（Markdown格式）
+}
+
+message CreatePostRequest {
+  string          title       = 1; // 帖子标题
+  string          summary     = 2; // 帖子摘要
+  string          slug        = 3; // 帖子URL友好标识
+  string          content     = 4; // 帖子正文
+  PostStatus      status      = 5; // 帖子状态
+  int64           category_id = 6; // 分类ID
+  repeated string tags        = 7; // 标签列表
+}
+
+message CreatePostReply {
+  PostDetail post = 1; // 创建成功后返回的帖子详细信息
+}
+
+message UpdatePostRequest {
+  int64           id          = 1; // 帖子ID
+  string          title       = 2; // 帖子标题
+  string          summary     = 3; // 帖子摘要
+  string          slug        = 4; // 帖子URL友好标识
+  string          content     = 5; // 帖子正文
+  PostStatus      status      = 6; // 帖子状态
+  int64           category_id = 7; // 分类ID
+  repeated string tags        = 8; // 标签列表
+
+  google.protobuf.FieldMask update_mask = 9; // 指定要更新的字段列表，例如 "title,summary,content" 表示只更新标题、摘要和正文内容，其他字段保持不变
+
+}
+
+message UpdatePostReply {
+  PostDetail post = 1; // 更新成功后返回的帖子详细信息
+}
+
+message DeletePostRequest {
+  int64 id = 1; // 帖子ID
+}
+
+message DeletePostReply {
+  bool success = 1; // 删除是否成功
+}
+
+message GetPostRequest {
+  oneof query {
+    int64  id   = 1; // 通过帖子ID查询
+    string slug = 2; // 通过帖子slug查询
+  }
+}
+
+message GetPostReply {
+  PostDetail post = 1;
+}
+
+message ListPostsRequest {
+  int64 page      = 1;
+  int64 page_size = 2;
+}
+
+message ListPostsReply {
+  repeated PostInfo posts = 1; // 帖子列表
+  int64             total = 2; // 总帖子数
+}
+
+message IncrCommentCountRequest {
+  int64 id = 1; // 帖子ID
+  int64 delta = 2; // 评论数增量，通常为 +1 或 -1
+}
+
+message IncrCommentCountReply {
+  bool success = 1;
+}
+
+message ListCategoriesRequest {
+  int64 page      = 1;
+  int64 page_size = 2;
+}
+
+message CreateCategoryRequest {
+  string name        = 1; // 分类名称
+  string slug        = 2; // 分类slug
+  string description = 3; // 分类描述
+}
+
+message CreateCategoryReply {
+  CategoryDetail category = 1;
+}
+
+message UpdateCategoryRequest {
+  int64  id          = 1; // 分类ID
+  string name        = 2; // 分类名称
+  string slug        = 3; // 分类slug
+  string description = 4; // 分类描述
+
+  google.protobuf.FieldMask update_mask = 5; // 需要更新的字段
+}
+
+message UpdateCategoryReply {
+  CategoryDetail category = 1;
+}
+
+message DeleteCategoryRequest {
+  int64 id = 1; // 分类ID
+}
+
+message DeleteCategoryReply {
+  bool success = 1;
+}
+
+message GetCategoryRequest {
+  int64 id = 1; // 分类ID
+}
+
+message GetCategoryReply {
+  CategoryDetail category = 1;
+}
+
+message ListCategoriesReply {
+  repeated CategoryInfo categories = 1; // 分类列表
+  int64              total      = 2; // 总分类数
+}
+
+message ListTagsRequest {
+  int64 page      = 1;
+  int64 page_size = 2;
+}
+
+message CreateTagRequest {
+  string name = 1; // 标签名称
+  string slug = 2; // 标签slug
+}
+
+message CreateTagReply {
+  TagDetail tag = 1;
+}
+
+message UpdateTagRequest {
+  int64  id   = 1; // 标签ID
+  string name = 2; // 标签名称
+  string slug = 3; // 标签slug
+
+  google.protobuf.FieldMask update_mask = 4; // 需要更新的字段
+}
+
+message UpdateTagReply {
+  TagDetail tag = 1;
+}
+
+message DeleteTagRequest {
+  int64 id = 1; // 标签ID
+}
+
+message DeleteTagReply {
+  bool success = 1;
+}
+
+message GetTagRequest {
+  int64 id = 1; // 标签ID
+}
+
+message GetTagReply {
+  TagDetail tag = 1;
+}
+
+message ListTagsReply {
+  repeated TagInfo tags = 1; // 标签列表
+  int64            total = 2; // 总标签数
+}

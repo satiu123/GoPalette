@@ -1,0 +1,205 @@
+syntax = "proto3";
+
+package api.user.v1;
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/field_mask.proto";
+
+option go_package = "GoPalette/api/user/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.user.v1";
+
+// 用户角色，普通用户和管理员
+enum Role {
+  USER  = 0;
+  ADMIN = 1;
+}
+
+// 用户状态，活跃和非活跃
+enum UserStatus {
+  ACTIVE   = 0;
+  INACTIVE = 1;
+}
+
+// 用户服务，提供了创建、更新、删除、获取和列出用户的接口
+service User {
+  // 注册用户，输入用户名、邮箱和密码，返回创建的用户信息
+  rpc Register (RegisterRequest) returns (RegisterReply){
+    option (google.api.http) = {
+      post: "/v1/users/register"
+      body: "*"
+    };
+  };
+  // 登录用户，输入邮箱和密码，返回用户信息和访问令牌
+  rpc Login (LoginRequest) returns (LoginReply){
+    option (google.api.http) = {
+      post: "/v1/users/login"
+      body: "*"
+    };
+  };
+
+  // 注销用户，输入用户ID，返回注销是否成功
+  rpc Logout (LogoutRequest) returns (LogoutReply){
+    option (google.api.http) = {
+      post: "/v1/users/logout"
+      body: "*"
+    };
+  };
+
+  // 创建用户，输入用户名、邮箱、密码和角色，返回创建的用户信息
+  rpc CreateUser (CreateUserRequest) returns (CreateUserReply){
+    option (google.api.http) = {
+      post: "/v1/users"
+      body: "*"
+    };
+  };
+  // 更新用户，输入用户ID、要更新的用户信息和更新字段掩码，返回更新后的用户信息
+  rpc UpdateUser (UpdateUserRequest) returns (UpdateUserReply){
+    option (google.api.http) = {
+      patch: "/v1/users/{id}"
+      body : "user"
+    };
+  };
+  // 删除用户，输入用户ID，返回删除是否成功
+  rpc DeleteUser (DeleteUserRequest) returns (DeleteUserReply){
+    option (google.api.http) = {
+      delete: "/v1/users/{id}"
+    };
+  };
+  // 获取用户，输入用户ID，返回用户信息
+  rpc GetUser (GetUserRequest) returns (GetUserReply){
+    option (google.api.http) = {
+      get: "/v1/users/{id}"
+    };
+  };
+  // 列出用户，输入分页参数，返回用户列表和总数
+  rpc ListUser (ListUserRequest) returns (ListUserReply){
+    option (google.api.http) = {
+      get: "/v1/users"
+    };
+  };
+  // 刷新令牌，输入刷新令牌，返回新的访问令牌和刷新令牌
+  rpc RefreshToken (RefreshTokenRequest) returns (RefreshTokenReply){
+    option (google.api.http) = {
+      post: "/v1/users/refresh"
+      body: "*"
+    };
+  };
+  // 批量获取公开用户信息（用户名、头像）
+  rpc BatchGetUsers (BatchGetUsersRequest) returns (BatchGetUsersReply){
+    option (google.api.http) = {
+      post: "/v1/users:batchGet"
+      body: "*"
+    };
+  };
+}
+
+// 包含了用户的基本信息，如用户名、邮箱、角色、状态等
+message UserInfo {
+  int64                     id           = 1;
+  string                    username     = 2;
+  string                    email        = 3;
+  Role                      role         = 4;
+  string                    avatar_u_r_l = 5;
+  UserStatus                status       = 6;
+  google.protobuf.Timestamp created_at   = 7;
+  google.protobuf.Timestamp updated_at   = 8;
+}
+
+message RegisterRequest {
+  string username = 1;
+  string email    = 2;
+  string password = 3;
+}
+
+message RegisterReply {
+  UserInfo user = 1;
+}
+
+message LoginRequest {
+  string email    = 1;
+  string password = 2;
+}
+
+message LoginReply {
+  string access_token  = 1;
+  string refresh_token = 2;
+}
+
+message LogoutRequest {
+  int64 user_id = 1;
+}
+
+message LogoutReply {
+  bool success = 1;
+}
+
+message CreateUserRequest {
+  string username = 1;
+  string email    = 2;
+  string password = 3;
+  Role   role     = 4;
+}
+
+message CreateUserReply {
+  UserInfo user = 1;
+}
+
+message UpdateUserRequest {
+  int64                     id          = 1;
+  UserInfo                  user        = 2;
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+message UpdateUserReply {
+  UserInfo user = 1;
+}
+
+message DeleteUserRequest {
+  int64 id = 1;
+}
+
+message DeleteUserReply {
+  bool success = 1;
+}
+
+message GetUserRequest {
+  int64 id = 1;
+}
+
+message GetUserReply {
+  UserInfo user = 1;
+}
+
+message ListUserRequest {
+  int64 page      = 1;
+  int64 page_size = 2;
+}
+
+message ListUserReply {
+  repeated UserInfo users = 1;
+  int64             total = 2;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message RefreshTokenReply {
+  string access_token  = 1;
+  string refresh_token = 2;
+}
+
+message UserProfile {
+  int64  id         = 1;
+  string username   = 2;
+  string avatar_url = 3;
+}
+
+message BatchGetUsersRequest {
+  repeated int64 ids = 1;
+}
+
+message BatchGetUsersReply {
+  repeated UserProfile users = 1;
+}

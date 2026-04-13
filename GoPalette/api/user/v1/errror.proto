@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package api.user.v1;
+import "errors/errors.proto";
+
+option go_package = "GoPalette/api/user/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.user.v1";
+
+enum ErrorReason {
+  // 设置默认的 HTTP 状态码为 500
+  option (errors.default_code) = 500;
+
+  // 未知错误
+  UNKNOWN_ERROR = 0 [(errors.code) = 500];
+
+  // 密码错误通常返回 400 或 401
+  PASSWORD_INCORRECT = 1 [(errors.code) = 401];
+  // 凭证过期 (Access Token 过期)
+  TOKEN_EXPIRED = 2 [(errors.code) = 401];
+  // 无效的凭证 (Token 格式错误或签名不对)
+  TOKEN_INVALID = 3 [(errors.code) = 401];
+  // 刷新令牌过期 (需要重新登录)
+  REFRESH_TOKEN_EXPIRED = 4 [(errors.code) = 401];
+  // 没有权限访问 (HTTP 403 Forbidden)
+  ACCESS_DENIED = 5 [(errors.code) = 403];
+  // 账号被禁用
+  ACCOUNT_DISABLED = 6 [(errors.code) = 403];
+  // 未认证 (HTTP 401 Unauthorized)
+  UNAUTHENTICATED = 7 [(errors.code) = 401];
+
+  // 用户不存在
+  USER_NOT_FOUND = 10 [(errors.code) = 404];
+  // 邮箱冲突/已被注册
+  EMAIL_CONFLICT = 11 [(errors.code) = 409];
+  // 参数无效
+  INVALID_ARGUMENT = 12 [(errors.code) = 400];
+
+  // 数据库错误
+  DATABASE_ERROR = 20 [(errors.code) = 500];
+
+  // 通用内部错误
+  INTERNAL_SERVER_ERROR = 99 [(errors.code) = 500];
+}
