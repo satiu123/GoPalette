@@ -1,6 +1,0 @@
-User-Agent: *
-Disallow:
-
-Sitemap: /sitemap.xml
-Sitemap: /rss.xml
-Sitemap: /atom.xml
