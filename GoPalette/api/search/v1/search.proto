@@ -2,29 +2,84 @@ syntax = "proto3";
 
 package api.search.v1;
 
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
 option go_package = "GoPalette/api/search/v1;v1";
 option java_multiple_files = true;
 option java_package = "api.search.v1";
 
+// Search 服务负责查询与索引投影同步。
 service Search {
-	rpc CreateSearch (CreateSearchRequest) returns (CreateSearchReply);
-	rpc UpdateSearch (UpdateSearchRequest) returns (UpdateSearchReply);
-	rpc DeleteSearch (DeleteSearchRequest) returns (DeleteSearchReply);
-	rpc GetSearch (GetSearchRequest) returns (GetSearchReply);
-	rpc ListSearch (ListSearchRequest) returns (ListSearchReply);
+	// 对外搜索接口
+	rpc SearchPosts (SearchPostsRequest) returns (SearchPostsReply) {
+		option (google.api.http) = {
+			get: "/v1/search/posts"
+		};
+	}
+
+	// 内部同步接口（由 Post Service 调用）
+	rpc SyncPost (SyncPostRequest) returns (SyncPostReply);
+
+	// 删除索引文档（按 post_id）
+	rpc DeleteIndex (DeleteIndexRequest) returns (DeleteIndexReply);
+
+	// 管理员触发：从 Post Service 拉取全量并重建索引
+	rpc RebuildIndex (RebuildIndexRequest) returns (RebuildIndexReply);
 }
 
-message CreateSearchRequest {}
-message CreateSearchReply {}
+message SearchPostsRequest {
+	string query = 1;
+	int64 page = 2;
+	int64 page_size = 3;
+	string category = 4;
+}
 
-message UpdateSearchRequest {}
-message UpdateSearchReply {}
+message PostSearchInfo {
+	int64 id = 1;
+	string title = 2;
+	string summary = 3;
+	string slug = 4;
+	string category_name = 5;
+	repeated string tags = 6;
+	google.protobuf.Timestamp created_at = 7;
+}
 
-message DeleteSearchRequest {}
-message DeleteSearchReply {}
+message SearchPostsReply {
+	repeated PostSearchInfo results = 1;
+	int64 total = 2;
+	int64 total_pages = 3;
+}
 
-message GetSearchRequest {}
-message GetSearchReply {}
+message SyncPostRequest {
+	int64 id = 1;
+	string title = 2;
+	string summary = 3;
+	string content = 4;
+	string slug = 5;
+	string category_name = 6;
+	repeated string tags = 7;
+	google.protobuf.Timestamp created_at = 8;
+}
 
-message ListSearchRequest {}
-message ListSearchReply {}
+message SyncPostReply {
+	bool success = 1;
+}
+
+message DeleteIndexRequest {
+	int64 post_id = 1;
+}
+
+message DeleteIndexReply {
+	bool success = 1;
+}
+
+message RebuildIndexRequest {
+	bool reset_first = 1;
+	bool include_non_published = 2;
+}
+
+message RebuildIndexReply {
+	bool success = 1;
+	int64 indexed_count = 2;
+}

@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package api.search.v1;
+
+import "errors/errors.proto";
+
+option go_package = "GoPalette/api/search/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.search.v1";
+
+enum ErrorReason {
+  option (errors.default_code) = 500;
+
+  INVALID_ARGUMENT = 0 [(errors.code) = 400];
+  INDEX_SYNC_FAILED = 1 [(errors.code) = 500];
+  SEARCH_FAILED = 2 [(errors.code) = 500];
+}

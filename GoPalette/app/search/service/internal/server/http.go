@@ -1,19 +1,23 @@
 package server
 
 import (
-	v1 "GoPalette/api/helloworld/v1"
+	v1 "GoPalette/api/search/v1"
 	"GoPalette/app/search/service/internal/conf"
 	"GoPalette/app/search/service/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/middleware/logging"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
+	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/http"
 )
 
 // NewHTTPServer new an HTTP server.
-func NewHTTPServer(c *conf.Server, greeter *service.GreeterService, logger log.Logger) *http.Server {
+func NewHTTPServer(c *conf.Server, search *service.SearchService, logger log.Logger) *http.Server {
 	var opts = []http.ServerOption{
 		http.Middleware(
+			tracing.Server(),
+			logging.Server(logger),
 			recovery.Recovery(),
 		),
 	}
@@ -27,6 +31,6 @@ func NewHTTPServer(c *conf.Server, greeter *service.GreeterService, logger log.L
 		opts = append(opts, http.Timeout(c.Http.Timeout.AsDuration()))
 	}
 	srv := http.NewServer(opts...)
-	v1.RegisterGreeterHTTPServer(srv, greeter)
+	v1.RegisterSearchHTTPServer(srv, search)
 	return srv
 }

@@ -325,6 +325,36 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.comment.v1.ListCommentsReply'
+    /v1/search/posts:
+        get:
+            tags:
+                - Search
+            description: 对外搜索接口
+            operationId: Search_SearchPosts
+            parameters:
+                - name: query
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: string
+                - name: category
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.search.v1.SearchPostsReply'
     /v1/tags:
         get:
             tags:
@@ -969,6 +999,37 @@ components:
                 updateMask:
                     type: string
                     format: field-mask
+        api.search.v1.PostSearchInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                title:
+                    type: string
+                summary:
+                    type: string
+                slug:
+                    type: string
+                categoryName:
+                    type: string
+                tags:
+                    type: array
+                    items:
+                        type: string
+                createdAt:
+                    type: string
+                    format: date-time
+        api.search.v1.SearchPostsReply:
+            type: object
+            properties:
+                results:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.search.v1.PostSearchInfo'
+                total:
+                    type: string
+                totalPages:
+                    type: string
         api.user.v1.BatchGetUsersReply:
             type: object
             properties:
@@ -1114,6 +1175,8 @@ tags:
       description: 评论管理服务
     - name: Post
       description: Post服务定义了标准的CRUD接口，用于创建、更新、删除、获取和列出帖子
+    - name: Search
+      description: Search 服务负责查询与索引投影同步。
     - name: Tag
       description: 标签管理服务
     - name: User

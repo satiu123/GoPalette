@@ -57,3 +57,16 @@ services:
       - "4318:4318"
     environment:
       - LOG_LEVEL=debug
+  meilisearch:
+    image: getmeili/meilisearch:v1.4.1
+    restart: always
+    command: meilisearch --master-key="${MEILISEARCH_MASTER_KEY}"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:7700/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "7700:7700"
+    volumes:
+      - /meili_data:/meili_data
