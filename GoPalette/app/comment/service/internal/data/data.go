@@ -1,6 +1,8 @@
 package data
 
 import (
+	"errors"
+
 	"github.com/satiu123/GoPalette/comment-service/internal/conf"
 
 	postv1 "github.com/satiu123/GoPalette/api/post/v1"
@@ -30,7 +32,15 @@ type Data struct {
 // NewData .
 func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 	helper := log.NewHelper(logger)
-
+	if c == nil {
+		return nil, nil, errors.New("缺少 data 配置")
+	}
+	if c.Database == nil {
+		return nil, nil, errors.New("缺少 data.database 配置")
+	}
+	if c.Redis == nil {
+		return nil, nil, errors.New("缺少 data.redis 配置")
+	}
 	db, err := gorm.Open(mysql.Open(c.Database.Source), &gorm.Config{})
 	if err != nil {
 		helper.Errorf("无法连接数据库: %v", err)

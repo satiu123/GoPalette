@@ -1,6 +1,8 @@
 package data
 
 import (
+	"errors"
+
 	postv1 "github.com/satiu123/GoPalette/api/post/v1"
 
 	"github.com/satiu123/GoPalette/search-service/internal/conf"
@@ -25,7 +27,12 @@ type Data struct {
 // NewData .
 func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 	helper := log.NewHelper(logger)
-
+	if c == nil {
+		return nil, nil, errors.New("缺少 data 配置")
+	}
+	if c.Meilisearch == nil {
+		return nil, nil, errors.New("缺少 data.meilisearch 配置")
+	}
 	ms := meilisearch.New(c.Meilisearch.Endpoint, meilisearch.WithAPIKey(c.Meilisearch.ApiKey))
 
 	postConn, err := grpc.NewClient(c.Clients.PostEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))

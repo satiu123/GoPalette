@@ -1,6 +1,8 @@
 package data
 
 import (
+	"errors"
+
 	searchv1 "github.com/satiu123/GoPalette/api/search/v1"
 	userv1 "github.com/satiu123/GoPalette/api/user/v1"
 
@@ -38,6 +40,16 @@ func NewSearchClient(d *Data) searchv1.SearchClient {
 // NewData .
 func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 	log := log.NewHelper(logger)
+	if c == nil {
+		return nil, nil, errors.New("缺少 data 配置")
+	}
+	if c.Database == nil {
+		return nil, nil, errors.New("缺少 data.database 配置")
+	}
+	if c.Redis == nil {
+		return nil, nil, errors.New("缺少 data.redis 配置")
+	}
+
 	db, err := gorm.Open(mysql.Open(c.Database.Source), &gorm.Config{})
 	if err != nil {
 		log.Errorf("无法连接数据库: %v", err)

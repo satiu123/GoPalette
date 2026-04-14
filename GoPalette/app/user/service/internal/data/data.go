@@ -1,6 +1,8 @@
 package data
 
 import (
+	"errors"
+
 	"github.com/satiu123/GoPalette/user-service/internal/conf"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -24,6 +26,16 @@ type Data struct {
 // NewData .
 func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 	log := log.NewHelper(logger)
+	if c == nil {
+		return nil, nil, errors.New("缺少 data 配置")
+	}
+	if c.Database == nil {
+		return nil, nil, errors.New("缺少 data.database 配置")
+	}
+	if c.Redis == nil {
+		return nil, nil, errors.New("缺少 data.redis 配置")
+	}
+
 	db, err := gorm.Open(mysql.Open(c.Database.Source), &gorm.Config{})
 	if err != nil {
 		log.Errorf("无法连接数据库: %v", err)
