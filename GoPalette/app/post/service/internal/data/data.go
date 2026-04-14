@@ -1,9 +1,10 @@
 package data
 
 import (
-	searchv1 "GoPalette/api/search/v1"
-	userv1 "GoPalette/api/user/v1"
-	"GoPalette/app/post/service/internal/conf"
+	searchv1 "github.com/satiu123/GoPalette/api/search/v1"
+	userv1 "github.com/satiu123/GoPalette/api/user/v1"
+
+	"github.com/satiu123/GoPalette/post-service/internal/conf"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-redis/redis/extra/redisotel"

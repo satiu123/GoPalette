@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	pb "GoPalette/api/search/v1"
+	pb "github.com/satiu123/GoPalette/api/search/v1"
 
 	"github.com/go-kratos/kratos/v2/log"
 )

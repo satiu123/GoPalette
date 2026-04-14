@@ -5,8 +5,9 @@ import (
 	"flag"
 	"os"
 
-	"GoPalette/app/user/service/internal/conf"
-	"GoPalette/pkg/opentelemetry"
+	"github.com/satiu123/GoPalette/pkg/opentelemetry"
+
+	"github.com/satiu123/GoPalette/user-service/internal/conf"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"

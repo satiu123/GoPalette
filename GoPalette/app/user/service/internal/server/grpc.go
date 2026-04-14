@@ -1,10 +1,12 @@
 package server
 
 import (
-	u "GoPalette/api/user/v1"
-	"GoPalette/app/user/service/internal/conf"
-	"GoPalette/app/user/service/internal/service"
-	"GoPalette/pkg/auth"
+	"github.com/satiu123/GoPalette/pkg/auth"
+
+	u "github.com/satiu123/GoPalette/api/user/v1"
+
+	"github.com/satiu123/GoPalette/user-service/internal/conf"
+	"github.com/satiu123/GoPalette/user-service/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"

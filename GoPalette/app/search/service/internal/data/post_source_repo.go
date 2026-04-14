@@ -3,8 +3,9 @@ package data
 import (
 	"context"
 
-	postv1 "GoPalette/api/post/v1"
-	"GoPalette/app/search/service/internal/biz"
+	postv1 "github.com/satiu123/GoPalette/api/post/v1"
+
+	"github.com/satiu123/GoPalette/search-service/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
 )

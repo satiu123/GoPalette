@@ -4,9 +4,11 @@ import (
 	"context"
 	"time"
 
-	pb "GoPalette/api/user/v1"
-	"GoPalette/app/user/service/internal/pkg/util"
-	"GoPalette/pkg/pagination"
+	"github.com/satiu123/GoPalette/pkg/pagination"
+
+	pb "github.com/satiu123/GoPalette/api/user/v1"
+
+	"github.com/satiu123/GoPalette/user-service/internal/pkg/util"
 
 	"github.com/go-kratos/kratos/v2/log"
 )

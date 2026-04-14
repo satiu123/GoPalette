@@ -1,8 +1,9 @@
 package data
 
 import (
-	postv1 "GoPalette/api/post/v1"
-	"GoPalette/app/search/service/internal/conf"
+	postv1 "github.com/satiu123/GoPalette/api/post/v1"
+
+	"github.com/satiu123/GoPalette/search-service/internal/conf"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
@@ -27,7 +28,7 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 
 	ms := meilisearch.New(c.Meilisearch.Endpoint, meilisearch.WithAPIKey(c.Meilisearch.ApiKey))
 
-	postConn, err := grpc.Dial(c.Clients.PostEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	postConn, err := grpc.NewClient(c.Clients.PostEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, nil, err
 	}

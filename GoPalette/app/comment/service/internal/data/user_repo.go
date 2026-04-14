@@ -3,8 +3,9 @@ package data
 import (
 	"context"
 
-	userv1 "GoPalette/api/user/v1"
-	"GoPalette/app/comment/service/internal/biz"
+	userv1 "github.com/satiu123/GoPalette/api/user/v1"
+
+	"github.com/satiu123/GoPalette/comment-service/internal/biz"
 )
 
 type userRepo struct {

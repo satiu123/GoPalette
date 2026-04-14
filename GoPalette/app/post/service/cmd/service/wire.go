@@ -6,11 +6,11 @@
 package main
 
 import (
-	"GoPalette/app/post/service/internal/biz"
-	"GoPalette/app/post/service/internal/conf"
-	"GoPalette/app/post/service/internal/data"
-	"GoPalette/app/post/service/internal/server"
-	"GoPalette/app/post/service/internal/service"
+	"github.com/satiu123/GoPalette/post-service/internal/biz"
+	"github.com/satiu123/GoPalette/post-service/internal/conf"
+	"github.com/satiu123/GoPalette/post-service/internal/data"
+	"github.com/satiu123/GoPalette/post-service/internal/server"
+	"github.com/satiu123/GoPalette/post-service/internal/service"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"

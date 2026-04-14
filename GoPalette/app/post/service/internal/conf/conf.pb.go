@@ -638,7 +638,7 @@ const file_app_post_service_internal_conf_conf_proto_rawDesc = "" +
 	"\x12jwt_refresh_secret\x18\x02 \x01(\tR\x10jwtRefreshSecret\x12E\n" +
 	"\x11jwt_access_expire\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\x0fjwtAccessExpire\x12G\n" +
 	"\x12jwt_refresh_expire\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\x10jwtRefreshExpire\x12\x16\n" +
-	"\x06issuer\x18\x05 \x01(\tR\x06issuerB/Z-GoPalette/app/post/service/internal/conf;confb\x06proto3"
+	"\x06issuer\x18\x05 \x01(\tR\x06issuerB?Z=github.com/satiu123/GoPalette/post-service/internal/conf;confb\x06proto3"
 
 var (
 	file_app_post_service_internal_conf_conf_proto_rawDescOnce sync.Once

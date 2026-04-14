@@ -1,0 +1,72 @@
+# This is a gateway config.
+name: helloworld
+version: v1
+middlewares:
+  - name: tracing
+    options:
+      '@type': type.googleapis.com/gateway.middleware.tracing.v1.Tracing
+      httpEndpoint: 'http://localhost:4318' # default opentelemetry collector port
+  - name: logging
+  - name: transcoder
+  - name: cors
+    options:
+      '@type': type.googleapis.com/gateway.middleware.cors.v1.Cors
+      allowCredentials: true
+      allowOrigins:
+        - .google.com
+      allowMethods:
+        - GET
+        - POST
+        - OPTIONS
+  - name: streamrecorder
+endpoints:
+
+  - path: /v1/users
+    timeout: 2s
+    protocol: HTTP
+    backends:
+      - target: '127.0.0.1:8000'
+
+  - path: /v1/users/*
+    timeout: 2s
+    protocol: HTTP
+    backends:
+      - target: '127.0.0.1:8000'
+
+  
+
+  - path: /v1/posts
+    timeout: 2s
+    protocol: HTTP
+    backends:
+      - target: '127.0.0.1:8001'
+    
+  - path: /v1/posts/*
+    timeout: 2s
+    protocol: HTTP
+    backends:
+      - target: '127.0.0.1:8001'
+    middlewares:
+      - name: circuitbreaker  
+        options:
+          '@type': type.googleapis.com/gateway.middleware.circuitbreaker.v1.CircuitBreaker
+          successRatio: {"success":0.8, "request":"1", "bucket":"10", "window":"3s"}
+
+  - path: /v1/comments
+    timeout: 3s
+    protocol: HTTP
+    backends:
+      - target: '127.0.0.1:8002'
+
+  - path: /v1/comments/*
+    timeout: 3s
+    protocol: HTTP
+    backends:
+      - target: '127.0.0.1:8002'
+
+
+  - path: /v1/search/*
+    timeout: 5s                
+    protocol: HTTP
+    backends:
+      - target: '127.0.0.1:8003'

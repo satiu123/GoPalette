@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 
-	pb "GoPalette/api/post/v1"
-	searchpb "GoPalette/api/search/v1"
-	userpb "GoPalette/api/user/v1"
-	"GoPalette/app/post/service/internal/biz"
-	"GoPalette/pkg/auth"
+	"github.com/satiu123/GoPalette/pkg/auth"
+
+	pb "github.com/satiu123/GoPalette/api/post/v1"
+	searchpb "github.com/satiu123/GoPalette/api/search/v1"
+	userpb "github.com/satiu123/GoPalette/api/user/v1"
+
+	"github.com/satiu123/GoPalette/post-service/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"google.golang.org/protobuf/types/known/timestamppb"

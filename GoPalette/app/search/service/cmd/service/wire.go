@@ -6,11 +6,11 @@
 package main
 
 import (
-	"GoPalette/app/search/service/internal/biz"
-	"GoPalette/app/search/service/internal/conf"
-	"GoPalette/app/search/service/internal/data"
-	"GoPalette/app/search/service/internal/server"
-	"GoPalette/app/search/service/internal/service"
+	"github.com/satiu123/GoPalette/search-service/internal/biz"
+	"github.com/satiu123/GoPalette/search-service/internal/conf"
+	"github.com/satiu123/GoPalette/search-service/internal/data"
+	"github.com/satiu123/GoPalette/search-service/internal/server"
+	"github.com/satiu123/GoPalette/search-service/internal/service"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"

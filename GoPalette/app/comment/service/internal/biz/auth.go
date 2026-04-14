@@ -1,10 +1,12 @@
 package biz
 
 import (
-	pb "GoPalette/api/comment/v1"
-	userPb "GoPalette/api/user/v1"
-	"GoPalette/pkg/auth"
 	"context"
+
+	"github.com/satiu123/GoPalette/pkg/auth"
+
+	pb "github.com/satiu123/GoPalette/api/comment/v1"
+	userPb "github.com/satiu123/GoPalette/api/user/v1"
 )
 
 func CheckOwner(ctx context.Context, ownerID int64) error {

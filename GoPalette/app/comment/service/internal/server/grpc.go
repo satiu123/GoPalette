@@ -1,10 +1,12 @@
 package server
 
 import (
-	v1 "GoPalette/api/comment/v1"
-	"GoPalette/app/comment/service/internal/conf"
-	"GoPalette/app/comment/service/internal/service"
-	"GoPalette/pkg/auth"
+	"github.com/satiu123/GoPalette/pkg/auth"
+
+	v1 "github.com/satiu123/GoPalette/api/comment/v1"
+
+	"github.com/satiu123/GoPalette/comment-service/internal/conf"
+	"github.com/satiu123/GoPalette/comment-service/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"

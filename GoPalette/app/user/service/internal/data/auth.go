@@ -1,11 +1,12 @@
 package data
 
 import (
-	"GoPalette/app/user/service/internal/biz"
 	"context"
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/satiu123/GoPalette/user-service/internal/biz"
 
 	"github.com/go-redis/redis/v8"
 )

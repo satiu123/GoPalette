@@ -1,10 +1,12 @@
 package biz
 
 import (
-	postPb "GoPalette/api/post/v1"
-	userPb "GoPalette/api/user/v1"
-	"GoPalette/pkg/auth"
 	"context"
+
+	"github.com/satiu123/GoPalette/pkg/auth"
+
+	postPb "github.com/satiu123/GoPalette/api/post/v1"
+	userPb "github.com/satiu123/GoPalette/api/user/v1"
 )
 
 // CheckOwner 检查当前用户是否是文章的作者或者管理员

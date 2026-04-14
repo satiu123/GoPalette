@@ -3,9 +3,11 @@ package service
 import (
 	"context"
 
-	pb "GoPalette/api/user/v1"
-	"GoPalette/app/user/service/internal/biz"
-	"GoPalette/pkg/util"
+	"github.com/satiu123/GoPalette/pkg/util"
+
+	pb "github.com/satiu123/GoPalette/api/user/v1"
+
+	"github.com/satiu123/GoPalette/user-service/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"google.golang.org/protobuf/types/known/timestamppb"

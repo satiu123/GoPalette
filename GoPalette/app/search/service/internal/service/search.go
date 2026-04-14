@@ -3,8 +3,9 @@ package service
 import (
 	"context"
 
-	pb "GoPalette/api/search/v1"
-	"GoPalette/app/search/service/internal/biz"
+	pb "github.com/satiu123/GoPalette/api/search/v1"
+
+	"github.com/satiu123/GoPalette/search-service/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"google.golang.org/protobuf/types/known/timestamppb"

@@ -7,16 +7,14 @@
 package main
 
 import (
-	"GoPalette/app/user/service/internal/biz"
-	"GoPalette/app/user/service/internal/conf"
-	"GoPalette/app/user/service/internal/data"
-	"GoPalette/app/user/service/internal/server"
-	"GoPalette/app/user/service/internal/service"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
-)
+	"github.com/satiu123/GoPalette/user-service/internal/biz"
+	"github.com/satiu123/GoPalette/user-service/internal/conf"
+	"github.com/satiu123/GoPalette/user-service/internal/data"
+	"github.com/satiu123/GoPalette/user-service/internal/server"
+	"github.com/satiu123/GoPalette/user-service/internal/service"
 
-import (
 	_ "go.uber.org/automaxprocs"
 )
 

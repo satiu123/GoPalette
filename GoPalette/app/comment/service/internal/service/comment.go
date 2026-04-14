@@ -3,9 +3,11 @@ package service
 import (
 	"context"
 
-	pb "GoPalette/api/comment/v1"
-	"GoPalette/app/comment/service/internal/biz"
-	"GoPalette/pkg/auth"
+	"github.com/satiu123/GoPalette/pkg/auth"
+
+	pb "github.com/satiu123/GoPalette/api/comment/v1"
+
+	"github.com/satiu123/GoPalette/comment-service/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"google.golang.org/protobuf/types/known/timestamppb"

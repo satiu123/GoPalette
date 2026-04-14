@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"GoPalette/app/comment/service/internal/biz"
+	"github.com/satiu123/GoPalette/comment-service/internal/biz"
 )
 
 type rateLimitRepo struct {

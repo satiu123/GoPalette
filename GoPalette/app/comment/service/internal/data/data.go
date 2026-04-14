@@ -1,10 +1,10 @@
 package data
 
 import (
-	"GoPalette/app/comment/service/internal/conf"
+	"github.com/satiu123/GoPalette/comment-service/internal/conf"
 
-	postv1 "GoPalette/api/post/v1"
-	userv1 "GoPalette/api/user/v1"
+	postv1 "github.com/satiu123/GoPalette/api/post/v1"
+	userv1 "github.com/satiu123/GoPalette/api/user/v1"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-redis/redis/extra/redisotel"
