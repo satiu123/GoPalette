@@ -52,6 +52,28 @@ endpoints:
           '@type': type.googleapis.com/gateway.middleware.circuitbreaker.v1.CircuitBreaker
           successRatio: {"success":0.8, "request":"1", "bucket":"10", "window":"3s"}
 
+  - path: /v1/tags
+    timeout: 2s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///post.service'
+  - path: /v1/tags/*
+    timeout: 2s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///post.service'
+
+  - path: /v1/categories
+    timeout: 2s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///post.service'
+  - path: /v1/categories/*
+    timeout: 2s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///post.service'
+
   - path: /v1/comments
     timeout: 3s
     protocol: HTTP

@@ -112,7 +112,7 @@ services:
     environment:
       - LOG_LEVEL=debug
   meilisearch:
-    image: getmeili/meilisearch:v1.4.1
+    image: getmeili/meilisearch:v1.42.1
     restart: always
     command: meilisearch --master-key="${MEILISEARCH_MASTER_KEY}"
     healthcheck:
@@ -128,7 +128,7 @@ services:
     image: gcr.io/etcd-development/etcd:v3.6.10
     restart: always
     volumes:
-      - ./etcd_data:/etcd_data
+      - /etcd_data:/etcd_data
     command:
       - /usr/local/bin/etcd
       - --name=s1

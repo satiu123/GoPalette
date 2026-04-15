@@ -8,7 +8,7 @@ server:
 data:
   meilisearch:
     endpoint: http://meilisearch:7700
-    api_key: "7Sf1EppCBY8W43wlBxBltDErjVyc4Wfb0g3EFBr9mws"
+    api_key: "BCSk29xyDFe0-Oa5g0SrqJWfAFbeRK36LVymcHin_fg"
     index_name: posts
   clients:
     post_endpoint: discovery:///post.service
