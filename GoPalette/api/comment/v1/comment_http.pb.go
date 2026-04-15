@@ -35,7 +35,7 @@ type CommentHTTPServer interface {
 func RegisterCommentHTTPServer(s *http.Server, srv CommentHTTPServer) {
 	r := s.Route("/")
 	r.POST("/v1/comments", _Comment_CreateComment0_HTTP_Handler(srv))
-	r.GET("/v1/posts/{post_id}/comments", _Comment_ListComments0_HTTP_Handler(srv))
+	r.GET("/v1/comments", _Comment_ListComments0_HTTP_Handler(srv))
 	r.DELETE("/v1/comments/{id}", _Comment_DeleteComment0_HTTP_Handler(srv))
 }
 
@@ -65,9 +65,6 @@ func _Comment_ListComments0_HTTP_Handler(srv CommentHTTPServer) func(ctx http.Co
 	return func(ctx http.Context) error {
 		var in ListCommentsRequest
 		if err := ctx.BindQuery(&in); err != nil {
-			return err
-		}
-		if err := ctx.BindVars(&in); err != nil {
 			return err
 		}
 		http.SetOperation(ctx, OperationCommentListComments)
@@ -153,7 +150,7 @@ func (c *CommentHTTPClientImpl) DeleteComment(ctx context.Context, in *DeleteCom
 // ListComments 拉取文章评论列表（按一级评论分页，附带二级回复）
 func (c *CommentHTTPClientImpl) ListComments(ctx context.Context, in *ListCommentsRequest, opts ...http.CallOption) (*ListCommentsReply, error) {
 	var out ListCommentsReply
-	pattern := "/v1/posts/{post_id}/comments"
+	pattern := "/v1/comments"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationCommentListComments))
 	opts = append(opts, http.PathTemplate(pattern))

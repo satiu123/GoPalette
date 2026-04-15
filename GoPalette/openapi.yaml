@@ -108,6 +108,31 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/api.post.v1.UpdateCategoryReply'
     /v1/comments:
+        get:
+            tags:
+                - Comment
+            description: 拉取文章评论列表（按一级评论分页，附带二级回复）
+            operationId: Comment_ListComments
+            parameters:
+                - name: postId
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.comment.v1.ListCommentsReply'
         post:
             tags:
                 - Comment
@@ -298,33 +323,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.post.v1.IncrCommentCountReply'
-    /v1/posts/{postId}/comments:
-        get:
-            tags:
-                - Comment
-            description: 拉取文章评论列表（按一级评论分页，附带二级回复）
-            operationId: Comment_ListComments
-            parameters:
-                - name: postId
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-                - name: page
-                  in: query
-                  schema:
-                    type: string
-                - name: pageSize
-                  in: query
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/api.comment.v1.ListCommentsReply'
     /v1/search/posts:
         get:
             tags:

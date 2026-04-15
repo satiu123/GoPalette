@@ -583,10 +583,10 @@ const file_comment_v1_comment_proto_rawDesc = "" +
 	"\x1aCOMMENT_STATUS_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15COMMENT_STATUS_NORMAL\x10\x01\x12\x1a\n" +
 	"\x16COMMENT_STATUS_PENDING\x10\x02\x12\x1a\n" +
-	"\x16COMMENT_STATUS_DELETED\x10\x032\xea\x02\n" +
+	"\x16COMMENT_STATUS_DELETED\x10\x032\xda\x02\n" +
 	"\aComment\x12k\n" +
-	"\rCreateComment\x12$.api.comment.v1.CreateCommentRequest\x1a\x1b.api.comment.v1.CommentInfo\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/v1/comments\x12|\n" +
-	"\fListComments\x12#.api.comment.v1.ListCommentsRequest\x1a!.api.comment.v1.ListCommentsReply\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/v1/posts/{post_id}/comments\x12t\n" +
+	"\rCreateComment\x12$.api.comment.v1.CreateCommentRequest\x1a\x1b.api.comment.v1.CommentInfo\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/v1/comments\x12l\n" +
+	"\fListComments\x12#.api.comment.v1.ListCommentsRequest\x1a!.api.comment.v1.ListCommentsReply\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/comments\x12t\n" +
 	"\rDeleteComment\x12$.api.comment.v1.DeleteCommentRequest\x1a\".api.comment.v1.DeleteCommentReply\"\x19\x82\xd3\xe4\x93\x02\x13*\x11/v1/comments/{id}B/\n" +
 	"\x0eapi.comment.v1P\x01Z\x1bGoPalette/api/comment/v1;v1b\x06proto3"
 

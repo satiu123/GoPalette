@@ -29,7 +29,7 @@ service Comment {
   // 拉取文章评论列表（按一级评论分页，附带二级回复）
   rpc ListComments (ListCommentsRequest) returns (ListCommentsReply) {
     option (google.api.http) = {
-      get: "/v1/posts/{post_id}/comments"
+      get: "/v1/comments"
     };
   }
 
