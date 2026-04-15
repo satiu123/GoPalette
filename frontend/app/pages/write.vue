@@ -342,54 +342,25 @@ const extensions = computed(() => [
 </script>
 
 <template>
-  <UEditor
-    v-if="collaborationReady"
-    ref="editorRef"
-    v-slot="{ editor, handlers }"
-    :model-value="collaborationEnabled ? undefined : content"
-    content-type="markdown"
-    :extensions="extensions"
-    :starter-kit="collaborationEnabled ? { undoRedo: false } : undefined"
-    :handlers="customHandlers"
-    autofocus
-    placeholder="Write, type '/' for commands..."
-    class="min-h-screen"
-    :ui="{
+  <UEditor v-if="collaborationReady" ref="editorRef" v-slot="{ editor, handlers }"
+    :model-value="collaborationEnabled ? undefined : content" content-type="markdown" :extensions="extensions"
+    :starter-kit="collaborationEnabled ? { undoRedo: false } : undefined" :handlers="customHandlers" autofocus
+    placeholder="Write, type '/' for commands..." class="min-h-screen" :ui="{
       base: 'p-4 sm:p-14',
       content: 'max-w-4xl mx-auto'
-    }"
-    @update:model-value="onUpdate"
-    @create="onCreate"
-  >
+    }" @update:model-value="onUpdate" @create="onCreate">
     <AppHeader>
       <div class="flex items-center gap-2">
-        <UButton
-          icon="i-lucide-save"
-          color="neutral"
-          variant="soft"
-          size="sm"
-          :disabled="!canSubmit || isSaving"
-          :loading="isSaving"
-          label="草稿"
-          @click="saveDraft"
-        />
+        <UButton icon="i-lucide-save" color="neutral" variant="soft" size="sm" :disabled="!canSubmit || isSaving"
+          :loading="isSaving" label="草稿" @click="saveDraft" />
 
-        <UButton
-          icon="i-lucide-send"
-          size="sm"
-          :disabled="!canSubmit || isSaving"
-          :loading="isSaving"
-          label="发布"
-          @click="publishNow"
-        />
+        <UButton icon="i-lucide-send" size="sm" :disabled="!canSubmit || isSaving" :loading="isSaving" label="发布"
+          @click="publishNow" />
       </div>
 
       <EditorCollaborationUsers :users="connectedUsers" />
 
-      <UEditorToolbar
-        :editor="editor"
-        :items="toolbarItems"
-      />
+      <UEditorToolbar :editor="editor" :items="toolbarItems" />
     </AppHeader>
 
     <section class="mx-auto mb-4 w-full max-w-4xl">
@@ -407,165 +378,82 @@ const extensions = computed(() => [
 
         <div class="grid gap-4 md:grid-cols-2">
           <UFormField label="标题" name="title" required>
-            <UInput
-              v-model="postMeta.title"
-              placeholder="请输入文章标题"
-            />
+            <UInput v-model="postMeta.title" placeholder="请输入文章标题" />
           </UFormField>
 
           <UFormField label="Slug" name="slug" required>
-            <UInput
-              v-model="postMeta.slug"
-              placeholder="article-slug"
-              @blur="normalizeSlug"
-            />
+            <UInput v-model="postMeta.slug" placeholder="article-slug" @blur="normalizeSlug" />
           </UFormField>
 
           <UFormField label="分类" name="categoryId">
-            <UInput
-              v-model="postMeta.categoryId"
-              placeholder="请输入分类 ID"
-            />
+            <UInput v-model="postMeta.categoryId" placeholder="请输入分类 ID" />
             <div class="mt-2 flex flex-wrap gap-2">
-              <UButton
-                v-for="category in categories"
-                :key="category.id"
-                size="xs"
+              <UButton v-for="category in categories" :key="category.id" size="xs"
                 :label="`${category.name} (${category.id})`"
                 :variant="postMeta.categoryId === category.id ? 'solid' : 'ghost'"
                 :color="postMeta.categoryId === category.id ? 'primary' : 'neutral'"
-                @click="postMeta.categoryId = category.id"
-              />
+                @click="postMeta.categoryId = category.id" />
             </div>
           </UFormField>
 
           <UFormField label="标签" name="tagsText">
-            <UInput
-              v-model="postMeta.tagsText"
-              placeholder="多个标签用逗号分隔"
-            />
+            <UInput v-model="postMeta.tagsText" placeholder="多个标签用逗号分隔" />
             <div class="mt-2 flex flex-wrap gap-2">
-              <UBadge
-                v-for="tag in selectedTags"
-                :key="`selected-${tag}`"
-                color="primary"
-                variant="subtle"
-                class="cursor-pointer"
-                :label="`#${tag} ×`"
-                @click="removeTag(tag)"
-              />
+              <UBadge v-for="tag in selectedTags" :key="`selected-${tag}`" color="primary" variant="subtle"
+                class="cursor-pointer" :label="`#${tag} ×`" @click="removeTag(tag)" />
             </div>
             <div class="mt-2 flex flex-wrap gap-2">
-              <UButton
-                v-for="tag in tagSuggestions"
-                :key="`suggest-${tag}`"
-                size="xs"
-                color="neutral"
-                variant="ghost"
-                :label="`#${tag}`"
-                @click="addTag(tag)"
-              />
+              <UButton v-for="tag in tagSuggestions" :key="`suggest-${tag}`" size="xs" color="neutral" variant="ghost"
+                :label="`#${tag}`" @click="addTag(tag)" />
             </div>
           </UFormField>
 
           <UFormField label="摘要" name="summary" class="md:col-span-2">
-            <UTextarea
-              v-model="postMeta.summary"
-              :rows="3"
-              autoresize
-              placeholder="不填写时将自动从正文提取前 140 字"
-            />
+            <UTextarea v-model="postMeta.summary" :rows="3" autoresize placeholder="不填写时将自动从正文提取前 140 字" />
           </UFormField>
         </div>
       </UCard>
     </section>
 
-    <UEditorToolbar
-      :editor="editor"
-      :items="bubbleToolbarItems"
-      layout="bubble"
-      :should-show="({ editor, view, state }: any) => {
-        if (editor.isActive('imageUpload') || editor.isActive('image') || state.selection instanceof CellSelection) {
-          return false
-        }
-        const { selection } = state
-        return view.hasFocus() && !selection.empty
-      }"
-    >
+    <UEditorToolbar :editor="editor" :items="bubbleToolbarItems" layout="bubble" :should-show="({ editor, view, state }: any) => {
+      if (editor.isActive('imageUpload') || editor.isActive('image') || state.selection instanceof CellSelection) {
+        return false
+      }
+      const { selection } = state
+      return view.hasFocus() && !selection.empty
+    }">
       <template #link>
         <EditorLinkPopover :editor="editor" />
       </template>
     </UEditorToolbar>
 
-    <UEditorToolbar
-      :editor="editor"
-      :items="getImageToolbarItems(editor)"
-      layout="bubble"
-      :should-show="({ editor, view }: any) => {
-        return editor.isActive('image') && view.hasFocus()
-      }"
-    />
+    <UEditorToolbar :editor="editor" :items="getImageToolbarItems(editor)" layout="bubble" :should-show="({ editor, view }: any) => {
+      return editor.isActive('image') && view.hasFocus()
+    }" />
 
-    <UEditorToolbar
-      :editor="editor"
-      :items="getTableToolbarItems(editor)"
-      layout="bubble"
-      :should-show="({ editor, view }: any) => {
-        return editor.state.selection instanceof CellSelection && view.hasFocus()
-      }"
-    />
+    <UEditorToolbar :editor="editor" :items="getTableToolbarItems(editor)" layout="bubble" :should-show="({ editor, view }: any) => {
+      return editor.state.selection instanceof CellSelection && view.hasFocus()
+    }" />
 
-    <UEditorEmojiMenu
-      :editor="editor"
-      :items="emojiItems"
-    />
+    <UEditorEmojiMenu :editor="editor" :items="emojiItems" />
 
-    <UEditorMentionMenu
-      :editor="editor"
-      :items="mentionItems"
-    />
+    <UEditorMentionMenu :editor="editor" :items="mentionItems" />
 
-    <UEditorSuggestionMenu
-      :editor="editor"
-      :items="suggestionItems"
-    />
+    <UEditorSuggestionMenu :editor="editor" :items="suggestionItems" />
 
-    <UEditorDragHandle
-      v-slot="{ ui, onClick }"
-      :editor="editor"
-      @node-change="onNodeChange"
-    >
-      <UButton
-        icon="i-lucide-plus"
-        color="neutral"
-        variant="ghost"
-        size="sm"
-        :class="ui.handle()"
-        @click="(e: MouseEvent) => {
-          e.stopPropagation()
-          const node = onClick()
+    <UEditorDragHandle v-slot="{ ui, onClick }" :editor="editor" @node-change="onNodeChange">
+      <UButton icon="i-lucide-plus" color="neutral" variant="ghost" size="sm" :class="ui.handle()" @click="(e: MouseEvent) => {
+        e.stopPropagation()
+        const node = onClick()
 
-          handlers.suggestion?.execute(editor, { pos: node?.pos }).run()
-        }"
-      />
+        handlers.suggestion?.execute(editor, { pos: node?.pos }).run()
+      }" />
 
-      <UDropdownMenu
-        v-slot="{ open }"
-        :modal="false"
-        :items="getDragHandleItems(editor)"
-        :content="{ side: 'left' }"
+      <UDropdownMenu v-slot="{ open }" :modal="false" :items="getDragHandleItems(editor)" :content="{ side: 'left' }"
         :ui="{ content: 'w-48', label: 'text-xs' }"
-        @update:open="editor.chain().setMeta('lockDragHandle', $event).run()"
-      >
-        <UButton
-          color="neutral"
-          variant="ghost"
-          active-variant="soft"
-          size="sm"
-          icon="i-lucide-grip-vertical"
-          :active="open"
-          :class="ui.handle()"
-        />
+        @update:open="editor.chain().setMeta('lockDragHandle', $event).run()">
+        <UButton color="neutral" variant="ghost" active-variant="soft" size="sm" icon="i-lucide-grip-vertical"
+          :active="open" :class="ui.handle()" />
       </UDropdownMenu>
     </UEditorDragHandle>
   </UEditor>
