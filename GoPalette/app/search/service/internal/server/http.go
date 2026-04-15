@@ -3,8 +3,8 @@ package server
 import (
 	v1 "github.com/satiu123/GoPalette/api/search/v1"
 
-	"github.com/satiu123/GoPalette/search-service/internal/conf"
-	"github.com/satiu123/GoPalette/search-service/internal/service"
+	"github.com/satiu123/GoPalette/app/search/service/internal/conf"
+	"github.com/satiu123/GoPalette/app/search/service/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/logging"

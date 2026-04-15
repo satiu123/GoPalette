@@ -5,7 +5,7 @@ import (
 
 	pb "github.com/satiu123/GoPalette/api/post/v1"
 
-	"github.com/satiu123/GoPalette/post-service/internal/biz"
+	"github.com/satiu123/GoPalette/app/post/service/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
 )

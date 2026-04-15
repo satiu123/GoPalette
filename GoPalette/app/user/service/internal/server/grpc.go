@@ -5,8 +5,8 @@ import (
 
 	u "github.com/satiu123/GoPalette/api/user/v1"
 
-	"github.com/satiu123/GoPalette/user-service/internal/conf"
-	"github.com/satiu123/GoPalette/user-service/internal/service"
+	"github.com/satiu123/GoPalette/app/user/service/internal/conf"
+	"github.com/satiu123/GoPalette/app/user/service/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"

@@ -9,7 +9,7 @@ import (
 	searchpb "github.com/satiu123/GoPalette/api/search/v1"
 	userpb "github.com/satiu123/GoPalette/api/user/v1"
 
-	"github.com/satiu123/GoPalette/post-service/internal/biz"
+	"github.com/satiu123/GoPalette/app/post/service/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"google.golang.org/protobuf/types/known/timestamppb"

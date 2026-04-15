@@ -6,15 +6,16 @@
 package main
 
 import (
-	"github.com/satiu123/GoPalette/comment-service/internal/biz"
-	"github.com/satiu123/GoPalette/comment-service/internal/conf"
-	"github.com/satiu123/GoPalette/comment-service/internal/data"
-	"github.com/satiu123/GoPalette/comment-service/internal/server"
-	"github.com/satiu123/GoPalette/comment-service/internal/service"
+	"github.com/satiu123/GoPalette/app/comment/service/internal/biz"
+	"github.com/satiu123/GoPalette/app/comment/service/internal/conf"
+	"github.com/satiu123/GoPalette/app/comment/service/internal/data"
+	"github.com/satiu123/GoPalette/app/comment/service/internal/server"
+	"github.com/satiu123/GoPalette/app/comment/service/internal/service"
+
+	"github.com/euskadi31/wire"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/google/wire"
 )
 
 // wireApp init kratos application.

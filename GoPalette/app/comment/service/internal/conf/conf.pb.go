@@ -602,7 +602,7 @@ const file_app_comment_service_internal_conf_conf_proto_rawDesc = "" +
 	"\ruser_endpoint\x18\x02 \x01(\tR\fuserEndpoint\x123\n" +
 	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"2\n" +
 	"\x04Auth\x12*\n" +
-	"\x11jwt_access_secret\x18\x01 \x01(\tR\x0fjwtAccessSecretBBZ@github.com/satiu123/GoPalette/comment-service/internal/conf;confb\x06proto3"
+	"\x11jwt_access_secret\x18\x01 \x01(\tR\x0fjwtAccessSecretBFZDgithub.com/satiu123/GoPalette/app/comment/service/internal/conf;confb\x06proto3"
 
 var (
 	file_app_comment_service_internal_conf_conf_proto_rawDescOnce sync.Once

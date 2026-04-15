@@ -11,8 +11,8 @@ import (
 
 	pb "github.com/satiu123/GoPalette/api/user/v1"
 
-	"github.com/satiu123/GoPalette/user-service/internal/conf"
-	"github.com/satiu123/GoPalette/user-service/internal/pkg/util"
+	"github.com/satiu123/GoPalette/app/user/service/internal/conf"
+	"github.com/satiu123/GoPalette/app/user/service/internal/pkg/util"
 
 	"github.com/go-kratos/kratos/v2/log"
 	jwtv5 "github.com/golang-jwt/jwt/v5"

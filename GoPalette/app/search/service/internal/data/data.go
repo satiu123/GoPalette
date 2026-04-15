@@ -3,12 +3,12 @@ package data
 import (
 	"errors"
 
+	"github.com/euskadi31/wire"
 	postv1 "github.com/satiu123/GoPalette/api/post/v1"
 
-	"github.com/satiu123/GoPalette/search-service/internal/conf"
+	"github.com/satiu123/GoPalette/app/search/service/internal/conf"
 
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/google/wire"
 	"github.com/meilisearch/meilisearch-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

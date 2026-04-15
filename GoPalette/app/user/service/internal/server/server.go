@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/google/wire"
+	"github.com/euskadi31/wire"
 )
 
 // ProviderSet is server providers.

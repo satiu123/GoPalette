@@ -5,7 +5,7 @@ import (
 
 	postv1 "github.com/satiu123/GoPalette/api/post/v1"
 
-	"github.com/satiu123/GoPalette/comment-service/internal/biz"
+	"github.com/satiu123/GoPalette/app/comment/service/internal/biz"
 
 	kerrors "github.com/go-kratos/kratos/v2/errors"
 )

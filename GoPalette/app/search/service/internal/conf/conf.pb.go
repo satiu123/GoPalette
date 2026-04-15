@@ -439,7 +439,7 @@ const file_app_search_service_internal_conf_conf_proto_rawDesc = "" +
 	"index_name\x18\x03 \x01(\tR\tindexName\x1ac\n" +
 	"\aClients\x12#\n" +
 	"\rpost_endpoint\x18\x01 \x01(\tR\fpostEndpoint\x123\n" +
-	"\atimeout\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\atimeoutBAZ?github.com/satiu123/GoPalette/search-service/internal/conf;confb\x06proto3"
+	"\atimeout\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\atimeoutBEZCgithub.com/satiu123/GoPalette/app/search/service/internal/conf;confb\x06proto3"
 
 var (
 	file_app_search_service_internal_conf_conf_proto_rawDescOnce sync.Once

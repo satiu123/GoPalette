@@ -62,8 +62,8 @@ build:
 .PHONY: generate
 # generate
 generate:
-	go generate ./...
-	go mod tidy
+	go generate work
+	go work sync
 
 .PHONY: all
 # generate all

@@ -5,7 +5,7 @@ import (
 	"flag"
 	"os"
 
-	"github.com/satiu123/GoPalette/comment-service/internal/conf"
+	"github.com/satiu123/GoPalette/app/comment/service/internal/conf"
 	"github.com/satiu123/GoPalette/pkg/opentelemetry"
 
 	"github.com/go-kratos/kratos/v2"

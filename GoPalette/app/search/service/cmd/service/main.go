@@ -7,7 +7,7 @@ import (
 
 	"github.com/satiu123/GoPalette/pkg/opentelemetry"
 
-	"github.com/satiu123/GoPalette/search-service/internal/conf"
+	"github.com/satiu123/GoPalette/app/search/service/internal/conf"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"

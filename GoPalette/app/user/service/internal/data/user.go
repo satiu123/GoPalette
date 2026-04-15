@@ -6,7 +6,7 @@ import (
 
 	"github.com/satiu123/GoPalette/pkg/pagination"
 
-	"github.com/satiu123/GoPalette/user-service/internal/biz"
+	"github.com/satiu123/GoPalette/app/user/service/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"gorm.io/gorm"

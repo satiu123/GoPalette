@@ -3,12 +3,12 @@ package data
 import (
 	"errors"
 
-	"github.com/satiu123/GoPalette/user-service/internal/conf"
+	"github.com/euskadi31/wire"
+	"github.com/satiu123/GoPalette/app/user/service/internal/conf"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-redis/redis/extra/redisotel"
 	"github.com/go-redis/redis/v8"
-	"github.com/google/wire"
 	"gorm.io/gorm"
 
 	"gorm.io/driver/mysql"

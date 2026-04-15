@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/satiu123/GoPalette/user-service/internal/biz"
+	"github.com/satiu123/GoPalette/app/user/service/internal/biz"
 
 	"github.com/go-redis/redis/v8"
 )

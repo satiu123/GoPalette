@@ -5,7 +5,7 @@ import (
 
 	userv1 "github.com/satiu123/GoPalette/api/user/v1"
 
-	"github.com/satiu123/GoPalette/comment-service/internal/biz"
+	"github.com/satiu123/GoPalette/app/comment/service/internal/biz"
 )
 
 type userRepo struct {

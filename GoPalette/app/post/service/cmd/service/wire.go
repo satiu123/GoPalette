@@ -6,15 +6,16 @@
 package main
 
 import (
-	"github.com/satiu123/GoPalette/post-service/internal/biz"
-	"github.com/satiu123/GoPalette/post-service/internal/conf"
-	"github.com/satiu123/GoPalette/post-service/internal/data"
-	"github.com/satiu123/GoPalette/post-service/internal/server"
-	"github.com/satiu123/GoPalette/post-service/internal/service"
+	"github.com/satiu123/GoPalette/app/post/service/internal/biz"
+	"github.com/satiu123/GoPalette/app/post/service/internal/conf"
+	"github.com/satiu123/GoPalette/app/post/service/internal/data"
+	"github.com/satiu123/GoPalette/app/post/service/internal/server"
+	"github.com/satiu123/GoPalette/app/post/service/internal/service"
+
+	"github.com/euskadi31/wire"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/google/wire"
 )
 
 // wireApp init kratos application.

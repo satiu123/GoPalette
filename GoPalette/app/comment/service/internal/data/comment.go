@@ -8,7 +8,7 @@ import (
 
 	pb "github.com/satiu123/GoPalette/api/comment/v1"
 
-	"github.com/satiu123/GoPalette/comment-service/internal/biz"
+	"github.com/satiu123/GoPalette/app/comment/service/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"gorm.io/gorm"
