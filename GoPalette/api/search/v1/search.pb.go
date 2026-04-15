@@ -625,12 +625,12 @@ const file_search_v1_search_proto_rawDesc = "" +
 	"\x15include_non_published\x18\x02 \x01(\bR\x13includeNonPublished\"R\n" +
 	"\x11RebuildIndexReply\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12#\n" +
-	"\rindexed_count\x18\x02 \x01(\x03R\findexedCount2\xe8\x02\n" +
+	"\rindexed_count\x18\x02 \x01(\x03R\findexedCount2\x87\x03\n" +
 	"\x06Search\x12k\n" +
 	"\vSearchPosts\x12!.api.search.v1.SearchPostsRequest\x1a\x1f.api.search.v1.SearchPostsReply\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/search/posts\x12H\n" +
 	"\bSyncPost\x12\x1e.api.search.v1.SyncPostRequest\x1a\x1c.api.search.v1.SyncPostReply\x12Q\n" +
-	"\vDeleteIndex\x12!.api.search.v1.DeleteIndexRequest\x1a\x1f.api.search.v1.DeleteIndexReply\x12T\n" +
-	"\fRebuildIndex\x12\".api.search.v1.RebuildIndexRequest\x1a .api.search.v1.RebuildIndexReplyB-\n" +
+	"\vDeleteIndex\x12!.api.search.v1.DeleteIndexRequest\x1a\x1f.api.search.v1.DeleteIndexReply\x12s\n" +
+	"\fRebuildIndex\x12\".api.search.v1.RebuildIndexRequest\x1a .api.search.v1.RebuildIndexReply\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/v1/search/rebuildB-\n" +
 	"\rapi.search.v1P\x01Z\x1aGoPalette/api/search/v1;v1b\x06proto3"
 
 var (

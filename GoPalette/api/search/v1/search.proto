@@ -25,7 +25,12 @@ service Search {
 	rpc DeleteIndex (DeleteIndexRequest) returns (DeleteIndexReply);
 
 	// 管理员触发：从 Post Service 拉取全量并重建索引
-	rpc RebuildIndex (RebuildIndexRequest) returns (RebuildIndexReply);
+	rpc RebuildIndex (RebuildIndexRequest) returns (RebuildIndexReply){
+		option (google.api.http) = {
+			post: "/v1/search/rebuild"
+			body: "*"
+		};
+	}
 }
 
 message SearchPostsRequest {

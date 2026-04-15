@@ -353,6 +353,25 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.search.v1.SearchPostsReply'
+    /v1/search/rebuild:
+        post:
+            tags:
+                - Search
+            description: 管理员触发：从 Post Service 拉取全量并重建索引
+            operationId: Search_RebuildIndex
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.search.v1.RebuildIndexRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.search.v1.RebuildIndexReply'
     /v1/tags:
         get:
             tags:
@@ -1017,6 +1036,20 @@ components:
                 createdAt:
                     type: string
                     format: date-time
+        api.search.v1.RebuildIndexReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                indexedCount:
+                    type: string
+        api.search.v1.RebuildIndexRequest:
+            type: object
+            properties:
+                resetFirst:
+                    type: boolean
+                includeNonPublished:
+                    type: boolean
         api.search.v1.SearchPostsReply:
             type: object
             properties:

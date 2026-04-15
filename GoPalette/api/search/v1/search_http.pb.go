@@ -19,9 +19,12 @@ var _ = binding.EncodeURL
 
 const _ = http.SupportPackageIsVersion1
 
+const OperationSearchRebuildIndex = "/api.search.v1.Search/RebuildIndex"
 const OperationSearchSearchPosts = "/api.search.v1.Search/SearchPosts"
 
 type SearchHTTPServer interface {
+	// RebuildIndex 管理员触发：从 Post Service 拉取全量并重建索引
+	RebuildIndex(context.Context, *RebuildIndexRequest) (*RebuildIndexReply, error)
 	// SearchPosts 对外搜索接口
 	SearchPosts(context.Context, *SearchPostsRequest) (*SearchPostsReply, error)
 }
@@ -29,6 +32,7 @@ type SearchHTTPServer interface {
 func RegisterSearchHTTPServer(s *http.Server, srv SearchHTTPServer) {
 	r := s.Route("/")
 	r.GET("/v1/search/posts", _Search_SearchPosts0_HTTP_Handler(srv))
+	r.POST("/v1/search/rebuild", _Search_RebuildIndex0_HTTP_Handler(srv))
 }
 
 func _Search_SearchPosts0_HTTP_Handler(srv SearchHTTPServer) func(ctx http.Context) error {
@@ -50,7 +54,31 @@ func _Search_SearchPosts0_HTTP_Handler(srv SearchHTTPServer) func(ctx http.Conte
 	}
 }
 
+func _Search_RebuildIndex0_HTTP_Handler(srv SearchHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in RebuildIndexRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationSearchRebuildIndex)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.RebuildIndex(ctx, req.(*RebuildIndexRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*RebuildIndexReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type SearchHTTPClient interface {
+	// RebuildIndex 管理员触发：从 Post Service 拉取全量并重建索引
+	RebuildIndex(ctx context.Context, req *RebuildIndexRequest, opts ...http.CallOption) (rsp *RebuildIndexReply, err error)
 	// SearchPosts 对外搜索接口
 	SearchPosts(ctx context.Context, req *SearchPostsRequest, opts ...http.CallOption) (rsp *SearchPostsReply, err error)
 }
@@ -61,6 +89,20 @@ type SearchHTTPClientImpl struct {
 
 func NewSearchHTTPClient(client *http.Client) SearchHTTPClient {
 	return &SearchHTTPClientImpl{client}
+}
+
+// RebuildIndex 管理员触发：从 Post Service 拉取全量并重建索引
+func (c *SearchHTTPClientImpl) RebuildIndex(ctx context.Context, in *RebuildIndexRequest, opts ...http.CallOption) (*RebuildIndexReply, error) {
+	var out RebuildIndexReply
+	pattern := "/v1/search/rebuild"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationSearchRebuildIndex))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 // SearchPosts 对外搜索接口

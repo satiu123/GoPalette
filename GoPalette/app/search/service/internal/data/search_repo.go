@@ -67,7 +67,7 @@ func (r *searchRepo) SearchPosts(ctx context.Context, query string, offset, limi
 		AttributesToHighlight: []string{"title", "summary"},
 		HighlightPreTag:       "<em>",
 		HighlightPostTag:      "</em>",
-	}
+	}	
 	if category != "" {
 		searchReq.Filter = fmt.Sprintf("category_name = \"%s\"", category)
 	}
