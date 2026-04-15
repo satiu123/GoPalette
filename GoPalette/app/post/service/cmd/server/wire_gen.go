@@ -24,14 +24,19 @@ import (
 
 // wireApp init kratos application.
 func wireApp(confServer *conf.Server, confData *conf.Data, auth *conf.Auth, registry *conf.Registry, logger log.Logger) (*kratos.App, func(), error) {
-	dataData, cleanup, err := data.NewData(confData, logger)
+	client, err := NewEtcdClient(registry)
+	if err != nil {
+		return nil, nil, err
+	}
+	etcdRegistry := NewRegistry(client)
+	userClient := data.NewUserClient(etcdRegistry, confData)
+	searchClient := data.NewSearchClient(etcdRegistry, confData)
+	dataData, cleanup, err := data.NewData(confData, logger, userClient, searchClient)
 	if err != nil {
 		return nil, nil, err
 	}
 	postRepo := data.NewPostRepo(dataData, logger)
 	postUsecase := biz.NewPostUsecase(postRepo, logger)
-	userClient := data.NewUserClient(dataData)
-	searchClient := data.NewSearchClient(dataData)
 	postService := service.NewPostService(postUsecase, userClient, searchClient, logger)
 	categoryRepo := data.NewCategoryRepo(dataData, logger)
 	categoryUsecase := biz.NewCategoryUsecase(categoryRepo, logger)
@@ -41,7 +46,7 @@ func wireApp(confServer *conf.Server, confData *conf.Data, auth *conf.Auth, regi
 	tagService := service.NewTagService(tagUsecase, logger)
 	grpcServer := server.NewGRPCServer(confServer, auth, postService, categoryService, tagService, logger)
 	httpServer := server.NewHTTPServer(confServer, auth, postService, categoryService, tagService, logger)
-	app := newApp(logger, grpcServer, httpServer, registry)
+	app := newApp(logger, grpcServer, httpServer, etcdRegistry)
 	return app, func() {
 		cleanup()
 	}, nil

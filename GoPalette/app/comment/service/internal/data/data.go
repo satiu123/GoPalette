@@ -1,6 +1,7 @@
 package data
 
 import (
+	"context"
 	"errors"
 
 	"github.com/satiu123/GoPalette/app/comment/service/internal/conf"
@@ -10,17 +11,17 @@ import (
 
 	"github.com/euskadi31/wire"
 
+	"github.com/go-kratos/kratos/contrib/registry/etcd/v2"
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-redis/redis/extra/redisotel"
 	"github.com/go-redis/redis/v8"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewCommentRepo, NewPostRepo, NewUserRepo, NewRateLimitRepo)
+var ProviderSet = wire.NewSet(NewData, NewCommentRepo, NewPostRepo, NewUserRepo, NewRateLimitRepo, NewUserClient, NewPostClient)
 
 // Data .
 type Data struct {
@@ -30,8 +31,34 @@ type Data struct {
 	userClient userv1.UserClient
 }
 
+func NewPostClient(reg *etcd.Registry, c *conf.Data) postv1.PostClient {
+	conn, err := grpc.DialInsecure(
+		context.Background(),
+		grpc.WithEndpoint(c.Clients.PostEndpoint),
+		grpc.WithTimeout(c.Clients.Timeout.AsDuration()),
+		grpc.WithDiscovery(reg),
+	)
+	if err != nil {
+		panic(err)
+	}
+	return postv1.NewPostClient(conn)
+}
+
+func NewUserClient(reg *etcd.Registry, c *conf.Data) userv1.UserClient {
+	conn, err := grpc.DialInsecure(
+		context.Background(),
+		grpc.WithEndpoint(c.Clients.UserEndpoint),
+		grpc.WithTimeout(c.Clients.Timeout.AsDuration()),
+		grpc.WithDiscovery(reg),
+	)
+	if err != nil {
+		panic(err)
+	}
+	return userv1.NewUserClient(conn)
+}
+
 // NewData .
-func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
+func NewData(c *conf.Data, logger log.Logger, pc postv1.PostClient, uc userv1.UserClient) (*Data, func(), error) {
 	helper := log.NewHelper(logger)
 	if c == nil {
 		return nil, nil, errors.New("缺少 data 配置")
@@ -64,24 +91,11 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 
 	helper.Info("数据库和Redis连接成功")
 
-	postConn, err := grpc.NewClient(c.Clients.PostEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, nil, err
-	}
-	helper.Infof("成功连接Post服务: %s", c.Clients.PostEndpoint)
-
-	userConn, err := grpc.NewClient(c.Clients.UserEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		_ = postConn.Close()
-		return nil, nil, err
-	}
-	helper.Infof("成功连接User服务: %s", c.Clients.UserEndpoint)
-
 	d := &Data{
 		db:         db,
 		rdb:        rdb,
-		postClient: postv1.NewPostClient(postConn),
-		userClient: userv1.NewUserClient(userConn),
+		postClient: pc,
+		userClient: uc,
 	}
 
 	cleanup := func() {
@@ -90,8 +104,6 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 			_ = sqlDB.Close()
 		}
 		_ = rdb.Close()
-		_ = postConn.Close()
-		_ = userConn.Close()
 	}
 	return d, cleanup, nil
 }

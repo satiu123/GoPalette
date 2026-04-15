@@ -35,7 +35,13 @@ func wireApp(confServer *conf.Server, confData *conf.Data, auth *conf.Auth, regi
 	userService := service.NewUserService(userUsecase, authUsecase, logger)
 	grpcServer := server.NewGRPCServer(confServer, auth, userService, logger)
 	httpServer := server.NewHTTPServer(confServer, auth, userService, logger)
-	app := newApp(logger, grpcServer, httpServer, registry)
+	client, err := NewEtcdClient(registry)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	etcdRegistry := NewRegistry(client)
+	app := newApp(logger, grpcServer, httpServer, etcdRegistry)
 	return app, func() {
 		cleanup()
 	}, nil

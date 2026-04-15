@@ -1,6 +1,7 @@
 package data
 
 import (
+	"context"
 	"errors"
 
 	"github.com/euskadi31/wire"
@@ -8,14 +9,14 @@ import (
 
 	"github.com/satiu123/GoPalette/app/search/service/internal/conf"
 
+	"github.com/go-kratos/kratos/contrib/registry/etcd/v2"
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/meilisearch/meilisearch-go"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewSearchRepo, NewPostSourceRepo)
+var ProviderSet = wire.NewSet(NewData, NewSearchRepo, NewPostSourceRepo, NewPostClient)
 
 // Data .
 type Data struct {
@@ -24,8 +25,21 @@ type Data struct {
 	indexName  string
 }
 
+func NewPostClient(reg *etcd.Registry, c *conf.Data) postv1.PostClient {
+	conn, err := grpc.DialInsecure(
+		context.Background(),
+		grpc.WithEndpoint(c.Clients.PostEndpoint),
+		grpc.WithTimeout(c.Clients.Timeout.AsDuration()),
+		grpc.WithDiscovery(reg),
+	)
+	if err != nil {
+		panic(err)
+	}
+	return postv1.NewPostClient(conn)
+}
+
 // NewData .
-func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
+func NewData(c *conf.Data, logger log.Logger, pc postv1.PostClient) (*Data, func(), error) {
 	helper := log.NewHelper(logger)
 	if c == nil {
 		return nil, nil, errors.New("缺少 data 配置")
@@ -35,18 +49,13 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 	}
 	ms := meilisearch.New(c.Meilisearch.Endpoint, meilisearch.WithAPIKey(c.Meilisearch.ApiKey))
 
-	postConn, err := grpc.NewClient(c.Clients.PostEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, nil, err
-	}
-
 	if c.Meilisearch.IndexName == "" {
 		c.Meilisearch.IndexName = "posts"
 	}
 
 	d := &Data{
 		meili:      ms,
-		postClient: postv1.NewPostClient(postConn),
+		postClient: pc,
 		indexName:  c.Meilisearch.IndexName,
 	}
 
@@ -56,9 +65,6 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 
 	cleanup := func() {
 		helper.Info("closing search data resources")
-		if err := postConn.Close(); err != nil {
-			helper.Errorf("关闭 post grpc 连接失败: %v", err)
-		}
 	}
 	return d, cleanup, nil
 }

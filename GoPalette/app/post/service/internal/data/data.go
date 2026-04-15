@@ -1,6 +1,7 @@
 package data
 
 import (
+	"context"
 	"errors"
 
 	"github.com/euskadi31/wire"
@@ -9,11 +10,11 @@ import (
 
 	"github.com/satiu123/GoPalette/app/post/service/internal/conf"
 
+	"github.com/go-kratos/kratos/contrib/registry/etcd/v2"
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-redis/redis/extra/redisotel"
 	"github.com/go-redis/redis/v8"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -29,16 +30,34 @@ type Data struct {
 	searchClient searchv1.SearchClient
 }
 
-func NewUserClient(d *Data) userv1.UserClient {
-	return d.userClient
+func NewUserClient(reg *etcd.Registry, c *conf.Data) userv1.UserClient {
+	conn, err := grpc.DialInsecure(
+		context.Background(),
+		grpc.WithEndpoint(c.Clients.UserEndpoint),
+		grpc.WithTimeout(c.Clients.Timeout.AsDuration()),
+		grpc.WithDiscovery(reg),
+	)
+	if err != nil {
+		panic(err)
+	}
+	return userv1.NewUserClient(conn)
 }
 
-func NewSearchClient(d *Data) searchv1.SearchClient {
-	return d.searchClient
+func NewSearchClient(reg *etcd.Registry, c *conf.Data) searchv1.SearchClient {
+	conn, err := grpc.DialInsecure(
+		context.Background(),
+		grpc.WithEndpoint(c.Clients.SearchEndpoint),
+		grpc.WithTimeout(c.Clients.Timeout.AsDuration()),
+		grpc.WithDiscovery(reg),
+	)
+	if err != nil {
+		panic(err)
+	}
+	return searchv1.NewSearchClient(conn)
 }
 
 // NewData .
-func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
+func NewData(c *conf.Data, logger log.Logger, uc userv1.UserClient, sc searchv1.SearchClient) (*Data, func(), error) {
 	log := log.NewHelper(logger)
 	if c == nil {
 		return nil, nil, errors.New("缺少 data 配置")
@@ -73,22 +92,11 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 	})
 	rdb.AddHook(redisotel.TracingHook{})
 	d := &Data{
-		db:  db,
-		rdb: rdb,
+		db:           db,
+		rdb:          rdb,
+		userClient:   uc,
+		searchClient: sc,
 	}
-
-	userConn, err := grpc.Dial(c.Clients.UserEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, nil, err
-	}
-	d.userClient = userv1.NewUserClient(userConn)
-
-	searchConn, err := grpc.Dial(c.Clients.SearchEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		_ = userConn.Close()
-		return nil, nil, err
-	}
-	d.searchClient = searchv1.NewSearchClient(searchConn)
 
 	return d, func() {
 		log.Info("message", "close the data resource")
@@ -101,12 +109,6 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 		}
 		if err := d.rdb.Close(); err != nil {
 			log.Errorf("failed to close redis: %v", err)
-		}
-		if err := userConn.Close(); err != nil {
-			log.Errorf("failed to close user grpc connection: %v", err)
-		}
-		if err := searchConn.Close(); err != nil {
-			log.Errorf("failed to close search grpc connection: %v", err)
 		}
 
 	}, nil

@@ -24,7 +24,14 @@ import (
 
 // wireApp init kratos application.
 func wireApp(confServer *conf.Server, confData *conf.Data, auth *conf.Auth, registry *conf.Registry, logger log.Logger) (*kratos.App, func(), error) {
-	dataData, cleanup, err := data.NewData(confData, logger)
+	client, err := NewEtcdClient(registry)
+	if err != nil {
+		return nil, nil, err
+	}
+	etcdRegistry := NewRegistry(client)
+	postClient := data.NewPostClient(etcdRegistry, confData)
+	userClient := data.NewUserClient(etcdRegistry, confData)
+	dataData, cleanup, err := data.NewData(confData, logger, postClient, userClient)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -36,7 +43,7 @@ func wireApp(confServer *conf.Server, confData *conf.Data, auth *conf.Auth, regi
 	commentService := service.NewCommentService(commentUsecase, logger)
 	grpcServer := server.NewGRPCServer(confServer, auth, commentService, logger)
 	httpServer := server.NewHTTPServer(confServer, auth, commentService, logger)
-	app := newApp(logger, grpcServer, httpServer, registry)
+	app := newApp(logger, grpcServer, httpServer, etcdRegistry)
 	return app, func() {
 		cleanup()
 	}, nil

@@ -38,18 +38,21 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, c *conf.Registry) *kratos.App {
-
+func NewEtcdClient(c *conf.Registry) (*etcdclient.Client, error) {
 	client, err := etcdclient.New(etcdclient.Config{
 		Endpoints:   c.Etcd.Endpoints,
 		DialTimeout: c.Etcd.Timeout.AsDuration(),
 	})
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
+	return client, nil
+}
+func NewRegistry(client *etcdclient.Client) *etcd.Registry {
+	return etcd.New(client)
+}
 
-	r := etcd.New(client)
-
+func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, reg *etcd.Registry) *kratos.App {
 	return kratos.New(
 		kratos.ID(id),
 		kratos.Name(Name),
@@ -60,7 +63,7 @@ func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, c *conf.Registr
 			gs,
 			hs,
 		),
-		kratos.Registrar(r),
+		kratos.Registrar(reg),
 	)
 }
 
