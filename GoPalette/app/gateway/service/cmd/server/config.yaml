@@ -5,7 +5,7 @@ middlewares:
   - name: tracing
     options:
       '@type': type.googleapis.com/gateway.middleware.tracing.v1.Tracing
-      httpEndpoint: 'http://localhost:4318' # default opentelemetry collector port
+      httpEndpoint: 'jaeger:4318' # default opentelemetry collector port
   - name: logging
   - name: transcoder
   - name: cors
@@ -25,13 +25,13 @@ endpoints:
     timeout: 2s
     protocol: HTTP
     backends:
-      - target: '127.0.0.1:8000'
+      - target: 'discovery:///user.service'
 
   - path: /v1/users/*
     timeout: 2s
     protocol: HTTP
     backends:
-      - target: '127.0.0.1:8000'
+      - target: 'discovery:///user.service'
 
   
 
@@ -39,13 +39,13 @@ endpoints:
     timeout: 2s
     protocol: HTTP
     backends:
-      - target: '127.0.0.1:8001'
+      - target: 'discovery:///post.service'
     
   - path: /v1/posts/*
     timeout: 2s
     protocol: HTTP
     backends:
-      - target: '127.0.0.1:8001'
+      - target: 'discovery:///post.service'
     middlewares:
       - name: circuitbreaker  
         options:
@@ -56,17 +56,17 @@ endpoints:
     timeout: 3s
     protocol: HTTP
     backends:
-      - target: '127.0.0.1:8002'
+      - target: 'discovery:///comment.service'
 
   - path: /v1/comments/*
     timeout: 3s
     protocol: HTTP
     backends:
-      - target: '127.0.0.1:8002'
+      - target: 'discovery:///comment.service'
 
 
   - path: /v1/search/*
     timeout: 5s                
     protocol: HTTP
     backends:
-      - target: '127.0.0.1:8003'
+      - target: 'discovery:///search.service'

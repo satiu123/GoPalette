@@ -8,6 +8,7 @@ import "google/protobuf/duration.proto";
 message Bootstrap {
   Server server = 1;
   Data data = 2;
+  Registry registry = 3;
 }
 
 message Server {
@@ -37,4 +38,12 @@ message Data {
   }
   Meilisearch meilisearch = 1;
   Clients clients = 2;
+}
+
+message Registry {
+  message Etcd {
+    repeated string endpoints = 1;
+    google.protobuf.Duration timeout = 2;
+  }
+  Etcd etcd = 1;
 }

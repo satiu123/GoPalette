@@ -5,9 +5,11 @@ import (
 	"flag"
 	"os"
 
-	"github.com/satiu123/GoPalette/app/comment/service/internal/conf"
 	"github.com/satiu123/GoPalette/pkg/opentelemetry"
 
+	"github.com/satiu123/GoPalette/app/search/service/internal/conf"
+
+	"github.com/go-kratos/kratos/contrib/registry/etcd/v2"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"
 	"github.com/go-kratos/kratos/v2/config/file"
@@ -15,6 +17,7 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/kratos/v2/transport/http"
+	etcdclient "go.etcd.io/etcd/client/v3"
 
 	_ "go.uber.org/automaxprocs"
 )
@@ -22,7 +25,7 @@ import (
 // go build -ldflags "-X main.Version=x.y.z"
 var (
 	// Name is the name of the compiled software.
-	Name = "GoPalette.comment.service"
+	Name = "search.service"
 	// Version is the version of the compiled software.
 	Version = "0.1.0"
 	// flagconf is the config flag.
@@ -35,7 +38,18 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server) *kratos.App {
+func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, c *conf.Registry) *kratos.App {
+
+	client, err := etcdclient.New(etcdclient.Config{
+		Endpoints:   c.Etcd.Endpoints,
+		DialTimeout: c.Etcd.Timeout.AsDuration(),
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	r := etcd.New(client)
+
 	return kratos.New(
 		kratos.ID(id),
 		kratos.Name(Name),
@@ -46,6 +60,7 @@ func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server) *kratos.App {
 			gs,
 			hs,
 		),
+		kratos.Registrar(r),
 	)
 }
 
@@ -60,7 +75,7 @@ func main() {
 		"trace.id", tracing.TraceID(),
 		"span.id", tracing.SpanID(),
 	)
-	logHelper := log.NewHelper(log.With(logger, "module", "main/comment"))
+	logHelper := log.NewHelper(log.With(logger, "module", "main/search"))
 	c := config.New(
 		config.WithSource(
 			file.NewSource(flagconf),
@@ -81,11 +96,6 @@ func main() {
 		otelShutdown = shutdownFn
 	}
 
-	var bc conf.Bootstrap
-	if err := c.Scan(&bc); err != nil {
-		panic(err)
-	}
-
 	// 确保在 main 函数退出时正确关闭 OpenTelemetry SDK
 	defer func() {
 		if shutdownErr := otelShutdown(context.Background()); shutdownErr != nil {
@@ -93,7 +103,12 @@ func main() {
 		}
 	}()
 
-	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Auth, logger)
+	var bc conf.Bootstrap
+	if err := c.Scan(&bc); err != nil {
+		panic(err)
+	}
+
+	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Registry, logger)
 	if err != nil {
 		panic(err)
 	}

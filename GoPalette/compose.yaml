@@ -1,27 +1,81 @@
 services:
-  # api:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   restart: always
-  #   depends_on:
-  #     mariadb:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
-  #   environment:
-  #     SERVER_ADDR: ":8080"
-  #     SERVER_ENV: "production"
-  #     JWT_ACCESS_TOKEN_SECRET: "${JWT_ACCESS_TOKEN_SECRET}"
-  #     JWT_REFRESH_TOKEN_SECRET: "${JWT_REFRESH_TOKEN_SECRET}"
-  #     DATABASE_DSN: "root:${MYSQL_ROOT_PASSWORD}@tcp(mariadb:3306)/gopalette?charset=utf8mb4&parseTime=True&loc=Local"
-  #     REDIS_ADDR: "redis:6379"
-  #     REDIS_PASSWORD: "${REDIS_PASSWORD}"
-  #   ports:
-  #     - "8080:8080"
-  #   volumes:
-  #     - ./static/uploads:/app/static/uploads
-
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - APP_RELATIVE_PATH=app/gateway/service
+        - HTTP_PORT=8080
+    command: [ "./server", "-conf", "/data/conf/config.yaml", "-discovery.dsn", "etcd:2379" ]
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
+    volumes:
+      - ./app/gateway/service/cmd/server/config.yaml:/data/conf/config.yaml
+    restart: always
+    ports:
+      - "8080:8080"
+  user:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - APP_RELATIVE_PATH=app/user/service
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
+    volumes:
+      - ./app/user/service/configs:/data/conf
+    depends_on:
+      - mariadb
+      - redis
+  post:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - APP_RELATIVE_PATH=app/post/service
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
+    volumes:
+      - ./app/post/service/configs:/data/conf
+    depends_on:
+      - mariadb
+      - redis
+  comment:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - APP_RELATIVE_PATH=app/comment/service
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
+    volumes:
+      - ./app/comment/service/configs:/data/conf
+    depends_on:
+      - mariadb
+      - redis
+  search:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - APP_RELATIVE_PATH=app/search/service
+    restart: always
+    environment:
+      MEILISEARCH_MASTER_KEY: "${MEILISEARCH_MASTER_KEY}"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
+    volumes:
+      - ./app/search/service/configs:/data/conf
+    depends_on:
+      - meilisearch
   mariadb:
     image: mariadb
     restart: always
@@ -70,3 +124,26 @@ services:
       - "7700:7700"
     volumes:
       - /meili_data:/meili_data
+  etcd:
+    image: gcr.io/etcd-development/etcd:v3.6.10
+    restart: always
+    volumes:
+      - ./etcd_data:/etcd_data
+    command:
+      - /usr/local/bin/etcd
+      - --name=s1
+      - --data-dir=/etcd-data
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --advertise-client-urls=http://0.0.0.0:2379
+      - --listen-peer-urls=http://0.0.0.0:2380
+      - --initial-advertise-peer-urls=http://0.0.0.0:2380
+      - --initial-cluster=s1=http://0.0.0.0:2380
+      - --initial-cluster-token=tkn
+      - --initial-cluster-state=new
+      - --log-level=info
+      - --logger=zap
+      - --log-outputs=stderr
+
+    ports:
+      - "2379:2379" # 客户端通信端口
+      - "2380:2380" # 集群通信端口

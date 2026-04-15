@@ -9,6 +9,7 @@ import (
 
 	"github.com/satiu123/GoPalette/app/user/service/internal/conf"
 
+	"github.com/go-kratos/kratos/contrib/registry/etcd/v2"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"
 	"github.com/go-kratos/kratos/v2/config/file"
@@ -16,14 +17,14 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/kratos/v2/transport/http"
-
+	etcdclient "go.etcd.io/etcd/client/v3"
 	_ "go.uber.org/automaxprocs"
 )
 
 // go build -ldflags "-X main.Version=x.y.z"
 var (
 	// Name is the name of the compiled software.
-	Name = "GoPalette.user.service"
+	Name = "user.service"
 	// Version is the version of the compiled software.
 	Version = "0.1.0"
 	// flagconf is the config flag.
@@ -38,15 +39,15 @@ func init() {
 
 func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, c *conf.Registry) *kratos.App {
 
-	// client, err := etcdclient.New(etcdclient.Config{
-	// 	Endpoints:   c.Etcd.Endpoints,
-	// 	DialTimeout: c.Etcd.Timeout.AsDuration(),
-	// })
-	// if err != nil {
-	// 	panic(err)
-	// }
+	client, err := etcdclient.New(etcdclient.Config{
+		Endpoints:   c.Etcd.Endpoints,
+		DialTimeout: c.Etcd.Timeout.AsDuration(),
+	})
+	if err != nil {
+		panic(err)
+	}
 
-	// r := etcd.New(client)
+	r := etcd.New(client)
 
 	return kratos.New(
 		kratos.ID(id),
@@ -58,7 +59,7 @@ func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, c *conf.Registr
 			gs,
 			hs,
 		),
-		// kratos.Registrar(r),
+		kratos.Registrar(r),
 	)
 }
 

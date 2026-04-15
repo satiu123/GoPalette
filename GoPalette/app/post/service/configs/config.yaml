@@ -8,16 +8,21 @@ server:
 data:
   database:
     driver: mysql
-    source: root:GP123@tcp(127.0.0.1:3306)/gopalette?parseTime=True&loc=Local
+    source: root:GP123@tcp(mariadb:3306)/gopalette?parseTime=True&loc=Local
   redis:
-    addr: 127.0.0.1:6379
+    addr: redis:6379
     password: "GP123"
     read_timeout: 0.2s
     write_timeout: 0.2s
   clients:
-    user_endpoint: 127.0.0.1:9000
-    search_endpoint: 127.0.0.1:9003
+    user_endpoint: discovery:///user.service
+    search_endpoint: discovery:///search.service
     timeout: 1s
+registry:
+  etcd:
+    endpoints:
+      - "etcd:2379"
+    timeout: 5s
 auth:
   jwt_access_secret: "GPA"
   jwt_refresh_secret: "GPR"

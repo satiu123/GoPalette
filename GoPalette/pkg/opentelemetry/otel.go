@@ -3,6 +3,7 @@ package opentelemetry
 import (
 	"context"
 	"errors"
+	"os"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
@@ -46,9 +47,16 @@ func SetupOTelSDK(ctx context.Context, serviceName string) (func(context.Context
 }
 
 func newTracerProvider(ctx context.Context, serviceName string) (*trace.TracerProvider, error) {
-	traceExporter, err := otlptracehttp.New(ctx,
-		otlptracehttp.WithInsecure(),
-	)
+	endpointURL := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+	if endpointURL == "" {
+		endpointURL = "http://jaeger:4318"
+	}
+
+	opts := []otlptracehttp.Option{
+		otlptracehttp.WithEndpointURL(endpointURL),
+	}
+
+	traceExporter, err := otlptracehttp.New(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}

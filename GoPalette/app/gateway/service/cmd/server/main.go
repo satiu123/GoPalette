@@ -11,11 +11,11 @@ import (
 	"github.com/go-kratos/gateway/client"
 	"github.com/go-kratos/gateway/config"
 	configLoader "github.com/go-kratos/gateway/config/config-loader"
-	"github.com/go-kratos/gateway/discovery"
 	"github.com/go-kratos/gateway/middleware"
 	"github.com/go-kratos/gateway/proxy"
 	"github.com/go-kratos/gateway/proxy/debug"
 	"github.com/go-kratos/gateway/server"
+	clientv3 "go.etcd.io/etcd/client/v3"
 
 	_ "net/http/pprof"
 
@@ -30,6 +30,7 @@ import (
 	_ "github.com/go-kratos/gateway/middleware/transcoder"
 	_ "go.uber.org/automaxprocs"
 
+	"github.com/go-kratos/kratos/contrib/registry/etcd/v2"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/registry"
@@ -83,11 +84,19 @@ func makeDiscovery() registry.Discovery {
 	if discoveryDSN == "" {
 		return nil
 	}
-	d, err := discovery.Create(discoveryDSN)
+	// d, err := discovery.Create(discoveryDSN)
+	// if err != nil {
+	// 	log.Fatalf("failed to create discovery: %v", err)
+	// }
+	// return d
+	cli, err := clientv3.New(clientv3.Config{
+		Endpoints:   []string{discoveryDSN},
+		DialTimeout: 5 * time.Second,
+	})
 	if err != nil {
-		log.Fatalf("failed to create discovery: %v", err)
+		log.Fatalf("failed to create etcd client: %v", err)
 	}
-	return d
+	return etcd.New(cli)
 }
 
 func main() {

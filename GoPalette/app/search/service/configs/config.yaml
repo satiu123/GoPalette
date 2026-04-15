@@ -7,9 +7,14 @@ server:
     timeout: 1s
 data:
   meilisearch:
-    endpoint: http://127.0.0.1:7700
+    endpoint: http://meilisearch:7700
     api_key: "7Sf1EppCBY8W43wlBxBltDErjVyc4Wfb0g3EFBr9mws"
     index_name: posts
   clients:
-    post_endpoint: 127.0.0.1:9001
+    post_endpoint: discovery:///post.service
     timeout: 1s
+registry:
+  etcd:
+    endpoints:
+      - "etcd:2379"
+    timeout: 5s

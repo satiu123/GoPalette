@@ -26,6 +26,7 @@ type Bootstrap struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Server        *Server                `protobuf:"bytes,1,opt,name=server,proto3" json:"server,omitempty"`
 	Data          *Data                  `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	Registry      *Registry              `protobuf:"bytes,3,opt,name=registry,proto3" json:"registry,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -70,6 +71,13 @@ func (x *Bootstrap) GetServer() *Server {
 func (x *Bootstrap) GetData() *Data {
 	if x != nil {
 		return x.Data
+	}
+	return nil
+}
+
+func (x *Bootstrap) GetRegistry() *Registry {
+	if x != nil {
+		return x.Registry
 	}
 	return nil
 }
@@ -178,6 +186,50 @@ func (x *Data) GetClients() *Data_Clients {
 	return nil
 }
 
+type Registry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Etcd          *Registry_Etcd         `protobuf:"bytes,1,opt,name=etcd,proto3" json:"etcd,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Registry) Reset() {
+	*x = Registry{}
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Registry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Registry) ProtoMessage() {}
+
+func (x *Registry) ProtoReflect() protoreflect.Message {
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Registry.ProtoReflect.Descriptor instead.
+func (*Registry) Descriptor() ([]byte, []int) {
+	return file_app_search_service_internal_conf_conf_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *Registry) GetEtcd() *Registry_Etcd {
+	if x != nil {
+		return x.Etcd
+	}
+	return nil
+}
+
 type Server_HTTP struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Network       string                 `protobuf:"bytes,1,opt,name=network,proto3" json:"network,omitempty"`
@@ -189,7 +241,7 @@ type Server_HTTP struct {
 
 func (x *Server_HTTP) Reset() {
 	*x = Server_HTTP{}
-	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[3]
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -201,7 +253,7 @@ func (x *Server_HTTP) String() string {
 func (*Server_HTTP) ProtoMessage() {}
 
 func (x *Server_HTTP) ProtoReflect() protoreflect.Message {
-	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[3]
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -249,7 +301,7 @@ type Server_GRPC struct {
 
 func (x *Server_GRPC) Reset() {
 	*x = Server_GRPC{}
-	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[4]
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -261,7 +313,7 @@ func (x *Server_GRPC) String() string {
 func (*Server_GRPC) ProtoMessage() {}
 
 func (x *Server_GRPC) ProtoReflect() protoreflect.Message {
-	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[4]
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -309,7 +361,7 @@ type Data_Meilisearch struct {
 
 func (x *Data_Meilisearch) Reset() {
 	*x = Data_Meilisearch{}
-	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[5]
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -321,7 +373,7 @@ func (x *Data_Meilisearch) String() string {
 func (*Data_Meilisearch) ProtoMessage() {}
 
 func (x *Data_Meilisearch) ProtoReflect() protoreflect.Message {
-	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[5]
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -368,7 +420,7 @@ type Data_Clients struct {
 
 func (x *Data_Clients) Reset() {
 	*x = Data_Clients{}
-	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[6]
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -380,7 +432,7 @@ func (x *Data_Clients) String() string {
 func (*Data_Clients) ProtoMessage() {}
 
 func (x *Data_Clients) ProtoReflect() protoreflect.Message {
-	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[6]
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -410,14 +462,67 @@ func (x *Data_Clients) GetTimeout() *durationpb.Duration {
 	return nil
 }
 
+type Registry_Etcd struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Endpoints     []string               `protobuf:"bytes,1,rep,name=endpoints,proto3" json:"endpoints,omitempty"`
+	Timeout       *durationpb.Duration   `protobuf:"bytes,2,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Registry_Etcd) Reset() {
+	*x = Registry_Etcd{}
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Registry_Etcd) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Registry_Etcd) ProtoMessage() {}
+
+func (x *Registry_Etcd) ProtoReflect() protoreflect.Message {
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Registry_Etcd.ProtoReflect.Descriptor instead.
+func (*Registry_Etcd) Descriptor() ([]byte, []int) {
+	return file_app_search_service_internal_conf_conf_proto_rawDescGZIP(), []int{3, 0}
+}
+
+func (x *Registry_Etcd) GetEndpoints() []string {
+	if x != nil {
+		return x.Endpoints
+	}
+	return nil
+}
+
+func (x *Registry_Etcd) GetTimeout() *durationpb.Duration {
+	if x != nil {
+		return x.Timeout
+	}
+	return nil
+}
+
 var File_app_search_service_internal_conf_conf_proto protoreflect.FileDescriptor
 
 const file_app_search_service_internal_conf_conf_proto_rawDesc = "" +
 	"\n" +
-	"+app/search/service/internal/conf/conf.proto\x12\x11kratos.api.search\x1a\x1egoogle/protobuf/duration.proto\"k\n" +
+	"+app/search/service/internal/conf/conf.proto\x12\x11kratos.api.search\x1a\x1egoogle/protobuf/duration.proto\"\xa4\x01\n" +
 	"\tBootstrap\x121\n" +
 	"\x06server\x18\x01 \x01(\v2\x19.kratos.api.search.ServerR\x06server\x12+\n" +
-	"\x04data\x18\x02 \x01(\v2\x17.kratos.api.search.DataR\x04data\"\xc6\x02\n" +
+	"\x04data\x18\x02 \x01(\v2\x17.kratos.api.search.DataR\x04data\x127\n" +
+	"\bregistry\x18\x03 \x01(\v2\x1b.kratos.api.search.RegistryR\bregistry\"\xc6\x02\n" +
 	"\x06Server\x122\n" +
 	"\x04http\x18\x01 \x01(\v2\x1e.kratos.api.search.Server.HTTPR\x04http\x122\n" +
 	"\x04grpc\x18\x02 \x01(\v2\x1e.kratos.api.search.Server.GRPCR\x04grpc\x1ai\n" +
@@ -439,6 +544,11 @@ const file_app_search_service_internal_conf_conf_proto_rawDesc = "" +
 	"index_name\x18\x03 \x01(\tR\tindexName\x1ac\n" +
 	"\aClients\x12#\n" +
 	"\rpost_endpoint\x18\x01 \x01(\tR\fpostEndpoint\x123\n" +
+	"\atimeout\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\x9b\x01\n" +
+	"\bRegistry\x124\n" +
+	"\x04etcd\x18\x01 \x01(\v2 .kratos.api.search.Registry.EtcdR\x04etcd\x1aY\n" +
+	"\x04Etcd\x12\x1c\n" +
+	"\tendpoints\x18\x01 \x03(\tR\tendpoints\x123\n" +
 	"\atimeout\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\atimeoutBEZCgithub.com/satiu123/GoPalette/app/search/service/internal/conf;confb\x06proto3"
 
 var (
@@ -453,32 +563,37 @@ func file_app_search_service_internal_conf_conf_proto_rawDescGZIP() []byte {
 	return file_app_search_service_internal_conf_conf_proto_rawDescData
 }
 
-var file_app_search_service_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_app_search_service_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_app_search_service_internal_conf_conf_proto_goTypes = []any{
 	(*Bootstrap)(nil),           // 0: kratos.api.search.Bootstrap
 	(*Server)(nil),              // 1: kratos.api.search.Server
 	(*Data)(nil),                // 2: kratos.api.search.Data
-	(*Server_HTTP)(nil),         // 3: kratos.api.search.Server.HTTP
-	(*Server_GRPC)(nil),         // 4: kratos.api.search.Server.GRPC
-	(*Data_Meilisearch)(nil),    // 5: kratos.api.search.Data.Meilisearch
-	(*Data_Clients)(nil),        // 6: kratos.api.search.Data.Clients
-	(*durationpb.Duration)(nil), // 7: google.protobuf.Duration
+	(*Registry)(nil),            // 3: kratos.api.search.Registry
+	(*Server_HTTP)(nil),         // 4: kratos.api.search.Server.HTTP
+	(*Server_GRPC)(nil),         // 5: kratos.api.search.Server.GRPC
+	(*Data_Meilisearch)(nil),    // 6: kratos.api.search.Data.Meilisearch
+	(*Data_Clients)(nil),        // 7: kratos.api.search.Data.Clients
+	(*Registry_Etcd)(nil),       // 8: kratos.api.search.Registry.Etcd
+	(*durationpb.Duration)(nil), // 9: google.protobuf.Duration
 }
 var file_app_search_service_internal_conf_conf_proto_depIdxs = []int32{
-	1, // 0: kratos.api.search.Bootstrap.server:type_name -> kratos.api.search.Server
-	2, // 1: kratos.api.search.Bootstrap.data:type_name -> kratos.api.search.Data
-	3, // 2: kratos.api.search.Server.http:type_name -> kratos.api.search.Server.HTTP
-	4, // 3: kratos.api.search.Server.grpc:type_name -> kratos.api.search.Server.GRPC
-	5, // 4: kratos.api.search.Data.meilisearch:type_name -> kratos.api.search.Data.Meilisearch
-	6, // 5: kratos.api.search.Data.clients:type_name -> kratos.api.search.Data.Clients
-	7, // 6: kratos.api.search.Server.HTTP.timeout:type_name -> google.protobuf.Duration
-	7, // 7: kratos.api.search.Server.GRPC.timeout:type_name -> google.protobuf.Duration
-	7, // 8: kratos.api.search.Data.Clients.timeout:type_name -> google.protobuf.Duration
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	1,  // 0: kratos.api.search.Bootstrap.server:type_name -> kratos.api.search.Server
+	2,  // 1: kratos.api.search.Bootstrap.data:type_name -> kratos.api.search.Data
+	3,  // 2: kratos.api.search.Bootstrap.registry:type_name -> kratos.api.search.Registry
+	4,  // 3: kratos.api.search.Server.http:type_name -> kratos.api.search.Server.HTTP
+	5,  // 4: kratos.api.search.Server.grpc:type_name -> kratos.api.search.Server.GRPC
+	6,  // 5: kratos.api.search.Data.meilisearch:type_name -> kratos.api.search.Data.Meilisearch
+	7,  // 6: kratos.api.search.Data.clients:type_name -> kratos.api.search.Data.Clients
+	8,  // 7: kratos.api.search.Registry.etcd:type_name -> kratos.api.search.Registry.Etcd
+	9,  // 8: kratos.api.search.Server.HTTP.timeout:type_name -> google.protobuf.Duration
+	9,  // 9: kratos.api.search.Server.GRPC.timeout:type_name -> google.protobuf.Duration
+	9,  // 10: kratos.api.search.Data.Clients.timeout:type_name -> google.protobuf.Duration
+	9,  // 11: kratos.api.search.Registry.Etcd.timeout:type_name -> google.protobuf.Duration
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_app_search_service_internal_conf_conf_proto_init() }
@@ -492,7 +607,7 @@ func file_app_search_service_internal_conf_conf_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_app_search_service_internal_conf_conf_proto_rawDesc), len(file_app_search_service_internal_conf_conf_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
