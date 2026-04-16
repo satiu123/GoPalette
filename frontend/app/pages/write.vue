@@ -6,11 +6,12 @@ import { TableKit } from '@tiptap/extension-table'
 import { CellSelection } from '@tiptap/pm/tables'
 import { CodeBlockShiki } from 'tiptap-extension-code-block-shiki'
 import { ImageUpload } from '~/components/editor/ImageUploadExtension'
-import { createPost, fetchCategories, fetchPostBySlug, fetchTags, POST_STATUS_DRAFT, POST_STATUS_PUBLISHED, updatePost } from '~/composables/useBlogApi'
+import { createPost, deletePost, fetchCategories, fetchPostBySlug, fetchTags, POST_STATUS_DRAFT, POST_STATUS_PUBLISHED, updatePost } from '~/composables/useBlogApi'
 
 const route = useRoute()
 const runtimeConfig = useRuntimeConfig()
 const toast = useToast()
+const { initAuth, isLoggedIn } = useAuth()
 
 const room = computed(() => route.query.room as string | undefined)
 
@@ -84,6 +85,7 @@ const tagSuggestions = computed(() => (tagsData.value?.tags || []).map(item => i
 const selectedTags = computed(() => parseTags(postMeta.tagsText))
 
 const isSaving = ref(false)
+const deletingPost = ref(false)
 
 const canSubmit = computed(() => {
   return Boolean(postMeta.title.trim() && content.value.trim())
@@ -296,6 +298,29 @@ function publishNow() {
   return savePost(POST_STATUS_PUBLISHED)
 }
 
+async function removeCurrentPost() {
+  if (!postMeta.id || deletingPost.value) return
+
+  deletingPost.value = true
+  try {
+    await deletePost(postMeta.id)
+    toast.add({
+      title: '文章已删除',
+      color: 'success'
+    })
+    await navigateTo('/admin')
+  } catch (error: unknown) {
+    const typed = error as { message?: string, data?: { message?: string } }
+    toast.add({
+      title: '删除失败',
+      description: typed?.data?.message || typed?.message || '请稍后重试',
+      color: 'error'
+    })
+  } finally {
+    deletingPost.value = false
+  }
+}
+
 watch(() => postMeta.title, (value) => {
   if (!postMeta.slug.trim()) {
     postMeta.slug = toSlug(value)
@@ -317,6 +342,13 @@ if (editingSlug.value) {
     content.value = existingPost.content || content.value
   }
 }
+
+onMounted(async () => {
+  initAuth()
+  if (!isLoggedIn.value) {
+    await navigateTo('/login?redirect=/write')
+  }
+})
 
 useSeoMeta({
   title: '写作工作台',
@@ -356,6 +388,17 @@ const extensions = computed(() => [
 
         <UButton icon="i-lucide-send" size="sm" :disabled="!canSubmit || isSaving" :loading="isSaving" label="发布"
           @click="publishNow" />
+
+        <UButton
+          v-if="postMeta.id"
+          icon="i-lucide-trash-2"
+          size="sm"
+          color="error"
+          variant="ghost"
+          :loading="deletingPost"
+          label="删除"
+          @click="removeCurrentPost"
+        />
       </div>
 
       <EditorCollaborationUsers :users="connectedUsers" />

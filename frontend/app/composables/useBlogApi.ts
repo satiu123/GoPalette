@@ -96,6 +96,16 @@ export interface SearchPostItem {
     createdAt?: string
 }
 
+export interface CategoryItem {
+    id: string
+    name: string
+}
+
+export interface TagItem {
+    id: string
+    name: string
+}
+
 export const POST_STATUS_DRAFT = 0
 export const POST_STATUS_PUBLISHED = 1
 export const POST_STATUS_ARCHIVED = 2
@@ -255,6 +265,56 @@ export async function fetchCategories(page = 1, pageSize = 200): Promise<{ categ
     }
 }
 
+export async function createCategory(payload: { name: string; slug?: string; description?: string }): Promise<CategoryItem | null> {
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>('/api/blog/categories', {
+        method: 'POST',
+        headers: withCsrfHeaders(),
+        body: payload
+    })
+
+    const category = response?.category || response?.data?.category || response?.data || response
+    if (!category) return null
+
+    const info = category?.info || category
+    return {
+        id: String(info?.id || ''),
+        name: String(info?.name || payload.name || '')
+    }
+}
+
+export async function updateCategory(id: string, payload: { name: string; slug?: string; description?: string; updateMask?: string }): Promise<CategoryItem | null> {
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>(`/api/blog/categories/${id}`, {
+        method: 'PATCH',
+        headers: withCsrfHeaders(),
+        body: {
+            id,
+            ...payload,
+            updateMask: payload.updateMask || 'name,slug,description'
+        }
+    })
+
+    const category = response?.category || response?.data?.category || response?.data || response
+    if (!category) return null
+    const info = category?.info || category
+
+    return {
+        id: String(info?.id || id),
+        name: String(info?.name || payload.name || '')
+    }
+}
+
+export async function deleteCategory(id: string): Promise<boolean> {
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>(`/api/blog/categories/${id}`, {
+        method: 'DELETE',
+        headers: withCsrfHeaders()
+    })
+
+    return Boolean(response?.success ?? response?.data?.success ?? true)
+}
+
 export async function fetchPostBySlug(slug: string): Promise<BlogPostItem | null> {
     const response = await $fetch<any>(`/api/blog/posts/${slug}`)
     const post = response?.post || response?.data?.post || response?.data || response
@@ -383,4 +443,64 @@ export async function updatePost(id: string, payload: {
     const post = response?.post || response?.data?.post || response?.data || response
 
     return post ? normalizePostDetail(post) : null
+}
+
+export async function deletePost(id: string): Promise<boolean> {
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>(`/api/blog/posts/${id}`, {
+        method: 'DELETE',
+        headers: withCsrfHeaders()
+    })
+
+    return Boolean(response?.success ?? response?.data?.success ?? true)
+}
+
+export async function createTag(payload: { name: string; slug?: string }): Promise<TagItem | null> {
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>('/api/blog/tags', {
+        method: 'POST',
+        headers: withCsrfHeaders(),
+        body: payload
+    })
+
+    const tag = response?.tag || response?.data?.tag || response?.data || response
+    if (!tag) return null
+    const info = tag?.info || tag
+
+    return {
+        id: String(info?.id || ''),
+        name: String(info?.name || payload.name || '')
+    }
+}
+
+export async function updateTag(id: string, payload: { name: string; slug?: string; updateMask?: string }): Promise<TagItem | null> {
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>(`/api/blog/tags/${id}`, {
+        method: 'PATCH',
+        headers: withCsrfHeaders(),
+        body: {
+            id,
+            ...payload,
+            updateMask: payload.updateMask || 'name,slug'
+        }
+    })
+
+    const tag = response?.tag || response?.data?.tag || response?.data || response
+    if (!tag) return null
+    const info = tag?.info || tag
+
+    return {
+        id: String(info?.id || id),
+        name: String(info?.name || payload.name || '')
+    }
+}
+
+export async function deleteTag(id: string): Promise<boolean> {
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>(`/api/blog/tags/${id}`, {
+        method: 'DELETE',
+        headers: withCsrfHeaders()
+    })
+
+    return Boolean(response?.success ?? response?.data?.success ?? true)
 }

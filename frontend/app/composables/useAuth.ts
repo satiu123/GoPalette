@@ -2,11 +2,13 @@ export interface AuthUser {
   id: string
   username: string
   email: string
-  role?: number
-  status?: number
+  role?: number | string
+  status?: number | string
   avatarURL?: string
   createdAt?: string
   updatedAt?: string
+  bio?: string
+  location?: string
 }
 
 interface AuthSession {
@@ -64,6 +66,27 @@ function isUnauthorizedError(error: unknown) {
   const status = Number(typed.status ?? typed.statusCode ?? typed.response?.status ?? 0)
 
   return status === 401
+}
+
+function normalizeAuthUser(input?: Record<string, unknown> | null): AuthUser | null {
+  if (!input || typeof input !== 'object') return null
+
+  return {
+    id: String(input.id || ''),
+    username: String(input.username || ''),
+    email: String(input.email || ''),
+    role: typeof input.role === 'string' || typeof input.role === 'number' ? input.role : undefined,
+    status: typeof input.status === 'string' || typeof input.status === 'number' ? input.status : undefined,
+    avatarURL: String(input.avatarURL || input.avatarUrl || input.avatar_u_r_l || input.avatar_url || ''),
+    createdAt: typeof input.createdAt === 'string'
+      ? input.createdAt
+      : (typeof input.created_at === 'string' ? input.created_at : ''),
+    updatedAt: typeof input.updatedAt === 'string'
+      ? input.updatedAt
+      : (typeof input.updated_at === 'string' ? input.updated_at : ''),
+    bio: String(input.bio || ''),
+    location: String(input.location || '')
+  }
 }
 
 export function useAuth() {
@@ -273,11 +296,11 @@ export function useAuth() {
       })
     }
 
-    const response = await authFetch<{ user?: AuthUser }>(`/api/user/profile/${userId}`, {
+    const response = await authFetch<{ user?: Record<string, unknown> }>(`/api/user/profile/${userId}`, {
       method: 'GET'
     })
 
-    user.value = response.user || null
+    user.value = normalizeAuthUser(response.user)
     return user.value
   }
 
@@ -287,7 +310,7 @@ export function useAuth() {
       throw new Error('当前未登录，无法更新个人信息')
     }
 
-    const response = await authFetch<{ user?: AuthUser }>(`/api/user/profile/${userId}`, {
+    const response = await authFetch<{ user?: Record<string, unknown> }>(`/api/user/profile/${userId}`, {
       method: 'PATCH',
       query: {
         updateMask: 'username,email,avatarURL'
@@ -301,15 +324,24 @@ export function useAuth() {
       }
     })
 
-    user.value = response.user || user.value
+    user.value = normalizeAuthUser(response.user) || user.value
     return user.value
   }
+
+  const isAdmin = computed(() => {
+    const role = user.value?.role
+    if (role === undefined || role === null) return false
+    if (typeof role === 'number') return role === 1
+
+    return String(role).toUpperCase() === 'ADMIN'
+  })
 
   return {
     session,
     user,
     initialized,
     isLoggedIn: computed(() => Boolean(session.value.accessToken)),
+    isAdmin,
     initAuth,
     login,
     register,

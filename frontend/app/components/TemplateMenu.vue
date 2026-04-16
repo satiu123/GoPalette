@@ -1,9 +1,12 @@
 <script setup lang="ts">
 const route = useRoute()
-const { isLoggedIn, initAuth } = useAuth()
+const { isLoggedIn, isAdmin, initAuth, session, user, fetchProfile } = useAuth()
 
 onMounted(() => {
   initAuth()
+  if (session.value.userId && !user.value) {
+    void fetchProfile(session.value.userId)
+  }
 })
 
 const items = computed(() => {
@@ -14,7 +17,9 @@ const items = computed(() => {
   ]
 
   if (isLoggedIn.value) {
-    return [...common, { label: '管理', to: '/admin' }, { label: '我的', to: '/profile' }]
+    return isAdmin.value
+      ? [...common, { label: '管理', to: '/admin' }, { label: '我的', to: '/profile' }]
+      : [...common, { label: '我的', to: '/profile' }]
   }
 
   return [...common, { label: '登录', to: '/login' }, { label: '注册', to: '/register' }]
