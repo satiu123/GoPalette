@@ -1,0 +1,19 @@
+server:
+  http:
+    addr: 0.0.0.0:8004
+    timeout: 2s
+  grpc:
+    addr: 0.0.0.0:9004
+    timeout: 2s
+data:
+  clients:
+    user_endpoint: discovery:///user.service
+    post_endpoint: discovery:///post.service
+    comment_endpoint: discovery:///comment.service
+    timeout: 2s
+registry:
+  etcd:
+    endpoints:
+      - "etcd:2379"
+    timeout: 5s
+

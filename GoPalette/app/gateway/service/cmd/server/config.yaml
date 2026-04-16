@@ -7,6 +7,7 @@ middlewares:
       '@type': type.googleapis.com/gateway.middleware.tracing.v1.Tracing
       httpEndpoint: 'jaeger:4318' # default opentelemetry collector port
   - name: logging
+  - name: authmetadata
   - name: transcoder
   - name: cors
     options:
@@ -92,3 +93,9 @@ endpoints:
     protocol: HTTP
     backends:
       - target: 'discovery:///search.service'
+
+  - path: /v1/profiles/*
+    timeout: 3s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///bff.service'

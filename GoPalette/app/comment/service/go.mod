@@ -7,7 +7,6 @@ require (
 	github.com/go-kratos/kratos/v2 v2.9.2
 	github.com/go-redis/redis/extra/redisotel v0.3.0
 	github.com/go-redis/redis/v8 v8.11.5
-	github.com/golang-jwt/jwt/v5 v5.3.1
 	go.etcd.io/etcd/client/v3 v3.6.10
 	go.uber.org/automaxprocs v1.6.0
 	google.golang.org/protobuf v1.36.11

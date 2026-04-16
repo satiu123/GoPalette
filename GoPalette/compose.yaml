@@ -76,6 +76,22 @@ services:
       - ./app/search/service/configs:/data/conf
     depends_on:
       - meilisearch
+  bff:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - APP_RELATIVE_PATH=app/bff/service
+    restart: always
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
+    volumes:
+      - ./app/bff/service/configs:/data/conf
+    depends_on:
+      - user
+      - post
+      - comment
+      - etcd
   mariadb:
     image: mariadb
     restart: always

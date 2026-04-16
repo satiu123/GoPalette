@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package api.bff.v1;
+
+import "comment/v1/comment.proto";
+import "post/v1/post.proto";
+import "user/v1/user.proto";
+import "google/api/annotations.proto";
+
+option go_package = "GoPalette/api/bff/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.bff.v1";
+
+service BlogBff {
+  // 获取完整的用户个人主页数据
+  rpc GetFullUserProfile (GetFullUserProfileRequest) returns (GetFullUserProfileReply) {
+    option (google.api.http) = {
+      get: "/v1/profiles/{user_id}"
+    };
+  }
+}
+
+message GetFullUserProfileRequest {
+  string user_id = 1;
+}
+
+message GetFullUserProfileReply {
+  api.user.v1.UserInfo user_info = 1;
+  api.post.v1.GetAuthorPostStatsReply post_stats = 2;
+  repeated api.comment.v1.CommentInfo recent_comments = 3;
+  repeated api.post.v1.PostInfo top_posts = 4;
+}

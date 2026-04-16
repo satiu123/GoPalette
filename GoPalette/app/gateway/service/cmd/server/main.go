@@ -28,6 +28,7 @@ import (
 	_ "github.com/go-kratos/gateway/middleware/streamrecorder"
 	_ "github.com/go-kratos/gateway/middleware/tracing"
 	_ "github.com/go-kratos/gateway/middleware/transcoder"
+	_ "github.com/satiu123/GoPalette/app/gateway/service/internal/middleware/authmetadata"
 	_ "go.uber.org/automaxprocs"
 
 	"github.com/go-kratos/kratos/contrib/registry/etcd/v2"

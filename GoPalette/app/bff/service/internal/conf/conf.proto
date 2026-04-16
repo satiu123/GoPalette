@@ -1,0 +1,46 @@
+syntax = "proto3";
+package kratos.api.bff;
+
+option go_package = "github.com/satiu123/GoPalette/app/bff/service/internal/conf;conf";
+
+import "google/protobuf/duration.proto";
+
+message Bootstrap {
+  Server server = 1;
+  Data data = 2;
+  Registry registry = 3;
+}
+
+message Server {
+  message HTTP {
+    string network = 1;
+    string addr = 2;
+    google.protobuf.Duration timeout = 3;
+  }
+  message GRPC {
+    string network = 1;
+    string addr = 2;
+    google.protobuf.Duration timeout = 3;
+  }
+  HTTP http = 1;
+  GRPC grpc = 2;
+}
+
+message Data {
+  message Clients {
+    string user_endpoint = 1;
+    string post_endpoint = 2;
+    string comment_endpoint = 3;
+    google.protobuf.Duration timeout = 4;
+  }
+  Clients clients = 1;
+}
+
+message Registry {
+  message Etcd {
+    repeated string endpoints = 1;
+    google.protobuf.Duration timeout = 2;
+  }
+  Etcd etcd = 1;
+}
+

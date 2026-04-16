@@ -348,6 +348,25 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.post.v1.TogglePostLikeReply'
+    /v1/profiles/{userId}:
+        get:
+            tags:
+                - BlogBff
+            description: 获取完整的用户个人主页数据
+            operationId: BlogBff_GetFullUserProfile
+            parameters:
+                - name: userId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.bff.v1.GetFullUserProfileReply'
     /v1/search/posts:
         get:
             tags:
@@ -851,6 +870,21 @@ paths:
                                 $ref: '#/components/schemas/api.user.v1.BatchGetUsersReply'
 components:
     schemas:
+        api.bff.v1.GetFullUserProfileReply:
+            type: object
+            properties:
+                userInfo:
+                    $ref: '#/components/schemas/api.user.v1.UserInfo'
+                postStats:
+                    $ref: '#/components/schemas/api.post.v1.GetAuthorPostStatsReply'
+                recentComments:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.comment.v1.CommentInfo'
+                topPosts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.post.v1.PostInfo'
         api.comment.v1.AuthorInfo:
             type: object
             properties:
@@ -1449,6 +1483,7 @@ components:
                 avatarUrl:
                     type: string
 tags:
+    - name: BlogBff
     - name: Category
       description: 分类管理服务
     - name: Comment

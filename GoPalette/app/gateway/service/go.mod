@@ -6,6 +6,7 @@ require (
 	github.com/go-kratos/gateway v0.0.0-20251215035409-a553bef5c1a8
 	github.com/go-kratos/kratos/contrib/registry/etcd/v2 v2.0.0-20260404020628-f149714c1d54
 	github.com/go-kratos/kratos/v2 v2.9.2
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	go.etcd.io/etcd/client/v3 v3.6.10
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f

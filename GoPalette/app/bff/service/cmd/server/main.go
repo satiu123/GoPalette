@@ -1,0 +1,121 @@
+package main
+
+import (
+	"context"
+	"flag"
+	"os"
+
+	"github.com/satiu123/GoPalette/pkg/opentelemetry"
+
+	"github.com/satiu123/GoPalette/app/bff/service/internal/conf"
+
+	"github.com/go-kratos/kratos/contrib/registry/etcd/v2"
+	"github.com/go-kratos/kratos/v2"
+	"github.com/go-kratos/kratos/v2/config"
+	"github.com/go-kratos/kratos/v2/config/file"
+	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/middleware/tracing"
+	"github.com/go-kratos/kratos/v2/transport/grpc"
+	"github.com/go-kratos/kratos/v2/transport/http"
+	etcdclient "go.etcd.io/etcd/client/v3"
+
+	_ "go.uber.org/automaxprocs"
+)
+
+// go build -ldflags "-X main.Version=x.y.z"
+var (
+	// Name is the name of the compiled software.
+	Name = "bff.service"
+	// Version is the version of the compiled software.
+	Version = "0.1.0"
+	// flagconf is the config flag.
+	flagconf string
+
+	id, _ = os.Hostname()
+)
+
+func init() {
+	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
+}
+
+func NewEtcdClient(c *conf.Registry) (*etcdclient.Client, error) {
+	client, err := etcdclient.New(etcdclient.Config{
+		Endpoints:   c.Etcd.Endpoints,
+		DialTimeout: c.Etcd.Timeout.AsDuration(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
+}
+func NewRegistry(client *etcdclient.Client) *etcd.Registry {
+	return etcd.New(client)
+}
+
+func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server, reg *etcd.Registry) *kratos.App {
+	return kratos.New(
+		kratos.ID(id),
+		kratos.Name(Name),
+		kratos.Version(Version),
+		kratos.Metadata(map[string]string{}),
+		kratos.Logger(logger),
+		kratos.Server(
+			gs,
+			hs,
+		),
+		kratos.Registrar(reg),
+	)
+}
+
+func main() {
+	flag.Parse()
+	logger := log.With(log.NewStdLogger(os.Stdout),
+		"ts", log.DefaultTimestamp,
+		"caller", log.DefaultCaller,
+		"service.id", id,
+		"service.name", Name,
+		"service.version", Version,
+		"trace.id", tracing.TraceID(),
+		"span.id", tracing.SpanID(),
+	)
+	logHelper := log.NewHelper(log.With(logger, "module", "main/bff"))
+	c := config.New(
+		config.WithSource(
+			file.NewSource(flagconf),
+		),
+	)
+	defer c.Close()
+
+	if err := c.Load(); err != nil {
+		panic(err)
+	}
+
+	otelShutdown := func(context.Context) error { return nil }
+	shutdownFn, err := opentelemetry.SetupOTelSDK(context.Background(), Name)
+	if err != nil {
+		logHelper.Errorf("初始化 OpenTelemetry SDK 失败: %v", err)
+	} else {
+		otelShutdown = shutdownFn
+	}
+	defer func() {
+		if shutdownErr := otelShutdown(context.Background()); shutdownErr != nil {
+			logHelper.Errorf("关闭 OpenTelemetry SDK 失败: %v", shutdownErr)
+		}
+	}()
+
+	var bc conf.Bootstrap
+	if err := c.Scan(&bc); err != nil {
+		panic(err)
+	}
+
+	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Registry, logger)
+	if err != nil {
+		panic(err)
+	}
+	defer cleanup()
+
+	if err := app.Run(); err != nil {
+		panic(err)
+	}
+}
+

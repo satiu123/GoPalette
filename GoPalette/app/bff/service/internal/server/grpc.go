@@ -1,30 +1,23 @@
 package server
 
 import (
-	"github.com/satiu123/GoPalette/pkg/auth"
-
-	u "github.com/satiu123/GoPalette/api/user/v1"
-
-	"github.com/satiu123/GoPalette/app/user/service/internal/conf"
-	"github.com/satiu123/GoPalette/app/user/service/internal/service"
+	v1 "github.com/satiu123/GoPalette/api/bff/v1"
+	"github.com/satiu123/GoPalette/app/bff/service/internal/conf"
+	"github.com/satiu123/GoPalette/app/bff/service/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
-	"github.com/go-kratos/kratos/v2/middleware/selector"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 )
 
 // NewGRPCServer new a gRPC server.
-func NewGRPCServer(c *conf.Server, _ *conf.Auth, user *service.UserService, logger log.Logger) *grpc.Server {
+func NewGRPCServer(c *conf.Server, bff *service.BffService, logger log.Logger) *grpc.Server {
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			tracing.Server(),
 			logging.Server(logger),
-			selector.Server(
-				auth.Server(),
-			).Match(NewWhiteListMatcher()).Build(),
 			recovery.Recovery(),
 		),
 	}
@@ -38,6 +31,7 @@ func NewGRPCServer(c *conf.Server, _ *conf.Auth, user *service.UserService, logg
 		opts = append(opts, grpc.Timeout(c.Grpc.Timeout.AsDuration()))
 	}
 	srv := grpc.NewServer(opts...)
-	u.RegisterUserServer(srv, user)
+	v1.RegisterBlogBffServer(srv, bff)
 	return srv
 }
+

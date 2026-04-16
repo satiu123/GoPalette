@@ -11,13 +11,11 @@ import (
 	"github.com/satiu123/GoPalette/app/post/service/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/middleware/selector"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/http"
-	jwtv5 "github.com/golang-jwt/jwt/v5"
 )
 
 func NewWhiteListMatcher() selector.MatchFunc {
@@ -39,17 +37,13 @@ func NewWhiteListMatcher() selector.MatchFunc {
 }
 
 // NewHTTPServer new an HTTP server.
-func NewHTTPServer(c *conf.Server, ca *conf.Auth, post *service.PostService, category *service.CategoryService, tag *service.TagService, logger log.Logger) *http.Server {
+func NewHTTPServer(c *conf.Server, _ *conf.Auth, post *service.PostService, category *service.CategoryService, tag *service.TagService, logger log.Logger) *http.Server {
 	var opts = []http.ServerOption{
 		http.Middleware(
 			tracing.Server(),
 			logging.Server(logger),
 			selector.Server(
-				jwt.Server(func(token *jwtv5.Token) (any, error) {
-					return []byte(ca.JwtAccessSecret), nil
-				}, jwt.WithClaims(func() jwtv5.Claims {
-					return &auth.AuthClaims{}
-				})),
+				auth.Server(),
 			).Match(NewWhiteListMatcher()).Build(),
 			recovery.Recovery(),
 		),
