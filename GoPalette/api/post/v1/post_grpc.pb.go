@@ -19,13 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Post_CreatePost_FullMethodName        = "/api.post.v1.Post/CreatePost"
-	Post_UpdatePost_FullMethodName        = "/api.post.v1.Post/UpdatePost"
-	Post_DeletePost_FullMethodName        = "/api.post.v1.Post/DeletePost"
-	Post_GetPost_FullMethodName           = "/api.post.v1.Post/GetPost"
-	Post_ListPosts_FullMethodName         = "/api.post.v1.Post/ListPosts"
-	Post_ListPostsForIndex_FullMethodName = "/api.post.v1.Post/ListPostsForIndex"
-	Post_IncrCommentCount_FullMethodName  = "/api.post.v1.Post/IncrCommentCount"
+	Post_CreatePost_FullMethodName         = "/api.post.v1.Post/CreatePost"
+	Post_UpdatePost_FullMethodName         = "/api.post.v1.Post/UpdatePost"
+	Post_DeletePost_FullMethodName         = "/api.post.v1.Post/DeletePost"
+	Post_GetPost_FullMethodName            = "/api.post.v1.Post/GetPost"
+	Post_ListPosts_FullMethodName          = "/api.post.v1.Post/ListPosts"
+	Post_ListAuthorPosts_FullMethodName    = "/api.post.v1.Post/ListAuthorPosts"
+	Post_GetAuthorPostStats_FullMethodName = "/api.post.v1.Post/GetAuthorPostStats"
+	Post_ListTopAuthorPosts_FullMethodName = "/api.post.v1.Post/ListTopAuthorPosts"
+	Post_ListPostsForIndex_FullMethodName  = "/api.post.v1.Post/ListPostsForIndex"
+	Post_IncrCommentCount_FullMethodName   = "/api.post.v1.Post/IncrCommentCount"
 )
 
 // PostClient is the client API for Post service.
@@ -44,6 +47,12 @@ type PostClient interface {
 	GetPost(ctx context.Context, in *GetPostRequest, opts ...grpc.CallOption) (*GetPostReply, error)
 	// ListPosts 列出帖子，输入分页参数，返回帖子列表
 	ListPosts(ctx context.Context, in *ListPostsRequest, opts ...grpc.CallOption) (*ListPostsReply, error)
+	// ListAuthorPosts 按作者列出帖子（用于个人主页）
+	ListAuthorPosts(ctx context.Context, in *ListAuthorPostsRequest, opts ...grpc.CallOption) (*ListAuthorPostsReply, error)
+	// GetAuthorPostStats 获取作者帖子聚合统计
+	GetAuthorPostStats(ctx context.Context, in *GetAuthorPostStatsRequest, opts ...grpc.CallOption) (*GetAuthorPostStatsReply, error)
+	// ListTopAuthorPosts 获取作者热门文章
+	ListTopAuthorPosts(ctx context.Context, in *ListTopAuthorPostsRequest, opts ...grpc.CallOption) (*ListTopAuthorPostsReply, error)
 	// ListPostsForIndex 仅供搜索服务使用，返回索引所需字段
 	ListPostsForIndex(ctx context.Context, in *ListPostsForIndexRequest, opts ...grpc.CallOption) (*ListPostsForIndexReply, error)
 	// IncrCommentCount 增减文章评论数（用于评论服务回写）
@@ -108,6 +117,36 @@ func (c *postClient) ListPosts(ctx context.Context, in *ListPostsRequest, opts .
 	return out, nil
 }
 
+func (c *postClient) ListAuthorPosts(ctx context.Context, in *ListAuthorPostsRequest, opts ...grpc.CallOption) (*ListAuthorPostsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAuthorPostsReply)
+	err := c.cc.Invoke(ctx, Post_ListAuthorPosts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postClient) GetAuthorPostStats(ctx context.Context, in *GetAuthorPostStatsRequest, opts ...grpc.CallOption) (*GetAuthorPostStatsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAuthorPostStatsReply)
+	err := c.cc.Invoke(ctx, Post_GetAuthorPostStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postClient) ListTopAuthorPosts(ctx context.Context, in *ListTopAuthorPostsRequest, opts ...grpc.CallOption) (*ListTopAuthorPostsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTopAuthorPostsReply)
+	err := c.cc.Invoke(ctx, Post_ListTopAuthorPosts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *postClient) ListPostsForIndex(ctx context.Context, in *ListPostsForIndexRequest, opts ...grpc.CallOption) (*ListPostsForIndexReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListPostsForIndexReply)
@@ -144,6 +183,12 @@ type PostServer interface {
 	GetPost(context.Context, *GetPostRequest) (*GetPostReply, error)
 	// ListPosts 列出帖子，输入分页参数，返回帖子列表
 	ListPosts(context.Context, *ListPostsRequest) (*ListPostsReply, error)
+	// ListAuthorPosts 按作者列出帖子（用于个人主页）
+	ListAuthorPosts(context.Context, *ListAuthorPostsRequest) (*ListAuthorPostsReply, error)
+	// GetAuthorPostStats 获取作者帖子聚合统计
+	GetAuthorPostStats(context.Context, *GetAuthorPostStatsRequest) (*GetAuthorPostStatsReply, error)
+	// ListTopAuthorPosts 获取作者热门文章
+	ListTopAuthorPosts(context.Context, *ListTopAuthorPostsRequest) (*ListTopAuthorPostsReply, error)
 	// ListPostsForIndex 仅供搜索服务使用，返回索引所需字段
 	ListPostsForIndex(context.Context, *ListPostsForIndexRequest) (*ListPostsForIndexReply, error)
 	// IncrCommentCount 增减文章评论数（用于评论服务回写）
@@ -172,6 +217,15 @@ func (UnimplementedPostServer) GetPost(context.Context, *GetPostRequest) (*GetPo
 }
 func (UnimplementedPostServer) ListPosts(context.Context, *ListPostsRequest) (*ListPostsReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListPosts not implemented")
+}
+func (UnimplementedPostServer) ListAuthorPosts(context.Context, *ListAuthorPostsRequest) (*ListAuthorPostsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListAuthorPosts not implemented")
+}
+func (UnimplementedPostServer) GetAuthorPostStats(context.Context, *GetAuthorPostStatsRequest) (*GetAuthorPostStatsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetAuthorPostStats not implemented")
+}
+func (UnimplementedPostServer) ListTopAuthorPosts(context.Context, *ListTopAuthorPostsRequest) (*ListTopAuthorPostsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListTopAuthorPosts not implemented")
 }
 func (UnimplementedPostServer) ListPostsForIndex(context.Context, *ListPostsForIndexRequest) (*ListPostsForIndexReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListPostsForIndex not implemented")
@@ -290,6 +344,60 @@ func _Post_ListPosts_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Post_ListAuthorPosts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAuthorPostsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServer).ListAuthorPosts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Post_ListAuthorPosts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServer).ListAuthorPosts(ctx, req.(*ListAuthorPostsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Post_GetAuthorPostStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAuthorPostStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServer).GetAuthorPostStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Post_GetAuthorPostStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServer).GetAuthorPostStats(ctx, req.(*GetAuthorPostStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Post_ListTopAuthorPosts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTopAuthorPostsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServer).ListTopAuthorPosts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Post_ListTopAuthorPosts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServer).ListTopAuthorPosts(ctx, req.(*ListTopAuthorPostsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Post_ListPostsForIndex_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListPostsForIndexRequest)
 	if err := dec(in); err != nil {
@@ -352,6 +460,18 @@ var Post_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListPosts",
 			Handler:    _Post_ListPosts_Handler,
+		},
+		{
+			MethodName: "ListAuthorPosts",
+			Handler:    _Post_ListAuthorPosts_Handler,
+		},
+		{
+			MethodName: "GetAuthorPostStats",
+			Handler:    _Post_GetAuthorPostStats_Handler,
+		},
+		{
+			MethodName: "ListTopAuthorPosts",
+			Handler:    _Post_ListTopAuthorPosts_Handler,
 		},
 		{
 			MethodName: "ListPostsForIndex",

@@ -19,9 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Comment_CreateComment_FullMethodName = "/api.comment.v1.Comment/CreateComment"
-	Comment_ListComments_FullMethodName  = "/api.comment.v1.Comment/ListComments"
-	Comment_DeleteComment_FullMethodName = "/api.comment.v1.Comment/DeleteComment"
+	Comment_CreateComment_FullMethodName          = "/api.comment.v1.Comment/CreateComment"
+	Comment_ListComments_FullMethodName           = "/api.comment.v1.Comment/ListComments"
+	Comment_DeleteComment_FullMethodName          = "/api.comment.v1.Comment/DeleteComment"
+	Comment_GetUserCommentStats_FullMethodName    = "/api.comment.v1.Comment/GetUserCommentStats"
+	Comment_ListUserRecentComments_FullMethodName = "/api.comment.v1.Comment/ListUserRecentComments"
 )
 
 // CommentClient is the client API for Comment service.
@@ -36,6 +38,10 @@ type CommentClient interface {
 	ListComments(ctx context.Context, in *ListCommentsRequest, opts ...grpc.CallOption) (*ListCommentsReply, error)
 	// 删除评论
 	DeleteComment(ctx context.Context, in *DeleteCommentRequest, opts ...grpc.CallOption) (*DeleteCommentReply, error)
+	// 获取用户评论统计
+	GetUserCommentStats(ctx context.Context, in *GetUserCommentStatsRequest, opts ...grpc.CallOption) (*GetUserCommentStatsReply, error)
+	// 获取用户近期评论
+	ListUserRecentComments(ctx context.Context, in *ListUserRecentCommentsRequest, opts ...grpc.CallOption) (*ListUserRecentCommentsReply, error)
 }
 
 type commentClient struct {
@@ -76,6 +82,26 @@ func (c *commentClient) DeleteComment(ctx context.Context, in *DeleteCommentRequ
 	return out, nil
 }
 
+func (c *commentClient) GetUserCommentStats(ctx context.Context, in *GetUserCommentStatsRequest, opts ...grpc.CallOption) (*GetUserCommentStatsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserCommentStatsReply)
+	err := c.cc.Invoke(ctx, Comment_GetUserCommentStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *commentClient) ListUserRecentComments(ctx context.Context, in *ListUserRecentCommentsRequest, opts ...grpc.CallOption) (*ListUserRecentCommentsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListUserRecentCommentsReply)
+	err := c.cc.Invoke(ctx, Comment_ListUserRecentComments_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CommentServer is the server API for Comment service.
 // All implementations must embed UnimplementedCommentServer
 // for forward compatibility.
@@ -88,6 +114,10 @@ type CommentServer interface {
 	ListComments(context.Context, *ListCommentsRequest) (*ListCommentsReply, error)
 	// 删除评论
 	DeleteComment(context.Context, *DeleteCommentRequest) (*DeleteCommentReply, error)
+	// 获取用户评论统计
+	GetUserCommentStats(context.Context, *GetUserCommentStatsRequest) (*GetUserCommentStatsReply, error)
+	// 获取用户近期评论
+	ListUserRecentComments(context.Context, *ListUserRecentCommentsRequest) (*ListUserRecentCommentsReply, error)
 	mustEmbedUnimplementedCommentServer()
 }
 
@@ -106,6 +136,12 @@ func (UnimplementedCommentServer) ListComments(context.Context, *ListCommentsReq
 }
 func (UnimplementedCommentServer) DeleteComment(context.Context, *DeleteCommentRequest) (*DeleteCommentReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteComment not implemented")
+}
+func (UnimplementedCommentServer) GetUserCommentStats(context.Context, *GetUserCommentStatsRequest) (*GetUserCommentStatsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUserCommentStats not implemented")
+}
+func (UnimplementedCommentServer) ListUserRecentComments(context.Context, *ListUserRecentCommentsRequest) (*ListUserRecentCommentsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListUserRecentComments not implemented")
 }
 func (UnimplementedCommentServer) mustEmbedUnimplementedCommentServer() {}
 func (UnimplementedCommentServer) testEmbeddedByValue()                 {}
@@ -182,6 +218,42 @@ func _Comment_DeleteComment_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Comment_GetUserCommentStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserCommentStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CommentServer).GetUserCommentStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Comment_GetUserCommentStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CommentServer).GetUserCommentStats(ctx, req.(*GetUserCommentStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Comment_ListUserRecentComments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListUserRecentCommentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CommentServer).ListUserRecentComments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Comment_ListUserRecentComments_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CommentServer).ListUserRecentComments(ctx, req.(*ListUserRecentCommentsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Comment_ServiceDesc is the grpc.ServiceDesc for Comment service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -200,6 +272,14 @@ var Comment_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteComment",
 			Handler:    _Comment_DeleteComment_Handler,
+		},
+		{
+			MethodName: "GetUserCommentStats",
+			Handler:    _Comment_GetUserCommentStats_Handler,
+		},
+		{
+			MethodName: "ListUserRecentComments",
+			Handler:    _Comment_ListUserRecentComments_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

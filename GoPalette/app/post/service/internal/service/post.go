@@ -172,6 +172,77 @@ func (s *PostService) ListPosts(ctx context.Context, req *pb.ListPostsRequest) (
 
 }
 
+func (s *PostService) ListAuthorPosts(ctx context.Context, req *pb.ListAuthorPostsRequest) (*pb.ListAuthorPostsReply, error) {
+	res, total, err := s.uc.ListAuthorPosts(ctx, req.AuthorId, req.Page, req.PageSize, req.IncludeNonPublished)
+	if err != nil {
+		return nil, err
+	}
+
+	posts := make([]*pb.PostInfo, len(res))
+	for i, p := range res {
+		posts[i] = s.toPBInfo(p)
+	}
+
+	if len(posts) > 0 {
+		usersResp, userErr := s.userc.BatchGetUsers(ctx, &userpb.BatchGetUsersRequest{Ids: []int64{req.AuthorId}})
+		if userErr != nil {
+			s.logger.WithContext(ctx).Warnf("批量获取作者信息失败: %v", userErr)
+		} else if len(usersResp.Users) > 0 {
+			author := usersResp.Users[0]
+			for _, item := range posts {
+				item.Author.Name = author.Username
+				item.Author.AvatarUrl = author.AvatarUrl
+			}
+		}
+	}
+
+	return &pb.ListAuthorPostsReply{Posts: posts, Total: total}, nil
+}
+
+func (s *PostService) GetAuthorPostStats(ctx context.Context, req *pb.GetAuthorPostStatsRequest) (*pb.GetAuthorPostStatsReply, error) {
+	stats, err := s.uc.GetAuthorPostStats(ctx, req.AuthorId, req.IncludeNonPublished)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetAuthorPostStatsReply{
+		Posts:     stats.Posts,
+		Published: stats.Published,
+		Drafts:    stats.Drafts,
+		Archived:  stats.Archived,
+		Views:     stats.Views,
+		Likes:     stats.Likes,
+		Comments:  stats.Comments,
+	}, nil
+}
+
+func (s *PostService) ListTopAuthorPosts(ctx context.Context, req *pb.ListTopAuthorPostsRequest) (*pb.ListTopAuthorPostsReply, error) {
+	res, err := s.uc.ListTopAuthorPosts(ctx, req.AuthorId, req.Limit, req.IncludeNonPublished)
+	if err != nil {
+		return nil, err
+	}
+
+	posts := make([]*pb.PostInfo, len(res))
+	for i, p := range res {
+		posts[i] = s.toPBInfo(p)
+	}
+
+	if len(posts) > 0 {
+		usersResp, userErr := s.userc.BatchGetUsers(ctx, &userpb.BatchGetUsersRequest{Ids: []int64{req.AuthorId}})
+		if userErr != nil {
+			s.logger.WithContext(ctx).Warnf("批量获取作者信息失败: %v", userErr)
+		} else if len(usersResp.Users) > 0 {
+			author := usersResp.Users[0]
+			for _, item := range posts {
+				item.Author.Name = author.Username
+				item.Author.AvatarUrl = author.AvatarUrl
+			}
+		}
+	}
+
+	return &pb.ListTopAuthorPostsReply{Posts: posts}, nil
+}
+
 func (s *PostService) ListPostsForIndex(ctx context.Context, req *pb.ListPostsForIndexRequest) (*pb.ListPostsForIndexReply, error) {
 	publishedOnly := !req.IncludeNonPublished
 

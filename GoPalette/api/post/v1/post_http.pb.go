@@ -21,9 +21,12 @@ const _ = http.SupportPackageIsVersion1
 
 const OperationPostCreatePost = "/api.post.v1.Post/CreatePost"
 const OperationPostDeletePost = "/api.post.v1.Post/DeletePost"
+const OperationPostGetAuthorPostStats = "/api.post.v1.Post/GetAuthorPostStats"
 const OperationPostGetPost = "/api.post.v1.Post/GetPost"
 const OperationPostIncrCommentCount = "/api.post.v1.Post/IncrCommentCount"
+const OperationPostListAuthorPosts = "/api.post.v1.Post/ListAuthorPosts"
 const OperationPostListPosts = "/api.post.v1.Post/ListPosts"
+const OperationPostListTopAuthorPosts = "/api.post.v1.Post/ListTopAuthorPosts"
 const OperationPostUpdatePost = "/api.post.v1.Post/UpdatePost"
 
 type PostHTTPServer interface {
@@ -31,12 +34,18 @@ type PostHTTPServer interface {
 	CreatePost(context.Context, *CreatePostRequest) (*CreatePostReply, error)
 	// DeletePost DeletePost 删除帖子，输入帖子ID，返回删除是否成功
 	DeletePost(context.Context, *DeletePostRequest) (*DeletePostReply, error)
+	// GetAuthorPostStats GetAuthorPostStats 获取作者帖子聚合统计
+	GetAuthorPostStats(context.Context, *GetAuthorPostStatsRequest) (*GetAuthorPostStatsReply, error)
 	// GetPost GetPost 获取帖子，输入帖子ID或slug，返回帖子详细信息
 	GetPost(context.Context, *GetPostRequest) (*GetPostReply, error)
 	// IncrCommentCount IncrCommentCount 增减文章评论数（用于评论服务回写）
 	IncrCommentCount(context.Context, *IncrCommentCountRequest) (*IncrCommentCountReply, error)
+	// ListAuthorPosts ListAuthorPosts 按作者列出帖子（用于个人主页）
+	ListAuthorPosts(context.Context, *ListAuthorPostsRequest) (*ListAuthorPostsReply, error)
 	// ListPosts ListPosts 列出帖子，输入分页参数，返回帖子列表
 	ListPosts(context.Context, *ListPostsRequest) (*ListPostsReply, error)
+	// ListTopAuthorPosts ListTopAuthorPosts 获取作者热门文章
+	ListTopAuthorPosts(context.Context, *ListTopAuthorPostsRequest) (*ListTopAuthorPostsReply, error)
 	// UpdatePost UpdatePost 更新帖子，输入帖子ID和要更新的字段列表，返回更新后的帖子详细信息
 	UpdatePost(context.Context, *UpdatePostRequest) (*UpdatePostReply, error)
 }
@@ -49,6 +58,9 @@ func RegisterPostHTTPServer(s *http.Server, srv PostHTTPServer) {
 	r.GET("/v1/posts/slug/{slug}", _Post_GetPost0_HTTP_Handler(srv))
 	r.GET("/v1/posts/{id}", _Post_GetPost1_HTTP_Handler(srv))
 	r.GET("/v1/posts", _Post_ListPosts0_HTTP_Handler(srv))
+	r.GET("/v1/users/{author_id}/posts", _Post_ListAuthorPosts0_HTTP_Handler(srv))
+	r.GET("/v1/users/{author_id}/posts/stats", _Post_GetAuthorPostStats0_HTTP_Handler(srv))
+	r.GET("/v1/users/{author_id}/posts/top", _Post_ListTopAuthorPosts0_HTTP_Handler(srv))
 	r.POST("/v1/posts/{id}/comment-count:incr", _Post_IncrCommentCount0_HTTP_Handler(srv))
 }
 
@@ -184,6 +196,72 @@ func _Post_ListPosts0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) er
 	}
 }
 
+func _Post_ListAuthorPosts0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListAuthorPostsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPostListAuthorPosts)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListAuthorPosts(ctx, req.(*ListAuthorPostsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListAuthorPostsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Post_GetAuthorPostStats0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetAuthorPostStatsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPostGetAuthorPostStats)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetAuthorPostStats(ctx, req.(*GetAuthorPostStatsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetAuthorPostStatsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Post_ListTopAuthorPosts0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListTopAuthorPostsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPostListTopAuthorPosts)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListTopAuthorPosts(ctx, req.(*ListTopAuthorPostsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListTopAuthorPostsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _Post_IncrCommentCount0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in IncrCommentCountRequest
@@ -214,12 +292,18 @@ type PostHTTPClient interface {
 	CreatePost(ctx context.Context, req *CreatePostRequest, opts ...http.CallOption) (rsp *CreatePostReply, err error)
 	// DeletePost DeletePost 删除帖子，输入帖子ID，返回删除是否成功
 	DeletePost(ctx context.Context, req *DeletePostRequest, opts ...http.CallOption) (rsp *DeletePostReply, err error)
+	// GetAuthorPostStats GetAuthorPostStats 获取作者帖子聚合统计
+	GetAuthorPostStats(ctx context.Context, req *GetAuthorPostStatsRequest, opts ...http.CallOption) (rsp *GetAuthorPostStatsReply, err error)
 	// GetPost GetPost 获取帖子，输入帖子ID或slug，返回帖子详细信息
 	GetPost(ctx context.Context, req *GetPostRequest, opts ...http.CallOption) (rsp *GetPostReply, err error)
 	// IncrCommentCount IncrCommentCount 增减文章评论数（用于评论服务回写）
 	IncrCommentCount(ctx context.Context, req *IncrCommentCountRequest, opts ...http.CallOption) (rsp *IncrCommentCountReply, err error)
+	// ListAuthorPosts ListAuthorPosts 按作者列出帖子（用于个人主页）
+	ListAuthorPosts(ctx context.Context, req *ListAuthorPostsRequest, opts ...http.CallOption) (rsp *ListAuthorPostsReply, err error)
 	// ListPosts ListPosts 列出帖子，输入分页参数，返回帖子列表
 	ListPosts(ctx context.Context, req *ListPostsRequest, opts ...http.CallOption) (rsp *ListPostsReply, err error)
+	// ListTopAuthorPosts ListTopAuthorPosts 获取作者热门文章
+	ListTopAuthorPosts(ctx context.Context, req *ListTopAuthorPostsRequest, opts ...http.CallOption) (rsp *ListTopAuthorPostsReply, err error)
 	// UpdatePost UpdatePost 更新帖子，输入帖子ID和要更新的字段列表，返回更新后的帖子详细信息
 	UpdatePost(ctx context.Context, req *UpdatePostRequest, opts ...http.CallOption) (rsp *UpdatePostReply, err error)
 }
@@ -260,6 +344,20 @@ func (c *PostHTTPClientImpl) DeletePost(ctx context.Context, in *DeletePostReque
 	return &out, nil
 }
 
+// GetAuthorPostStats GetAuthorPostStats 获取作者帖子聚合统计
+func (c *PostHTTPClientImpl) GetAuthorPostStats(ctx context.Context, in *GetAuthorPostStatsRequest, opts ...http.CallOption) (*GetAuthorPostStatsReply, error) {
+	var out GetAuthorPostStatsReply
+	pattern := "/v1/users/{author_id}/posts/stats"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationPostGetAuthorPostStats))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // GetPost GetPost 获取帖子，输入帖子ID或slug，返回帖子详细信息
 func (c *PostHTTPClientImpl) GetPost(ctx context.Context, in *GetPostRequest, opts ...http.CallOption) (*GetPostReply, error) {
 	var out GetPostReply
@@ -288,12 +386,40 @@ func (c *PostHTTPClientImpl) IncrCommentCount(ctx context.Context, in *IncrComme
 	return &out, nil
 }
 
+// ListAuthorPosts ListAuthorPosts 按作者列出帖子（用于个人主页）
+func (c *PostHTTPClientImpl) ListAuthorPosts(ctx context.Context, in *ListAuthorPostsRequest, opts ...http.CallOption) (*ListAuthorPostsReply, error) {
+	var out ListAuthorPostsReply
+	pattern := "/v1/users/{author_id}/posts"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationPostListAuthorPosts))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // ListPosts ListPosts 列出帖子，输入分页参数，返回帖子列表
 func (c *PostHTTPClientImpl) ListPosts(ctx context.Context, in *ListPostsRequest, opts ...http.CallOption) (*ListPostsReply, error) {
 	var out ListPostsReply
 	pattern := "/v1/posts"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPostListPosts))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListTopAuthorPosts ListTopAuthorPosts 获取作者热门文章
+func (c *PostHTTPClientImpl) ListTopAuthorPosts(ctx context.Context, in *ListTopAuthorPostsRequest, opts ...http.CallOption) (*ListTopAuthorPostsReply, error) {
+	var out ListTopAuthorPostsReply
+	pattern := "/v1/users/{author_id}/posts/top"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationPostListTopAuthorPosts))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {

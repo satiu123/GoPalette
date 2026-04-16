@@ -72,6 +72,28 @@ func (s *CommentService) DeleteComment(ctx context.Context, req *pb.DeleteCommen
 	return &pb.DeleteCommentReply{Success: true}, nil
 }
 
+func (s *CommentService) GetUserCommentStats(ctx context.Context, req *pb.GetUserCommentStatsRequest) (*pb.GetUserCommentStatsReply, error) {
+	total, err := s.uc.GetUserCommentStats(ctx, req.UserId)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.GetUserCommentStatsReply{Total: total}, nil
+}
+
+func (s *CommentService) ListUserRecentComments(ctx context.Context, req *pb.ListUserRecentCommentsRequest) (*pb.ListUserRecentCommentsReply, error) {
+	comments, err := s.uc.ListUserRecentComments(ctx, req.UserId, req.Limit)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]*pb.CommentInfo, 0, len(comments))
+	for _, item := range comments {
+		items = append(items, s.toPB(item, nil, nil))
+	}
+
+	return &pb.ListUserRecentCommentsReply{Comments: items}, nil
+}
+
 func (s *CommentService) toPB(c *biz.Comment, author *biz.UserProfile, replyTo *biz.UserProfile) *pb.CommentInfo {
 	if c == nil {
 		return nil

@@ -53,6 +53,24 @@ service Post {
       get: "/v1/posts"
     };
   };
+  // ListAuthorPosts 按作者列出帖子（用于个人主页）
+  rpc ListAuthorPosts (ListAuthorPostsRequest) returns (ListAuthorPostsReply){
+    option (google.api.http) = {
+      get: "/v1/users/{author_id}/posts"
+    };
+  };
+  // GetAuthorPostStats 获取作者帖子聚合统计
+  rpc GetAuthorPostStats (GetAuthorPostStatsRequest) returns (GetAuthorPostStatsReply){
+    option (google.api.http) = {
+      get: "/v1/users/{author_id}/posts/stats"
+    };
+  };
+  // ListTopAuthorPosts 获取作者热门文章
+  rpc ListTopAuthorPosts (ListTopAuthorPostsRequest) returns (ListTopAuthorPostsReply){
+    option (google.api.http) = {
+      get: "/v1/users/{author_id}/posts/top"
+    };
+  };
   // ListPostsForIndex 仅供搜索服务使用，返回索引所需字段
   rpc ListPostsForIndex (ListPostsForIndexRequest) returns (ListPostsForIndexReply);
   // IncrCommentCount 增减文章评论数（用于评论服务回写）
@@ -252,6 +270,43 @@ message ListPostsRequest {
 message ListPostsReply {
   repeated PostInfo posts = 1; // 帖子列表
   int64             total = 2; // 总帖子数
+}
+
+message ListAuthorPostsRequest {
+  int64 author_id = 1;
+  int64 page = 2;
+  int64 page_size = 3;
+  bool include_non_published = 4;
+}
+
+message ListAuthorPostsReply {
+  repeated PostInfo posts = 1;
+  int64 total = 2;
+}
+
+message GetAuthorPostStatsRequest {
+  int64 author_id = 1;
+  bool include_non_published = 2;
+}
+
+message GetAuthorPostStatsReply {
+  int64 posts = 1;
+  int64 published = 2;
+  int64 drafts = 3;
+  int64 archived = 4;
+  int64 views = 5;
+  int64 likes = 6;
+  int64 comments = 7;
+}
+
+message ListTopAuthorPostsRequest {
+  int64 author_id = 1;
+  int64 limit = 2;
+  bool include_non_published = 3;
+}
+
+message ListTopAuthorPostsReply {
+  repeated PostInfo posts = 1;
 }
 
 message ListPostsForIndexRequest {

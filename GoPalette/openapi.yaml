@@ -589,6 +589,87 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.user.v1.RegisterReply'
+    /v1/users/{authorId}/posts:
+        get:
+            tags:
+                - Post
+            description: ListAuthorPosts 按作者列出帖子（用于个人主页）
+            operationId: Post_ListAuthorPosts
+            parameters:
+                - name: authorId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: string
+                - name: includeNonPublished
+                  in: query
+                  schema:
+                    type: boolean
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.ListAuthorPostsReply'
+    /v1/users/{authorId}/posts/stats:
+        get:
+            tags:
+                - Post
+            description: GetAuthorPostStats 获取作者帖子聚合统计
+            operationId: Post_GetAuthorPostStats
+            parameters:
+                - name: authorId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: includeNonPublished
+                  in: query
+                  schema:
+                    type: boolean
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.GetAuthorPostStatsReply'
+    /v1/users/{authorId}/posts/top:
+        get:
+            tags:
+                - Post
+            description: ListTopAuthorPosts 获取作者热门文章
+            operationId: Post_ListTopAuthorPosts
+            parameters:
+                - name: authorId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: limit
+                  in: query
+                  schema:
+                    type: string
+                - name: includeNonPublished
+                  in: query
+                  schema:
+                    type: boolean
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.ListTopAuthorPostsReply'
     /v1/users/{id}:
         get:
             tags:
@@ -655,6 +736,48 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.user.v1.UpdateUserReply'
+    /v1/users/{userId}/comments/recent:
+        get:
+            tags:
+                - Comment
+            description: 获取用户近期评论
+            operationId: Comment_ListUserRecentComments
+            parameters:
+                - name: userId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: limit
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.comment.v1.ListUserRecentCommentsReply'
+    /v1/users/{userId}/comments/stats:
+        get:
+            tags:
+                - Comment
+            description: 获取用户评论统计
+            operationId: Comment_GetUserCommentStats
+            parameters:
+                - name: userId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.comment.v1.GetUserCommentStatsReply'
     /v1/users:batchGet:
         post:
             tags:
@@ -733,6 +856,11 @@ components:
             properties:
                 success:
                     type: boolean
+        api.comment.v1.GetUserCommentStatsReply:
+            type: object
+            properties:
+                total:
+                    type: string
         api.comment.v1.ListCommentsReply:
             type: object
             properties:
@@ -742,6 +870,13 @@ components:
                         $ref: '#/components/schemas/api.comment.v1.CommentInfo'
                 total:
                     type: string
+        api.comment.v1.ListUserRecentCommentsReply:
+            type: object
+            properties:
+                comments:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.comment.v1.CommentInfo'
         api.post.v1.AuthorInfo:
             type: object
             properties:
@@ -835,6 +970,23 @@ components:
             properties:
                 success:
                     type: boolean
+        api.post.v1.GetAuthorPostStatsReply:
+            type: object
+            properties:
+                posts:
+                    type: string
+                published:
+                    type: string
+                drafts:
+                    type: string
+                archived:
+                    type: string
+                views:
+                    type: string
+                likes:
+                    type: string
+                comments:
+                    type: string
         api.post.v1.GetCategoryReply:
             type: object
             properties:
@@ -861,6 +1013,15 @@ components:
                 id:
                     type: string
                 delta:
+                    type: string
+        api.post.v1.ListAuthorPostsReply:
+            type: object
+            properties:
+                posts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.post.v1.PostInfo'
+                total:
                     type: string
         api.post.v1.ListCategoriesReply:
             type: object
@@ -889,6 +1050,13 @@ components:
                         $ref: '#/components/schemas/api.post.v1.TagInfo'
                 total:
                     type: string
+        api.post.v1.ListTopAuthorPostsReply:
+            type: object
+            properties:
+                posts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.post.v1.PostInfo'
         api.post.v1.PostDetail:
             type: object
             properties:

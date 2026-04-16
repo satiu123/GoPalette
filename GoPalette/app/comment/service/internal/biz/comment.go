@@ -47,6 +47,8 @@ type CommentRepo interface {
 	GetByID(ctx context.Context, id int64) (*Comment, error)
 	ListRootByPost(ctx context.Context, postID, page, pageSize int64) ([]*Comment, int64, error)
 	ListRepliesByRootIDs(ctx context.Context, rootIDs []int64) ([]*Comment, error)
+	CountByUser(ctx context.Context, userID int64) (int64, error)
+	ListRecentByUser(ctx context.Context, userID, limit int64) ([]*Comment, error)
 	UpdateRootID(ctx context.Context, id, rootID int64) error
 	SoftDelete(ctx context.Context, id int64) error
 }
@@ -248,6 +250,27 @@ func (uc *CommentUsecase) ListByPost(ctx context.Context, postID, page, pageSize
 	}
 
 	return rootViews, total, nil
+}
+
+func (uc *CommentUsecase) GetUserCommentStats(ctx context.Context, userID int64) (int64, error) {
+	if userID <= 0 {
+		return 0, pb.ErrorInvalidArgument("%s", "user_id 无效")
+	}
+	return uc.repo.CountByUser(ctx, userID)
+}
+
+func (uc *CommentUsecase) ListUserRecentComments(ctx context.Context, userID, limit int64) ([]*Comment, error) {
+	if userID <= 0 {
+		return nil, pb.ErrorInvalidArgument("%s", "user_id 无效")
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 50 {
+		limit = 50
+	}
+
+	return uc.repo.ListRecentByUser(ctx, userID, limit)
 }
 
 func hasSensitiveWord(content string) bool {

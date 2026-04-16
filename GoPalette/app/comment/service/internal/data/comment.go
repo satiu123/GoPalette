@@ -108,6 +108,36 @@ func (r *commentRepo) ListRepliesByRootIDs(ctx context.Context, rootIDs []int64)
 	return out, nil
 }
 
+func (r *commentRepo) CountByUser(ctx context.Context, userID int64) (int64, error) {
+	var total int64
+	err := r.data.db.WithContext(ctx).
+		Model(&Comment{}).
+		Where("user_id = ? AND status IN ?", userID, []int32{biz.CommentStatusNormal, biz.CommentStatusPending}).
+		Count(&total).Error
+	if err != nil {
+		return 0, err
+	}
+	return total, nil
+}
+
+func (r *commentRepo) ListRecentByUser(ctx context.Context, userID, limit int64) ([]*biz.Comment, error) {
+	var pos []Comment
+	err := r.data.db.WithContext(ctx).
+		Where("user_id = ? AND status IN ?", userID, []int32{biz.CommentStatusNormal, biz.CommentStatusPending}).
+		Order("created_at DESC").
+		Limit(int(limit)).
+		Find(&pos).Error
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]*biz.Comment, 0, len(pos))
+	for i := range pos {
+		out = append(out, toBizComment(&pos[i]))
+	}
+	return out, nil
+}
+
 func (r *commentRepo) UpdateRootID(ctx context.Context, id, rootID int64) error {
 	return r.data.db.WithContext(ctx).Model(&Comment{}).Where("id = ?", id).Update("root_id", rootID).Error
 }

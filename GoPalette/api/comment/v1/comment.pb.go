@@ -535,6 +535,190 @@ func (x *DeleteCommentReply) GetSuccess() bool {
 	return false
 }
 
+type GetUserCommentStatsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserCommentStatsRequest) Reset() {
+	*x = GetUserCommentStatsRequest{}
+	mi := &file_comment_v1_comment_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserCommentStatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserCommentStatsRequest) ProtoMessage() {}
+
+func (x *GetUserCommentStatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_comment_v1_comment_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserCommentStatsRequest.ProtoReflect.Descriptor instead.
+func (*GetUserCommentStatsRequest) Descriptor() ([]byte, []int) {
+	return file_comment_v1_comment_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetUserCommentStatsRequest) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+type GetUserCommentStatsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Total         int64                  `protobuf:"varint,1,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserCommentStatsReply) Reset() {
+	*x = GetUserCommentStatsReply{}
+	mi := &file_comment_v1_comment_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserCommentStatsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserCommentStatsReply) ProtoMessage() {}
+
+func (x *GetUserCommentStatsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_comment_v1_comment_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserCommentStatsReply.ProtoReflect.Descriptor instead.
+func (*GetUserCommentStatsReply) Descriptor() ([]byte, []int) {
+	return file_comment_v1_comment_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GetUserCommentStatsReply) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type ListUserRecentCommentsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Limit         int64                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUserRecentCommentsRequest) Reset() {
+	*x = ListUserRecentCommentsRequest{}
+	mi := &file_comment_v1_comment_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUserRecentCommentsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUserRecentCommentsRequest) ProtoMessage() {}
+
+func (x *ListUserRecentCommentsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_comment_v1_comment_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUserRecentCommentsRequest.ProtoReflect.Descriptor instead.
+func (*ListUserRecentCommentsRequest) Descriptor() ([]byte, []int) {
+	return file_comment_v1_comment_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ListUserRecentCommentsRequest) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *ListUserRecentCommentsRequest) GetLimit() int64 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+type ListUserRecentCommentsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Comments      []*CommentInfo         `protobuf:"bytes,1,rep,name=comments,proto3" json:"comments,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUserRecentCommentsReply) Reset() {
+	*x = ListUserRecentCommentsReply{}
+	mi := &file_comment_v1_comment_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUserRecentCommentsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUserRecentCommentsReply) ProtoMessage() {}
+
+func (x *ListUserRecentCommentsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_comment_v1_comment_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUserRecentCommentsReply.ProtoReflect.Descriptor instead.
+func (*ListUserRecentCommentsReply) Descriptor() ([]byte, []int) {
+	return file_comment_v1_comment_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ListUserRecentCommentsReply) GetComments() []*CommentInfo {
+	if x != nil {
+		return x.Comments
+	}
+	return nil
+}
+
 var File_comment_v1_comment_proto protoreflect.FileDescriptor
 
 const file_comment_v1_comment_proto_rawDesc = "" +
@@ -578,16 +762,27 @@ const file_comment_v1_comment_proto_rawDesc = "" +
 	"\x14DeleteCommentRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\".\n" +
 	"\x12DeleteCommentReply\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess*\x82\x01\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"5\n" +
+	"\x1aGetUserCommentStatsRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\"0\n" +
+	"\x18GetUserCommentStatsReply\x12\x14\n" +
+	"\x05total\x18\x01 \x01(\x03R\x05total\"N\n" +
+	"\x1dListUserRecentCommentsRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\x03R\x05limit\"V\n" +
+	"\x1bListUserRecentCommentsReply\x127\n" +
+	"\bcomments\x18\x01 \x03(\v2\x1b.api.comment.v1.CommentInfoR\bcomments*\x82\x01\n" +
 	"\rCommentStatus\x12\x1e\n" +
 	"\x1aCOMMENT_STATUS_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15COMMENT_STATUS_NORMAL\x10\x01\x12\x1a\n" +
 	"\x16COMMENT_STATUS_PENDING\x10\x02\x12\x1a\n" +
-	"\x16COMMENT_STATUS_DELETED\x10\x032\xda\x02\n" +
+	"\x16COMMENT_STATUS_DELETED\x10\x032\x98\x05\n" +
 	"\aComment\x12k\n" +
 	"\rCreateComment\x12$.api.comment.v1.CreateCommentRequest\x1a\x1b.api.comment.v1.CommentInfo\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/v1/comments\x12l\n" +
 	"\fListComments\x12#.api.comment.v1.ListCommentsRequest\x1a!.api.comment.v1.ListCommentsReply\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/comments\x12t\n" +
-	"\rDeleteComment\x12$.api.comment.v1.DeleteCommentRequest\x1a\".api.comment.v1.DeleteCommentReply\"\x19\x82\xd3\xe4\x93\x02\x13*\x11/v1/comments/{id}B/\n" +
+	"\rDeleteComment\x12$.api.comment.v1.DeleteCommentRequest\x1a\".api.comment.v1.DeleteCommentReply\"\x19\x82\xd3\xe4\x93\x02\x13*\x11/v1/comments/{id}\x12\x97\x01\n" +
+	"\x13GetUserCommentStats\x12*.api.comment.v1.GetUserCommentStatsRequest\x1a(.api.comment.v1.GetUserCommentStatsReply\"*\x82\xd3\xe4\x93\x02$\x12\"/v1/users/{user_id}/comments/stats\x12\xa1\x01\n" +
+	"\x16ListUserRecentComments\x12-.api.comment.v1.ListUserRecentCommentsRequest\x1a+.api.comment.v1.ListUserRecentCommentsReply\"+\x82\xd3\xe4\x93\x02%\x12#/v1/users/{user_id}/comments/recentB/\n" +
 	"\x0eapi.comment.v1P\x01Z\x1bGoPalette/api/comment/v1;v1b\x06proto3"
 
 var (
@@ -603,37 +798,46 @@ func file_comment_v1_comment_proto_rawDescGZIP() []byte {
 }
 
 var file_comment_v1_comment_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_comment_v1_comment_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_comment_v1_comment_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_comment_v1_comment_proto_goTypes = []any{
-	(CommentStatus)(0),            // 0: api.comment.v1.CommentStatus
-	(*AuthorInfo)(nil),            // 1: api.comment.v1.AuthorInfo
-	(*CommentInfo)(nil),           // 2: api.comment.v1.CommentInfo
-	(*CreateCommentRequest)(nil),  // 3: api.comment.v1.CreateCommentRequest
-	(*ListCommentsRequest)(nil),   // 4: api.comment.v1.ListCommentsRequest
-	(*ListCommentsReply)(nil),     // 5: api.comment.v1.ListCommentsReply
-	(*DeleteCommentRequest)(nil),  // 6: api.comment.v1.DeleteCommentRequest
-	(*DeleteCommentReply)(nil),    // 7: api.comment.v1.DeleteCommentReply
-	(*timestamppb.Timestamp)(nil), // 8: google.protobuf.Timestamp
+	(CommentStatus)(0),                    // 0: api.comment.v1.CommentStatus
+	(*AuthorInfo)(nil),                    // 1: api.comment.v1.AuthorInfo
+	(*CommentInfo)(nil),                   // 2: api.comment.v1.CommentInfo
+	(*CreateCommentRequest)(nil),          // 3: api.comment.v1.CreateCommentRequest
+	(*ListCommentsRequest)(nil),           // 4: api.comment.v1.ListCommentsRequest
+	(*ListCommentsReply)(nil),             // 5: api.comment.v1.ListCommentsReply
+	(*DeleteCommentRequest)(nil),          // 6: api.comment.v1.DeleteCommentRequest
+	(*DeleteCommentReply)(nil),            // 7: api.comment.v1.DeleteCommentReply
+	(*GetUserCommentStatsRequest)(nil),    // 8: api.comment.v1.GetUserCommentStatsRequest
+	(*GetUserCommentStatsReply)(nil),      // 9: api.comment.v1.GetUserCommentStatsReply
+	(*ListUserRecentCommentsRequest)(nil), // 10: api.comment.v1.ListUserRecentCommentsRequest
+	(*ListUserRecentCommentsReply)(nil),   // 11: api.comment.v1.ListUserRecentCommentsReply
+	(*timestamppb.Timestamp)(nil),         // 12: google.protobuf.Timestamp
 }
 var file_comment_v1_comment_proto_depIdxs = []int32{
 	0,  // 0: api.comment.v1.CommentInfo.status:type_name -> api.comment.v1.CommentStatus
 	1,  // 1: api.comment.v1.CommentInfo.author:type_name -> api.comment.v1.AuthorInfo
 	1,  // 2: api.comment.v1.CommentInfo.reply_to_author:type_name -> api.comment.v1.AuthorInfo
-	8,  // 3: api.comment.v1.CommentInfo.created_at:type_name -> google.protobuf.Timestamp
-	8,  // 4: api.comment.v1.CommentInfo.updated_at:type_name -> google.protobuf.Timestamp
+	12, // 3: api.comment.v1.CommentInfo.created_at:type_name -> google.protobuf.Timestamp
+	12, // 4: api.comment.v1.CommentInfo.updated_at:type_name -> google.protobuf.Timestamp
 	2,  // 5: api.comment.v1.CommentInfo.replies:type_name -> api.comment.v1.CommentInfo
 	2,  // 6: api.comment.v1.ListCommentsReply.comments:type_name -> api.comment.v1.CommentInfo
-	3,  // 7: api.comment.v1.Comment.CreateComment:input_type -> api.comment.v1.CreateCommentRequest
-	4,  // 8: api.comment.v1.Comment.ListComments:input_type -> api.comment.v1.ListCommentsRequest
-	6,  // 9: api.comment.v1.Comment.DeleteComment:input_type -> api.comment.v1.DeleteCommentRequest
-	2,  // 10: api.comment.v1.Comment.CreateComment:output_type -> api.comment.v1.CommentInfo
-	5,  // 11: api.comment.v1.Comment.ListComments:output_type -> api.comment.v1.ListCommentsReply
-	7,  // 12: api.comment.v1.Comment.DeleteComment:output_type -> api.comment.v1.DeleteCommentReply
-	10, // [10:13] is the sub-list for method output_type
-	7,  // [7:10] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	2,  // 7: api.comment.v1.ListUserRecentCommentsReply.comments:type_name -> api.comment.v1.CommentInfo
+	3,  // 8: api.comment.v1.Comment.CreateComment:input_type -> api.comment.v1.CreateCommentRequest
+	4,  // 9: api.comment.v1.Comment.ListComments:input_type -> api.comment.v1.ListCommentsRequest
+	6,  // 10: api.comment.v1.Comment.DeleteComment:input_type -> api.comment.v1.DeleteCommentRequest
+	8,  // 11: api.comment.v1.Comment.GetUserCommentStats:input_type -> api.comment.v1.GetUserCommentStatsRequest
+	10, // 12: api.comment.v1.Comment.ListUserRecentComments:input_type -> api.comment.v1.ListUserRecentCommentsRequest
+	2,  // 13: api.comment.v1.Comment.CreateComment:output_type -> api.comment.v1.CommentInfo
+	5,  // 14: api.comment.v1.Comment.ListComments:output_type -> api.comment.v1.ListCommentsReply
+	7,  // 15: api.comment.v1.Comment.DeleteComment:output_type -> api.comment.v1.DeleteCommentReply
+	9,  // 16: api.comment.v1.Comment.GetUserCommentStats:output_type -> api.comment.v1.GetUserCommentStatsReply
+	11, // 17: api.comment.v1.Comment.ListUserRecentComments:output_type -> api.comment.v1.ListUserRecentCommentsReply
+	13, // [13:18] is the sub-list for method output_type
+	8,  // [8:13] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_comment_v1_comment_proto_init() }
@@ -647,7 +851,7 @@ func file_comment_v1_comment_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_comment_v1_comment_proto_rawDesc), len(file_comment_v1_comment_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   7,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

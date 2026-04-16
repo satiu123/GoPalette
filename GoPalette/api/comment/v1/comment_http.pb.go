@@ -21,15 +21,21 @@ const _ = http.SupportPackageIsVersion1
 
 const OperationCommentCreateComment = "/api.comment.v1.Comment/CreateComment"
 const OperationCommentDeleteComment = "/api.comment.v1.Comment/DeleteComment"
+const OperationCommentGetUserCommentStats = "/api.comment.v1.Comment/GetUserCommentStats"
 const OperationCommentListComments = "/api.comment.v1.Comment/ListComments"
+const OperationCommentListUserRecentComments = "/api.comment.v1.Comment/ListUserRecentComments"
 
 type CommentHTTPServer interface {
 	// CreateComment 发表评论/回复
 	CreateComment(context.Context, *CreateCommentRequest) (*CommentInfo, error)
 	// DeleteComment 删除评论
 	DeleteComment(context.Context, *DeleteCommentRequest) (*DeleteCommentReply, error)
+	// GetUserCommentStats 获取用户评论统计
+	GetUserCommentStats(context.Context, *GetUserCommentStatsRequest) (*GetUserCommentStatsReply, error)
 	// ListComments 拉取文章评论列表（按一级评论分页，附带二级回复）
 	ListComments(context.Context, *ListCommentsRequest) (*ListCommentsReply, error)
+	// ListUserRecentComments 获取用户近期评论
+	ListUserRecentComments(context.Context, *ListUserRecentCommentsRequest) (*ListUserRecentCommentsReply, error)
 }
 
 func RegisterCommentHTTPServer(s *http.Server, srv CommentHTTPServer) {
@@ -37,6 +43,8 @@ func RegisterCommentHTTPServer(s *http.Server, srv CommentHTTPServer) {
 	r.POST("/v1/comments", _Comment_CreateComment0_HTTP_Handler(srv))
 	r.GET("/v1/comments", _Comment_ListComments0_HTTP_Handler(srv))
 	r.DELETE("/v1/comments/{id}", _Comment_DeleteComment0_HTTP_Handler(srv))
+	r.GET("/v1/users/{user_id}/comments/stats", _Comment_GetUserCommentStats0_HTTP_Handler(srv))
+	r.GET("/v1/users/{user_id}/comments/recent", _Comment_ListUserRecentComments0_HTTP_Handler(srv))
 }
 
 func _Comment_CreateComment0_HTTP_Handler(srv CommentHTTPServer) func(ctx http.Context) error {
@@ -102,13 +110,61 @@ func _Comment_DeleteComment0_HTTP_Handler(srv CommentHTTPServer) func(ctx http.C
 	}
 }
 
+func _Comment_GetUserCommentStats0_HTTP_Handler(srv CommentHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetUserCommentStatsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationCommentGetUserCommentStats)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetUserCommentStats(ctx, req.(*GetUserCommentStatsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetUserCommentStatsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Comment_ListUserRecentComments0_HTTP_Handler(srv CommentHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListUserRecentCommentsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationCommentListUserRecentComments)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListUserRecentComments(ctx, req.(*ListUserRecentCommentsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListUserRecentCommentsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type CommentHTTPClient interface {
 	// CreateComment 发表评论/回复
 	CreateComment(ctx context.Context, req *CreateCommentRequest, opts ...http.CallOption) (rsp *CommentInfo, err error)
 	// DeleteComment 删除评论
 	DeleteComment(ctx context.Context, req *DeleteCommentRequest, opts ...http.CallOption) (rsp *DeleteCommentReply, err error)
+	// GetUserCommentStats 获取用户评论统计
+	GetUserCommentStats(ctx context.Context, req *GetUserCommentStatsRequest, opts ...http.CallOption) (rsp *GetUserCommentStatsReply, err error)
 	// ListComments 拉取文章评论列表（按一级评论分页，附带二级回复）
 	ListComments(ctx context.Context, req *ListCommentsRequest, opts ...http.CallOption) (rsp *ListCommentsReply, err error)
+	// ListUserRecentComments 获取用户近期评论
+	ListUserRecentComments(ctx context.Context, req *ListUserRecentCommentsRequest, opts ...http.CallOption) (rsp *ListUserRecentCommentsReply, err error)
 }
 
 type CommentHTTPClientImpl struct {
@@ -147,12 +203,40 @@ func (c *CommentHTTPClientImpl) DeleteComment(ctx context.Context, in *DeleteCom
 	return &out, nil
 }
 
+// GetUserCommentStats 获取用户评论统计
+func (c *CommentHTTPClientImpl) GetUserCommentStats(ctx context.Context, in *GetUserCommentStatsRequest, opts ...http.CallOption) (*GetUserCommentStatsReply, error) {
+	var out GetUserCommentStatsReply
+	pattern := "/v1/users/{user_id}/comments/stats"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationCommentGetUserCommentStats))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // ListComments 拉取文章评论列表（按一级评论分页，附带二级回复）
 func (c *CommentHTTPClientImpl) ListComments(ctx context.Context, in *ListCommentsRequest, opts ...http.CallOption) (*ListCommentsReply, error) {
 	var out ListCommentsReply
 	pattern := "/v1/comments"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationCommentListComments))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListUserRecentComments 获取用户近期评论
+func (c *CommentHTTPClientImpl) ListUserRecentComments(ctx context.Context, in *ListUserRecentCommentsRequest, opts ...http.CallOption) (*ListUserRecentCommentsReply, error) {
+	var out ListUserRecentCommentsReply
+	pattern := "/v1/users/{user_id}/comments/recent"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationCommentListUserRecentComments))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {

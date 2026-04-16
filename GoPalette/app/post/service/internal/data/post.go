@@ -184,6 +184,107 @@ func (r *postRepo) List(ctx context.Context, page, pageSize int64) ([]*biz.Post,
 	return posts, total, nil
 }
 
+func (r *postRepo) ListByAuthor(ctx context.Context, authorID, page, pageSize int64, publishedOnly bool) ([]*biz.Post, int64, error) {
+	p := pagination.NewPagingParam(page, pageSize)
+
+	var pos []Post
+	var total int64
+
+	db := r.data.db.WithContext(ctx).Model(&Post{}).Where("author_id = ?", authorID)
+	if publishedOnly {
+		db = db.Where("status = ?", 1)
+	}
+
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	if total == 0 {
+		return []*biz.Post{}, 0, nil
+	}
+
+	err := db.Preload("Category").
+		Preload("Tags").
+		Order("created_at DESC").
+		Scopes(pagination.Paginate(p)).
+		Find(&pos).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	posts := make([]*biz.Post, 0, len(pos))
+	for _, po := range pos {
+		posts = append(posts, r.toBizPost(&po))
+	}
+
+	return posts, total, nil
+}
+
+func (r *postRepo) GetAuthorStats(ctx context.Context, authorID int64, publishedOnly bool) (*biz.AuthorPostStats, error) {
+	type row struct {
+		Posts     int64
+		Published int64
+		Drafts    int64
+		Archived  int64
+		Views     int64
+		Likes     int64
+		Comments  int64
+	}
+
+	query := r.data.db.WithContext(ctx).Model(&Post{}).Where("author_id = ?", authorID)
+	if publishedOnly {
+		query = query.Where("status = ?", 1)
+	}
+
+	var out row
+	err := query.Select(
+		"COUNT(*) AS posts, " +
+			"SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS published, " +
+			"SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS drafts, " +
+			"SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS archived, " +
+			"COALESCE(SUM(view_count), 0) AS views, " +
+			"COALESCE(SUM(like_count), 0) AS likes, " +
+			"COALESCE(SUM(comment_count), 0) AS comments",
+	).Scan(&out).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &biz.AuthorPostStats{
+		Posts:     out.Posts,
+		Published: out.Published,
+		Drafts:    out.Drafts,
+		Archived:  out.Archived,
+		Views:     out.Views,
+		Likes:     out.Likes,
+		Comments:  out.Comments,
+	}, nil
+}
+
+func (r *postRepo) ListTopByAuthor(ctx context.Context, authorID, limit int64, publishedOnly bool) ([]*biz.Post, error) {
+	var pos []Post
+
+	query := r.data.db.WithContext(ctx).Model(&Post{}).Where("author_id = ?", authorID)
+	if publishedOnly {
+		query = query.Where("status = ?", 1)
+	}
+
+	err := query.Preload("Category").
+		Preload("Tags").
+		Order("view_count DESC, like_count DESC, created_at DESC").
+		Limit(int(limit)).
+		Find(&pos).Error
+	if err != nil {
+		return nil, err
+	}
+
+	posts := make([]*biz.Post, 0, len(pos))
+	for _, po := range pos {
+		posts = append(posts, r.toBizPost(&po))
+	}
+
+	return posts, nil
+}
+
 func (r *postRepo) ListForIndex(ctx context.Context, page, pageSize int64, publishedOnly bool) ([]*biz.Post, int64, error) {
 	p := pagination.NewPagingParam(page, pageSize)
 

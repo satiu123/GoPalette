@@ -38,8 +38,21 @@ type PostRepo interface {
 	GetByID(context.Context, int64) (*Post, error)
 	GetBySlug(context.Context, string) (*Post, error)
 	List(ctx context.Context, page, pageSize int64) ([]*Post, int64, error)
+	ListByAuthor(ctx context.Context, authorID, page, pageSize int64, publishedOnly bool) ([]*Post, int64, error)
+	GetAuthorStats(ctx context.Context, authorID int64, publishedOnly bool) (*AuthorPostStats, error)
+	ListTopByAuthor(ctx context.Context, authorID, limit int64, publishedOnly bool) ([]*Post, error)
 	ListForIndex(ctx context.Context, page, pageSize int64, publishedOnly bool) ([]*Post, int64, error)
 	IncrCommentCount(ctx context.Context, id int64, delta int64) error
+}
+
+type AuthorPostStats struct {
+	Posts     int64
+	Published int64
+	Drafts    int64
+	Archived  int64
+	Views     int64
+	Likes     int64
+	Comments  int64
 }
 
 type PostUsecase struct {
@@ -124,6 +137,24 @@ func (uc *PostUsecase) DeletePost(ctx context.Context, id int64) error {
 
 func (uc *PostUsecase) ListPosts(ctx context.Context, page, pageSize int64) ([]*Post, int64, error) {
 	return uc.repo.List(ctx, page, pageSize)
+}
+
+func (uc *PostUsecase) ListAuthorPosts(ctx context.Context, authorID, page, pageSize int64, includeNonPublished bool) ([]*Post, int64, error) {
+	publishedOnly := !includeNonPublished
+	return uc.repo.ListByAuthor(ctx, authorID, page, pageSize, publishedOnly)
+}
+
+func (uc *PostUsecase) GetAuthorPostStats(ctx context.Context, authorID int64, includeNonPublished bool) (*AuthorPostStats, error) {
+	publishedOnly := !includeNonPublished
+	return uc.repo.GetAuthorStats(ctx, authorID, publishedOnly)
+}
+
+func (uc *PostUsecase) ListTopAuthorPosts(ctx context.Context, authorID, limit int64, includeNonPublished bool) ([]*Post, error) {
+	publishedOnly := !includeNonPublished
+	if limit <= 0 {
+		limit = 5
+	}
+	return uc.repo.ListTopByAuthor(ctx, authorID, limit, publishedOnly)
 }
 
 func (uc *PostUsecase) ListPostsForIndex(ctx context.Context, page, pageSize int64, publishedOnly bool) ([]*Post, int64, error) {
