@@ -80,6 +80,19 @@ service Post {
       body: "*"
     };
   };
+  // TogglePostLike 点赞/取消点赞
+  rpc TogglePostLike (TogglePostLikeRequest) returns (TogglePostLikeReply){
+    option (google.api.http) = {
+      post: "/v1/posts/{id}/like"
+      body: "*"
+    };
+  };
+  // ListUserLikedPosts 获取用户点赞/收藏文章列表
+  rpc ListUserLikedPosts (ListUserLikedPostsRequest) returns (ListUserLikedPostsReply){
+    option (google.api.http) = {
+      get: "/v1/users/{user_id}/likes"
+    };
+  };
 }
 
 // 分类管理服务
@@ -339,6 +352,26 @@ message IncrCommentCountRequest {
 
 message IncrCommentCountReply {
   bool success = 1;
+}
+
+message TogglePostLikeRequest {
+  int64 id = 1;
+}
+
+message TogglePostLikeReply {
+  bool liked = 1;
+  int64 like_count = 2;
+}
+
+message ListUserLikedPostsRequest {
+  int64 user_id = 1;
+  int64 page = 2;
+  int64 page_size = 3;
+}
+
+message ListUserLikedPostsReply {
+  repeated PostInfo posts = 1;
+  int64 total = 2;
 }
 
 message ListCategoriesRequest {

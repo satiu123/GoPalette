@@ -2,8 +2,10 @@ package biz
 
 import (
 	"context"
+	"strings"
 	"time"
 
+	"github.com/satiu123/GoPalette/pkg/auth"
 	"github.com/satiu123/GoPalette/pkg/pagination"
 
 	pb "github.com/satiu123/GoPalette/api/user/v1"
@@ -14,13 +16,16 @@ import (
 )
 
 type User struct {
-	ID        int64
-	Username  string
-	Email     string
-	Password  string
-	Role      int32
-	AvatarURL string
-	Status    int32
+	ID          int64
+	Username    string
+	Email       string
+	Password    string
+	Role        int32
+	AvatarURL   string
+	Status      int32
+	Bio         string
+	SocialLinks map[string]string
+	Location    string
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -94,6 +99,7 @@ func (uc *UserUsecase) UpdateUser(ctx context.Context, u *User, fields []string)
 		// 从更新字段中移除敏感字段
 		fields = filterSensitiveFields(fields)
 	}
+	fields = normalizeUserUpdateFields(fields)
 
 	if len(fields) == 0 {
 		return nil, pb.ErrorInvalidArgument("没有可更新字段")
@@ -115,6 +121,9 @@ func (uc *UserUsecase) GetUser(ctx context.Context, id int64) (*User, error) {
 	user, err := uc.repo.Get(ctx, id)
 	if err != nil {
 		return nil, pb.ErrorUserNotFound("用户 ID %d 不存在", id)
+	}
+	if !isSelf(ctx, id) {
+		user.Email = ""
 	}
 	return user, nil
 }
@@ -150,4 +159,23 @@ func filterSensitiveFields(fields []string) []string {
 		}
 	}
 	return filtered
+}
+
+func normalizeUserUpdateFields(fields []string) []string {
+	normalized := make([]string, 0, len(fields))
+	for _, field := range fields {
+		switch strings.TrimSpace(field) {
+		case "username", "email", "status", "bio", "location", "social_links", "socialLinks", "avatar_u_r_l", "avatarURL":
+			normalized = append(normalized, field)
+		}
+	}
+	return normalized
+}
+
+func isSelf(ctx context.Context, targetID int64) bool {
+	claims, ok := auth.FromContext(ctx)
+	if !ok {
+		return false
+	}
+	return claims.UserID == targetID
 }

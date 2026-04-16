@@ -42,16 +42,8 @@ func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 	}
 
 	return &pb.CreateUserReply{
-		User: &pb.UserInfo{
-			Id:        createdUser.ID,
-			Username:  createdUser.Username,
-			Email:     createdUser.Email,
-			Role:      pb.Role(createdUser.Role),
-			AvatarURL: createdUser.AvatarURL,
-			Status:    pb.UserStatus(createdUser.Status),
-			CreatedAt: timestamppb.New(createdUser.CreatedAt),
-			UpdatedAt: timestamppb.New(createdUser.UpdatedAt),
-		}}, nil
+		User: s.toPBUser(createdUser),
+	}, nil
 }
 
 func (s *UserService) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterReply, error) {
@@ -70,16 +62,8 @@ func (s *UserService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 	}
 
 	return &pb.RegisterReply{
-		User: &pb.UserInfo{
-			Id:        createdUser.ID,
-			Username:  createdUser.Username,
-			Email:     createdUser.Email,
-			Role:      pb.Role(createdUser.Role),
-			AvatarURL: createdUser.AvatarURL,
-			Status:    pb.UserStatus(createdUser.Status),
-			CreatedAt: timestamppb.New(createdUser.CreatedAt),
-			UpdatedAt: timestamppb.New(createdUser.UpdatedAt),
-		}}, nil
+		User: s.toPBUser(createdUser),
+	}, nil
 }
 
 func (s *UserService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginReply, error) {
@@ -109,10 +93,14 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 		return nil, pb.ErrorInvalidArgument("用户信息和 update_mask 不能为空")
 	}
 	u := &biz.User{
-		ID:       req.Id,
-		Username: req.User.Username,
-		Email:    req.User.Email,
-		Status:   int32(req.User.Status),
+		ID:          req.Id,
+		Username:    req.User.Username,
+		Email:       req.User.Email,
+		AvatarURL:   req.User.AvatarURL,
+		Status:      int32(req.User.Status),
+		Bio:         req.User.Bio,
+		SocialLinks: req.User.SocialLinks,
+		Location:    req.User.Location,
 	}
 	// 清洗update_mask
 	updateFields := util.CleanUpdateMask(req.UpdateMask.Paths, "users.")
@@ -123,16 +111,8 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 	}
 
 	return &pb.UpdateUserReply{
-		User: &pb.UserInfo{
-			Id:        updatedUser.ID,
-			Username:  updatedUser.Username,
-			Email:     updatedUser.Email,
-			Role:      pb.Role(updatedUser.Role),
-			AvatarURL: updatedUser.AvatarURL,
-			Status:    pb.UserStatus(updatedUser.Status),
-			CreatedAt: timestamppb.New(updatedUser.CreatedAt),
-			UpdatedAt: timestamppb.New(updatedUser.UpdatedAt),
-		}}, nil
+		User: s.toPBUser(updatedUser),
+	}, nil
 }
 func (s *UserService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserReply, error) {
 	if err := s.uc.DeleteUser(ctx, req.Id); err != nil {
@@ -147,16 +127,8 @@ func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 	}
 
 	return &pb.GetUserReply{
-		User: &pb.UserInfo{
-			Id:        user.ID,
-			Username:  user.Username,
-			Email:     user.Email,
-			Role:      pb.Role(user.Role),
-			AvatarURL: user.AvatarURL,
-			Status:    pb.UserStatus(user.Status),
-			CreatedAt: timestamppb.New(user.CreatedAt),
-			UpdatedAt: timestamppb.New(user.UpdatedAt),
-		}}, nil
+		User: s.toPBUser(user),
+	}, nil
 }
 func (s *UserService) ListUser(ctx context.Context, req *pb.ListUserRequest) (*pb.ListUserReply, error) {
 	res, err := s.uc.ListUser(ctx, req.Page, req.PageSize)
@@ -167,7 +139,7 @@ func (s *UserService) ListUser(ctx context.Context, req *pb.ListUserRequest) (*p
 	total := res.Total
 
 	// 将 biz.User 切片转换为 pb.UserInfo 切片
-	pbUsers := make([]*pb.UserInfo, len(users))
+	pbUsers := make([]*pb.UserInfo, 0, len(users))
 	for _, user := range users {
 		// 处理 UpdatedAt 字段，确保它不是零值
 		var pbUpdatedAt *timestamppb.Timestamp
@@ -177,14 +149,17 @@ func (s *UserService) ListUser(ctx context.Context, req *pb.ListUserRequest) (*p
 
 		// 将 biz.User 转换为 pb.UserInfo
 		pbUsers = append(pbUsers, &pb.UserInfo{
-			Id:        user.ID,
-			Username:  user.Username,
-			Email:     user.Email,
-			Role:      pb.Role(user.Role),
-			AvatarURL: user.AvatarURL,
-			Status:    pb.UserStatus(user.Status),
-			CreatedAt: timestamppb.New(user.CreatedAt),
-			UpdatedAt: pbUpdatedAt,
+			Id:          user.ID,
+			Username:    user.Username,
+			Email:       user.Email,
+			Role:        pb.Role(user.Role),
+			AvatarURL:   user.AvatarURL,
+			Status:      pb.UserStatus(user.Status),
+			CreatedAt:   timestamppb.New(user.CreatedAt),
+			UpdatedAt:   pbUpdatedAt,
+			Bio:         user.Bio,
+			SocialLinks: user.SocialLinks,
+			Location:    user.Location,
 		})
 	}
 
@@ -221,4 +196,20 @@ func (s *UserService) BatchGetUsers(ctx context.Context, req *pb.BatchGetUsersRe
 		})
 	}
 	return &pb.BatchGetUsersReply{Users: profiles}, nil
+}
+
+func (s *UserService) toPBUser(u *biz.User) *pb.UserInfo {
+	return &pb.UserInfo{
+		Id:          u.ID,
+		Username:    u.Username,
+		Email:       u.Email,
+		Role:        pb.Role(u.Role),
+		AvatarURL:   u.AvatarURL,
+		Status:      pb.UserStatus(u.Status),
+		CreatedAt:   timestamppb.New(u.CreatedAt),
+		UpdatedAt:   timestamppb.New(u.UpdatedAt),
+		Bio:         u.Bio,
+		SocialLinks: u.SocialLinks,
+		Location:    u.Location,
+	}
 }

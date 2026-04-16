@@ -129,6 +129,9 @@ type UserInfo struct {
 	Status        UserStatus             `protobuf:"varint,6,opt,name=status,proto3,enum=api.user.v1.UserStatus" json:"status,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Bio           string                 `protobuf:"bytes,9,opt,name=bio,proto3" json:"bio,omitempty"`
+	SocialLinks   map[string]string      `protobuf:"bytes,10,rep,name=social_links,json=socialLinks,proto3" json:"social_links,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Location      string                 `protobuf:"bytes,11,opt,name=location,proto3" json:"location,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -217,6 +220,27 @@ func (x *UserInfo) GetUpdatedAt() *timestamppb.Timestamp {
 		return x.UpdatedAt
 	}
 	return nil
+}
+
+func (x *UserInfo) GetBio() string {
+	if x != nil {
+		return x.Bio
+	}
+	return ""
+}
+
+func (x *UserInfo) GetSocialLinks() map[string]string {
+	if x != nil {
+		return x.SocialLinks
+	}
+	return nil
+}
+
+func (x *UserInfo) GetLocation() string {
+	if x != nil {
+		return x.Location
+	}
+	return ""
 }
 
 type RegisterRequest struct {
@@ -1259,7 +1283,7 @@ var File_user_v1_user_proto protoreflect.FileDescriptor
 
 const file_user_v1_user_proto_rawDesc = "" +
 	"\n" +
-	"\x12user/v1/user.proto\x12\vapi.user.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a google/protobuf/field_mask.proto\"\xbb\x02\n" +
+	"\x12user/v1/user.proto\x12\vapi.user.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a google/protobuf/field_mask.proto\"\xf4\x03\n" +
 	"\bUserInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
@@ -1270,7 +1294,14 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"_\n" +
+	"updated_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x10\n" +
+	"\x03bio\x18\t \x01(\tR\x03bio\x12I\n" +
+	"\fsocial_links\x18\n" +
+	" \x03(\v2&.api.user.v1.UserInfo.SocialLinksEntryR\vsocialLinks\x12\x1a\n" +
+	"\blocation\x18\v \x01(\tR\blocation\x1a>\n" +
+	"\x10SocialLinksEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"_\n" +
 	"\x0fRegisterRequest\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +
@@ -1367,7 +1398,7 @@ func file_user_v1_user_proto_rawDescGZIP() []byte {
 }
 
 var file_user_v1_user_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_user_v1_user_proto_goTypes = []any{
 	(Role)(0),                     // 0: api.user.v1.Role
 	(UserStatus)(0),               // 1: api.user.v1.UserStatus
@@ -1393,48 +1424,50 @@ var file_user_v1_user_proto_goTypes = []any{
 	(*UserProfile)(nil),           // 21: api.user.v1.UserProfile
 	(*BatchGetUsersRequest)(nil),  // 22: api.user.v1.BatchGetUsersRequest
 	(*BatchGetUsersReply)(nil),    // 23: api.user.v1.BatchGetUsersReply
-	(*timestamppb.Timestamp)(nil), // 24: google.protobuf.Timestamp
-	(*fieldmaskpb.FieldMask)(nil), // 25: google.protobuf.FieldMask
+	nil,                           // 24: api.user.v1.UserInfo.SocialLinksEntry
+	(*timestamppb.Timestamp)(nil), // 25: google.protobuf.Timestamp
+	(*fieldmaskpb.FieldMask)(nil), // 26: google.protobuf.FieldMask
 }
 var file_user_v1_user_proto_depIdxs = []int32{
 	0,  // 0: api.user.v1.UserInfo.role:type_name -> api.user.v1.Role
 	1,  // 1: api.user.v1.UserInfo.status:type_name -> api.user.v1.UserStatus
-	24, // 2: api.user.v1.UserInfo.created_at:type_name -> google.protobuf.Timestamp
-	24, // 3: api.user.v1.UserInfo.updated_at:type_name -> google.protobuf.Timestamp
-	2,  // 4: api.user.v1.RegisterReply.user:type_name -> api.user.v1.UserInfo
-	0,  // 5: api.user.v1.CreateUserRequest.role:type_name -> api.user.v1.Role
-	2,  // 6: api.user.v1.CreateUserReply.user:type_name -> api.user.v1.UserInfo
-	2,  // 7: api.user.v1.UpdateUserRequest.user:type_name -> api.user.v1.UserInfo
-	25, // 8: api.user.v1.UpdateUserRequest.update_mask:type_name -> google.protobuf.FieldMask
-	2,  // 9: api.user.v1.UpdateUserReply.user:type_name -> api.user.v1.UserInfo
-	2,  // 10: api.user.v1.GetUserReply.user:type_name -> api.user.v1.UserInfo
-	2,  // 11: api.user.v1.ListUserReply.users:type_name -> api.user.v1.UserInfo
-	21, // 12: api.user.v1.BatchGetUsersReply.users:type_name -> api.user.v1.UserProfile
-	3,  // 13: api.user.v1.User.Register:input_type -> api.user.v1.RegisterRequest
-	5,  // 14: api.user.v1.User.Login:input_type -> api.user.v1.LoginRequest
-	7,  // 15: api.user.v1.User.Logout:input_type -> api.user.v1.LogoutRequest
-	9,  // 16: api.user.v1.User.CreateUser:input_type -> api.user.v1.CreateUserRequest
-	11, // 17: api.user.v1.User.UpdateUser:input_type -> api.user.v1.UpdateUserRequest
-	13, // 18: api.user.v1.User.DeleteUser:input_type -> api.user.v1.DeleteUserRequest
-	15, // 19: api.user.v1.User.GetUser:input_type -> api.user.v1.GetUserRequest
-	17, // 20: api.user.v1.User.ListUser:input_type -> api.user.v1.ListUserRequest
-	19, // 21: api.user.v1.User.RefreshToken:input_type -> api.user.v1.RefreshTokenRequest
-	22, // 22: api.user.v1.User.BatchGetUsers:input_type -> api.user.v1.BatchGetUsersRequest
-	4,  // 23: api.user.v1.User.Register:output_type -> api.user.v1.RegisterReply
-	6,  // 24: api.user.v1.User.Login:output_type -> api.user.v1.LoginReply
-	8,  // 25: api.user.v1.User.Logout:output_type -> api.user.v1.LogoutReply
-	10, // 26: api.user.v1.User.CreateUser:output_type -> api.user.v1.CreateUserReply
-	12, // 27: api.user.v1.User.UpdateUser:output_type -> api.user.v1.UpdateUserReply
-	14, // 28: api.user.v1.User.DeleteUser:output_type -> api.user.v1.DeleteUserReply
-	16, // 29: api.user.v1.User.GetUser:output_type -> api.user.v1.GetUserReply
-	18, // 30: api.user.v1.User.ListUser:output_type -> api.user.v1.ListUserReply
-	20, // 31: api.user.v1.User.RefreshToken:output_type -> api.user.v1.RefreshTokenReply
-	23, // 32: api.user.v1.User.BatchGetUsers:output_type -> api.user.v1.BatchGetUsersReply
-	23, // [23:33] is the sub-list for method output_type
-	13, // [13:23] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	25, // 2: api.user.v1.UserInfo.created_at:type_name -> google.protobuf.Timestamp
+	25, // 3: api.user.v1.UserInfo.updated_at:type_name -> google.protobuf.Timestamp
+	24, // 4: api.user.v1.UserInfo.social_links:type_name -> api.user.v1.UserInfo.SocialLinksEntry
+	2,  // 5: api.user.v1.RegisterReply.user:type_name -> api.user.v1.UserInfo
+	0,  // 6: api.user.v1.CreateUserRequest.role:type_name -> api.user.v1.Role
+	2,  // 7: api.user.v1.CreateUserReply.user:type_name -> api.user.v1.UserInfo
+	2,  // 8: api.user.v1.UpdateUserRequest.user:type_name -> api.user.v1.UserInfo
+	26, // 9: api.user.v1.UpdateUserRequest.update_mask:type_name -> google.protobuf.FieldMask
+	2,  // 10: api.user.v1.UpdateUserReply.user:type_name -> api.user.v1.UserInfo
+	2,  // 11: api.user.v1.GetUserReply.user:type_name -> api.user.v1.UserInfo
+	2,  // 12: api.user.v1.ListUserReply.users:type_name -> api.user.v1.UserInfo
+	21, // 13: api.user.v1.BatchGetUsersReply.users:type_name -> api.user.v1.UserProfile
+	3,  // 14: api.user.v1.User.Register:input_type -> api.user.v1.RegisterRequest
+	5,  // 15: api.user.v1.User.Login:input_type -> api.user.v1.LoginRequest
+	7,  // 16: api.user.v1.User.Logout:input_type -> api.user.v1.LogoutRequest
+	9,  // 17: api.user.v1.User.CreateUser:input_type -> api.user.v1.CreateUserRequest
+	11, // 18: api.user.v1.User.UpdateUser:input_type -> api.user.v1.UpdateUserRequest
+	13, // 19: api.user.v1.User.DeleteUser:input_type -> api.user.v1.DeleteUserRequest
+	15, // 20: api.user.v1.User.GetUser:input_type -> api.user.v1.GetUserRequest
+	17, // 21: api.user.v1.User.ListUser:input_type -> api.user.v1.ListUserRequest
+	19, // 22: api.user.v1.User.RefreshToken:input_type -> api.user.v1.RefreshTokenRequest
+	22, // 23: api.user.v1.User.BatchGetUsers:input_type -> api.user.v1.BatchGetUsersRequest
+	4,  // 24: api.user.v1.User.Register:output_type -> api.user.v1.RegisterReply
+	6,  // 25: api.user.v1.User.Login:output_type -> api.user.v1.LoginReply
+	8,  // 26: api.user.v1.User.Logout:output_type -> api.user.v1.LogoutReply
+	10, // 27: api.user.v1.User.CreateUser:output_type -> api.user.v1.CreateUserReply
+	12, // 28: api.user.v1.User.UpdateUser:output_type -> api.user.v1.UpdateUserReply
+	14, // 29: api.user.v1.User.DeleteUser:output_type -> api.user.v1.DeleteUserReply
+	16, // 30: api.user.v1.User.GetUser:output_type -> api.user.v1.GetUserReply
+	18, // 31: api.user.v1.User.ListUser:output_type -> api.user.v1.ListUserReply
+	20, // 32: api.user.v1.User.RefreshToken:output_type -> api.user.v1.RefreshTokenReply
+	23, // 33: api.user.v1.User.BatchGetUsers:output_type -> api.user.v1.BatchGetUsersReply
+	24, // [24:34] is the sub-list for method output_type
+	14, // [14:24] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_user_v1_user_proto_init() }
@@ -1448,7 +1481,7 @@ func file_user_v1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_v1_user_proto_rawDesc), len(file_user_v1_user_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   22,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

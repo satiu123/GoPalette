@@ -76,7 +76,7 @@ func NewData(c *conf.Data, logger log.Logger, uc userv1.UserClient, sc searchv1.
 	}
 
 	// 自动迁移数据库结构
-	if err := db.AutoMigrate(&Post{}, &Category{}, &Tag{}); err != nil {
+	if err := db.AutoMigrate(&Post{}, &Category{}, &Tag{}, &PostLike{}); err != nil {
 		log.Errorf("自动迁移数据库结构失败: %v", err)
 		return nil, nil, err
 	}

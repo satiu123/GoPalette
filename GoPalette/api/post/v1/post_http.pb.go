@@ -27,6 +27,8 @@ const OperationPostIncrCommentCount = "/api.post.v1.Post/IncrCommentCount"
 const OperationPostListAuthorPosts = "/api.post.v1.Post/ListAuthorPosts"
 const OperationPostListPosts = "/api.post.v1.Post/ListPosts"
 const OperationPostListTopAuthorPosts = "/api.post.v1.Post/ListTopAuthorPosts"
+const OperationPostListUserLikedPosts = "/api.post.v1.Post/ListUserLikedPosts"
+const OperationPostTogglePostLike = "/api.post.v1.Post/TogglePostLike"
 const OperationPostUpdatePost = "/api.post.v1.Post/UpdatePost"
 
 type PostHTTPServer interface {
@@ -46,6 +48,10 @@ type PostHTTPServer interface {
 	ListPosts(context.Context, *ListPostsRequest) (*ListPostsReply, error)
 	// ListTopAuthorPosts ListTopAuthorPosts 获取作者热门文章
 	ListTopAuthorPosts(context.Context, *ListTopAuthorPostsRequest) (*ListTopAuthorPostsReply, error)
+	// ListUserLikedPosts ListUserLikedPosts 获取用户点赞/收藏文章列表
+	ListUserLikedPosts(context.Context, *ListUserLikedPostsRequest) (*ListUserLikedPostsReply, error)
+	// TogglePostLike TogglePostLike 点赞/取消点赞
+	TogglePostLike(context.Context, *TogglePostLikeRequest) (*TogglePostLikeReply, error)
 	// UpdatePost UpdatePost 更新帖子，输入帖子ID和要更新的字段列表，返回更新后的帖子详细信息
 	UpdatePost(context.Context, *UpdatePostRequest) (*UpdatePostReply, error)
 }
@@ -62,6 +68,8 @@ func RegisterPostHTTPServer(s *http.Server, srv PostHTTPServer) {
 	r.GET("/v1/users/{author_id}/posts/stats", _Post_GetAuthorPostStats0_HTTP_Handler(srv))
 	r.GET("/v1/users/{author_id}/posts/top", _Post_ListTopAuthorPosts0_HTTP_Handler(srv))
 	r.POST("/v1/posts/{id}/comment-count:incr", _Post_IncrCommentCount0_HTTP_Handler(srv))
+	r.POST("/v1/posts/{id}/like", _Post_TogglePostLike0_HTTP_Handler(srv))
+	r.GET("/v1/users/{user_id}/likes", _Post_ListUserLikedPosts0_HTTP_Handler(srv))
 }
 
 func _Post_CreatePost0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
@@ -287,6 +295,53 @@ func _Post_IncrCommentCount0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Cont
 	}
 }
 
+func _Post_TogglePostLike0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in TogglePostLikeRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPostTogglePostLike)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.TogglePostLike(ctx, req.(*TogglePostLikeRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*TogglePostLikeReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Post_ListUserLikedPosts0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListUserLikedPostsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPostListUserLikedPosts)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListUserLikedPosts(ctx, req.(*ListUserLikedPostsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListUserLikedPostsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type PostHTTPClient interface {
 	// CreatePost CreatePost 创建帖子，输入帖子标题、摘要、正文内容、状态、作者ID、分类ID和标签列表，返回创建的帖子详细信息
 	CreatePost(ctx context.Context, req *CreatePostRequest, opts ...http.CallOption) (rsp *CreatePostReply, err error)
@@ -304,6 +359,10 @@ type PostHTTPClient interface {
 	ListPosts(ctx context.Context, req *ListPostsRequest, opts ...http.CallOption) (rsp *ListPostsReply, err error)
 	// ListTopAuthorPosts ListTopAuthorPosts 获取作者热门文章
 	ListTopAuthorPosts(ctx context.Context, req *ListTopAuthorPostsRequest, opts ...http.CallOption) (rsp *ListTopAuthorPostsReply, err error)
+	// ListUserLikedPosts ListUserLikedPosts 获取用户点赞/收藏文章列表
+	ListUserLikedPosts(ctx context.Context, req *ListUserLikedPostsRequest, opts ...http.CallOption) (rsp *ListUserLikedPostsReply, err error)
+	// TogglePostLike TogglePostLike 点赞/取消点赞
+	TogglePostLike(ctx context.Context, req *TogglePostLikeRequest, opts ...http.CallOption) (rsp *TogglePostLikeReply, err error)
 	// UpdatePost UpdatePost 更新帖子，输入帖子ID和要更新的字段列表，返回更新后的帖子详细信息
 	UpdatePost(ctx context.Context, req *UpdatePostRequest, opts ...http.CallOption) (rsp *UpdatePostReply, err error)
 }
@@ -422,6 +481,34 @@ func (c *PostHTTPClientImpl) ListTopAuthorPosts(ctx context.Context, in *ListTop
 	opts = append(opts, http.Operation(OperationPostListTopAuthorPosts))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListUserLikedPosts ListUserLikedPosts 获取用户点赞/收藏文章列表
+func (c *PostHTTPClientImpl) ListUserLikedPosts(ctx context.Context, in *ListUserLikedPostsRequest, opts ...http.CallOption) (*ListUserLikedPostsReply, error) {
+	var out ListUserLikedPostsReply
+	pattern := "/v1/users/{user_id}/likes"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationPostListUserLikedPosts))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// TogglePostLike TogglePostLike 点赞/取消点赞
+func (c *PostHTTPClientImpl) TogglePostLike(ctx context.Context, in *TogglePostLikeRequest, opts ...http.CallOption) (*TogglePostLikeReply, error) {
+	var out TogglePostLikeReply
+	pattern := "/v1/posts/{id}/like"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationPostTogglePostLike))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

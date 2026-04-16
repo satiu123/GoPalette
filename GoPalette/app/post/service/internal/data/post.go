@@ -2,6 +2,8 @@ package data
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/satiu123/GoPalette/pkg/pagination"
 
@@ -47,6 +49,12 @@ type Tag struct {
 	PostCount int64 `gorm:"default:0"`
 }
 
+type PostLike struct {
+	PostID    int64     `gorm:"primaryKey;autoIncrement:false"`
+	UserID    int64     `gorm:"primaryKey;autoIncrement:false"`
+	CreatedAt time.Time `gorm:"not null;autoCreateTime"`
+}
+
 type postRepo struct {
 	data *Data
 	log  *log.Helper
@@ -62,6 +70,7 @@ func NewPostRepo(data *Data, logger log.Logger) biz.PostRepo {
 func (Post) TableName() string     { return "posts" }
 func (Category) TableName() string { return "categories" }
 func (Tag) TableName() string      { return "tags" }
+func (PostLike) TableName() string { return "post_likes" }
 
 func (r *postRepo) Create(ctx context.Context, p *biz.Post) (*biz.Post, error) {
 	po := r.toDataPost(p)
@@ -382,4 +391,72 @@ func (r *postRepo) IncrCommentCount(ctx context.Context, id int64, delta int64) 
 	return r.data.db.WithContext(ctx).Model(&Post{}).
 		Where("id = ?", id).
 		Update("comment_count", gorm.Expr("GREATEST(comment_count + ?, 0)", delta)).Error
+}
+
+func (r *postRepo) ToggleLike(ctx context.Context, postID, userID int64) (bool, int64, error) {
+	liked := false
+	var likeCount int64
+	err := r.data.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var relation PostLike
+		err := tx.Where("post_id = ? AND user_id = ?", postID, userID).First(&relation).Error
+		if err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+			if err := tx.Create(&PostLike{PostID: postID, UserID: userID}).Error; err != nil {
+				return err
+			}
+			if err := tx.Model(&Post{}).
+				Where("id = ?", postID).
+				Update("like_count", gorm.Expr("like_count + 1")).Error; err != nil {
+				return err
+			}
+			liked = true
+		} else {
+			if err := tx.Where("post_id = ? AND user_id = ?", postID, userID).Delete(&PostLike{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Model(&Post{}).
+				Where("id = ?", postID).
+				Update("like_count", gorm.Expr("GREATEST(like_count - 1, 0)")).Error; err != nil {
+				return err
+			}
+		}
+		return tx.Model(&Post{}).Where("id = ?", postID).Select("like_count").Scan(&likeCount).Error
+	})
+	if err != nil {
+		return false, 0, err
+	}
+	return liked, likeCount, nil
+}
+
+func (r *postRepo) ListLikedByUser(ctx context.Context, userID, page, pageSize int64) ([]*biz.Post, int64, error) {
+	p := pagination.NewPagingParam(page, pageSize)
+
+	var total int64
+	db := r.data.db.WithContext(ctx).Model(&Post{}).
+		Joins("JOIN post_likes ON post_likes.post_id = posts.id").
+		Where("post_likes.user_id = ?", userID)
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	if total == 0 {
+		return []*biz.Post{}, 0, nil
+	}
+
+	var pos []Post
+	err := db.Preload("Category").
+		Preload("Tags").
+		Order("post_likes.created_at DESC").
+		Scopes(pagination.Paginate(p)).
+		Find(&pos).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	posts := make([]*biz.Post, 0, len(pos))
+	for i := range pos {
+		posts = append(posts, r.toBizPost(&pos[i]))
+	}
+	return posts, total, nil
 }

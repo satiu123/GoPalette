@@ -323,6 +323,31 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.post.v1.IncrCommentCountReply'
+    /v1/posts/{id}/like:
+        post:
+            tags:
+                - Post
+            description: TogglePostLike 点赞/取消点赞
+            operationId: Post_TogglePostLike
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.post.v1.TogglePostLikeRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.TogglePostLikeReply'
     /v1/search/posts:
         get:
             tags:
@@ -778,6 +803,33 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.comment.v1.GetUserCommentStatsReply'
+    /v1/users/{userId}/likes:
+        get:
+            tags:
+                - Post
+            description: ListUserLikedPosts 获取用户点赞/收藏文章列表
+            operationId: Post_ListUserLikedPosts
+            parameters:
+                - name: userId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.ListUserLikedPostsReply'
     /v1/users:batchGet:
         post:
             tags:
@@ -1057,6 +1109,15 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/api.post.v1.PostInfo'
+        api.post.v1.ListUserLikedPostsReply:
+            type: object
+            properties:
+                posts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.post.v1.PostInfo'
+                total:
+                    type: string
         api.post.v1.PostDetail:
             type: object
             properties:
@@ -1117,6 +1178,18 @@ components:
                 id:
                     type: string
                 name:
+                    type: string
+        api.post.v1.TogglePostLikeReply:
+            type: object
+            properties:
+                liked:
+                    type: boolean
+                likeCount:
+                    type: string
+        api.post.v1.TogglePostLikeRequest:
+            type: object
+            properties:
+                id:
                     type: string
         api.post.v1.UpdateCategoryReply:
             type: object
@@ -1357,6 +1430,14 @@ components:
                 updatedAt:
                     type: string
                     format: date-time
+                bio:
+                    type: string
+                socialLinks:
+                    type: object
+                    additionalProperties:
+                        type: string
+                location:
+                    type: string
             description: 包含了用户的基本信息，如用户名、邮箱、角色、状态等
         api.user.v1.UserProfile:
             type: object

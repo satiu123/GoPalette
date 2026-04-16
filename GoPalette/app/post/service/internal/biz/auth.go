@@ -38,3 +38,17 @@ func CheckAdmin(ctx context.Context) error {
 	}
 	return nil
 }
+
+func CheckIncludeNonPublishedAccess(ctx context.Context, authorID int64, includeNonPublished bool) error {
+	if !includeNonPublished {
+		return nil
+	}
+	claims, ok := auth.FromContext(ctx)
+	if !ok {
+		return postPb.ErrorUnauthenticated("未认证")
+	}
+	if claims.UserID != authorID {
+		return postPb.ErrorAccessDenied("无权查看非公开文章")
+	}
+	return nil
+}

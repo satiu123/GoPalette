@@ -5,6 +5,7 @@ import (
 	"time"
 
 	pb "github.com/satiu123/GoPalette/api/post/v1"
+	"github.com/satiu123/GoPalette/pkg/auth"
 
 	"github.com/go-kratos/kratos/v2/log"
 )
@@ -43,6 +44,8 @@ type PostRepo interface {
 	ListTopByAuthor(ctx context.Context, authorID, limit int64, publishedOnly bool) ([]*Post, error)
 	ListForIndex(ctx context.Context, page, pageSize int64, publishedOnly bool) ([]*Post, int64, error)
 	IncrCommentCount(ctx context.Context, id int64, delta int64) error
+	ToggleLike(ctx context.Context, postID, userID int64) (bool, int64, error)
+	ListLikedByUser(ctx context.Context, userID, page, pageSize int64) ([]*Post, int64, error)
 }
 
 type AuthorPostStats struct {
@@ -140,16 +143,25 @@ func (uc *PostUsecase) ListPosts(ctx context.Context, page, pageSize int64) ([]*
 }
 
 func (uc *PostUsecase) ListAuthorPosts(ctx context.Context, authorID, page, pageSize int64, includeNonPublished bool) ([]*Post, int64, error) {
+	if err := CheckIncludeNonPublishedAccess(ctx, authorID, includeNonPublished); err != nil {
+		return nil, 0, err
+	}
 	publishedOnly := !includeNonPublished
 	return uc.repo.ListByAuthor(ctx, authorID, page, pageSize, publishedOnly)
 }
 
 func (uc *PostUsecase) GetAuthorPostStats(ctx context.Context, authorID int64, includeNonPublished bool) (*AuthorPostStats, error) {
+	if err := CheckIncludeNonPublishedAccess(ctx, authorID, includeNonPublished); err != nil {
+		return nil, err
+	}
 	publishedOnly := !includeNonPublished
 	return uc.repo.GetAuthorStats(ctx, authorID, publishedOnly)
 }
 
 func (uc *PostUsecase) ListTopAuthorPosts(ctx context.Context, authorID, limit int64, includeNonPublished bool) ([]*Post, error) {
+	if err := CheckIncludeNonPublishedAccess(ctx, authorID, includeNonPublished); err != nil {
+		return nil, err
+	}
 	publishedOnly := !includeNonPublished
 	if limit <= 0 {
 		limit = 5
@@ -172,4 +184,29 @@ func (uc *PostUsecase) IncrCommentCount(ctx context.Context, id int64, delta int
 		return pb.ErrorPostNotFound("文章未找到")
 	}
 	return uc.repo.IncrCommentCount(ctx, id, delta)
+}
+
+func (uc *PostUsecase) TogglePostLike(ctx context.Context, id int64) (bool, int64, error) {
+	if id <= 0 {
+		return false, 0, pb.ErrorInvalidArgument("%s", "文章ID无效")
+	}
+	claims, ok := auth.FromContext(ctx)
+	if !ok {
+		return false, 0, pb.ErrorUnauthenticated("未认证")
+	}
+	if _, err := uc.repo.GetByID(ctx, id); err != nil {
+		return false, 0, pb.ErrorPostNotFound("文章未找到")
+	}
+	liked, likeCount, err := uc.repo.ToggleLike(ctx, id, claims.UserID)
+	if err != nil {
+		return false, 0, err
+	}
+	return liked, likeCount, nil
+}
+
+func (uc *PostUsecase) ListUserLikedPosts(ctx context.Context, userID, page, pageSize int64) ([]*Post, int64, error) {
+	if err := CheckOwner(ctx, userID); err != nil {
+		return nil, 0, err
+	}
+	return uc.repo.ListLikedByUser(ctx, userID, page, pageSize)
 }

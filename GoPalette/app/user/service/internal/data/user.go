@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/satiu123/GoPalette/pkg/pagination"
@@ -14,12 +15,15 @@ import (
 
 type User struct {
 	gorm.Model
-	Username  string `gorm:"type:varchar(50);uniqueIndex;not null"`
-	Email     string `gorm:"type:varchar(100);uniqueIndex;not null"`
-	Password  string `gorm:"type:varchar(255);not null"`
-	Role      int32  `gorm:"type:int;default:0"` // 0: user, 1: admin
-	AvatarURL string `gorm:"type:varchar(255)"`
-	Status    int32  `gorm:"type:int;default:0"` // 0: active, 1: inactive
+	Username    string `gorm:"type:varchar(50);uniqueIndex;not null"`
+	Email       string `gorm:"type:varchar(100);uniqueIndex;not null"`
+	Password    string `gorm:"type:varchar(255);not null"`
+	Role        int32  `gorm:"type:int;default:0"` // 0: user, 1: admin
+	AvatarURL   string `gorm:"type:varchar(255)"`
+	Status      int32  `gorm:"type:int;default:0"` // 0: active, 1: inactive
+	Bio         string `gorm:"type:varchar(512)"`
+	SocialLinks string `gorm:"type:json"`
+	Location    string `gorm:"type:varchar(255)"`
 }
 
 func (User) TableName() string { return "users" }
@@ -37,12 +41,20 @@ func NewUserRepo(data *Data, logger log.Logger) biz.UserRepo {
 }
 
 func (r *userRepo) Create(ctx context.Context, u *biz.User) (*biz.User, error) {
+	socialLinks, err := marshalSocialLinks(u.SocialLinks)
+	if err != nil {
+		return nil, err
+	}
 	po := &User{
-		Username: u.Username,
-		Password: u.Password,
-		Email:    u.Email,
-		Role:     u.Role,
-		Status:   u.Status,
+		Username:    u.Username,
+		Password:    u.Password,
+		Email:       u.Email,
+		Role:        u.Role,
+		Status:      u.Status,
+		AvatarURL:   u.AvatarURL,
+		Bio:         u.Bio,
+		SocialLinks: socialLinks,
+		Location:    u.Location,
 	}
 
 	if err := r.data.db.WithContext(ctx).Create(po).Error; err != nil {
@@ -52,20 +64,35 @@ func (r *userRepo) Create(ctx context.Context, u *biz.User) (*biz.User, error) {
 }
 
 func (r *userRepo) Update(ctx context.Context, u *biz.User, fields []string) (*biz.User, error) {
-	db := r.data.db.WithContext(ctx).Model(&User{})
-	po := &User{
-		Model:     gorm.Model{ID: uint(u.ID)},
-		Username:  u.Username,
-		Email:     u.Email,
-		AvatarURL: u.AvatarURL,
-		Status:    u.Status,
-	}
-	// 只更新指定字段
-	if len(fields) > 0 {
-		db = db.Select(fields)
+	updates := make(map[string]any, len(fields))
+	for _, field := range fields {
+		switch field {
+		case "username":
+			updates["username"] = u.Username
+		case "email":
+			updates["email"] = u.Email
+		case "avatar_u_r_l", "avatarURL":
+			updates["avatar_url"] = u.AvatarURL
+		case "status":
+			updates["status"] = u.Status
+		case "bio":
+			updates["bio"] = u.Bio
+		case "location":
+			updates["location"] = u.Location
+		case "social_links", "socialLinks":
+			socialLinks, err := marshalSocialLinks(u.SocialLinks)
+			if err != nil {
+				return nil, err
+			}
+			updates["social_links"] = socialLinks
+		}
 	}
 
-	if err := db.Where("id = ?", u.ID).Updates(po).Error; err != nil {
+	if len(updates) == 0 {
+		return nil, errors.New("no valid update fields")
+	}
+
+	if err := r.data.db.WithContext(ctx).Model(&User{}).Where("id = ?", u.ID).Updates(updates).Error; err != nil {
 		return nil, err
 	}
 	return r.Get(ctx, u.ID)
@@ -143,15 +170,41 @@ func (r *userRepo) FindByEmail(ctx context.Context, email string) (*biz.User, er
 }
 
 func (r *userRepo) toBizUser(po *User) *biz.User {
+	socialLinks, _ := unmarshalSocialLinks(po.SocialLinks)
 	return &biz.User{
-		ID:        int64(po.ID),
-		Username:  po.Username,
-		Email:     po.Email,
-		Password:  po.Password,
-		Role:      po.Role,
-		AvatarURL: po.AvatarURL,
-		Status:    po.Status,
-		CreatedAt: po.CreatedAt,
-		UpdatedAt: po.UpdatedAt,
+		ID:          int64(po.ID),
+		Username:    po.Username,
+		Email:       po.Email,
+		Password:    po.Password,
+		Role:        po.Role,
+		AvatarURL:   po.AvatarURL,
+		Status:      po.Status,
+		Bio:         po.Bio,
+		SocialLinks: socialLinks,
+		Location:    po.Location,
+		CreatedAt:   po.CreatedAt,
+		UpdatedAt:   po.UpdatedAt,
 	}
+}
+
+func marshalSocialLinks(links map[string]string) (string, error) {
+	if links == nil {
+		return "{}", nil
+	}
+	raw, err := json.Marshal(links)
+	if err != nil {
+		return "", err
+	}
+	return string(raw), nil
+}
+
+func unmarshalSocialLinks(raw string) (map[string]string, error) {
+	if raw == "" {
+		return map[string]string{}, nil
+	}
+	links := make(map[string]string)
+	if err := json.Unmarshal([]byte(raw), &links); err != nil {
+		return map[string]string{}, err
+	}
+	return links, nil
 }
