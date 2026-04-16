@@ -14,7 +14,7 @@ const items = computed(() => {
   ]
 
   if (isLoggedIn.value) {
-    return [...common, { label: '我的', to: '/profile' }]
+    return [...common, { label: '管理', to: '/admin' }, { label: '我的', to: '/profile' }]
   }
 
   return [...common, { label: '登录', to: '/login' }, { label: '注册', to: '/register' }]
@@ -31,15 +31,7 @@ function isActive(path: string) {
 
 <template>
   <div class="flex items-center gap-1 rounded-full bg-muted/60 p-1">
-    <UButton
-      v-for="item in items"
-      :key="item.to"
-      :to="item.to"
-      size="xs"
-      :label="item.label"
-      class="rounded-full"
-      :variant="isActive(item.to) ? 'solid' : 'ghost'"
-      :color="isActive(item.to) ? 'primary' : 'neutral'"
-    />
+    <UButton v-for="item in items" :key="item.to" :to="item.to" size="xs" :label="item.label" class="rounded-full"
+      :variant="isActive(item.to) ? 'solid' : 'ghost'" :color="isActive(item.to) ? 'primary' : 'neutral'" />
   </div>
 </template>

@@ -20,6 +20,50 @@ export interface PostInfo {
     updatedAt?: string
 }
 
+export interface CommentInfo {
+    id: string
+    postId: string
+    userId: string
+    content: string
+    parentId?: string
+    rootId?: string
+    status?: number | string
+    likeCount?: string
+    author?: {
+        id?: string
+        name?: string
+        avatarUrl?: string
+    }
+    createdAt?: string
+    updatedAt?: string
+    replies?: CommentInfo[]
+}
+
+function normalizeComment(input: Record<string, any>): CommentInfo {
+    const repliesRaw = Array.isArray(input?.replies) ? input.replies : []
+
+    return {
+        id: String(input?.id || ''),
+        postId: String(input?.postId || input?.post_id || ''),
+        userId: String(input?.userId || input?.user_id || ''),
+        content: String(input?.content || ''),
+        parentId: String(input?.parentId || input?.parent_id || ''),
+        rootId: String(input?.rootId || input?.root_id || ''),
+        status: input?.status,
+        likeCount: String(input?.likeCount || input?.like_count || '0'),
+        author: input?.author
+            ? {
+                id: String(input.author.id || ''),
+                name: String(input.author.name || ''),
+                avatarUrl: String(input.author.avatarUrl || input.author.avatar_url || '')
+            }
+            : undefined,
+        createdAt: String(input?.createdAt || input?.created_at || ''),
+        updatedAt: String(input?.updatedAt || input?.updated_at || ''),
+        replies: repliesRaw.map((reply: Record<string, any>) => normalizeComment(reply))
+    }
+}
+
 export interface PostDetail {
     info?: PostInfo
     content?: string
@@ -42,12 +86,35 @@ export interface BlogPostItem {
     content?: string
 }
 
+export interface SearchPostItem {
+    id: string
+    title: string
+    summary: string
+    slug: string
+    categoryName: string
+    tags: string[]
+    createdAt?: string
+}
+
 export const POST_STATUS_DRAFT = 0
 export const POST_STATUS_PUBLISHED = 1
 export const POST_STATUS_ARCHIVED = 2
 
+function toPostStatus(value: number | string | undefined) {
+    if (typeof value === 'number') return value
+
+    const text = String(value || '').trim().toUpperCase()
+    if (!text) return POST_STATUS_DRAFT
+    if (text === 'PUBLISHED') return POST_STATUS_PUBLISHED
+    if (text === 'ARCHIVED') return POST_STATUS_ARCHIVED
+    if (text === 'DRAFT') return POST_STATUS_DRAFT
+
+    const parsed = Number(text)
+    return Number.isFinite(parsed) ? parsed : POST_STATUS_DRAFT
+}
+
 export function isVisiblePostStatus(status: number | string) {
-    const value = Number(status)
+    const value = toPostStatus(status)
     if (!Number.isFinite(value)) return false
 
     return value === POST_STATUS_PUBLISHED || value === POST_STATUS_ARCHIVED
@@ -128,7 +195,7 @@ export function normalizePostInfo(post: PostInfoLike): BlogPostItem {
         title: raw.title || '未命名文章',
         summary: raw.summary || '暂无摘要',
         slug: raw.slug || '',
-        status: Number(raw.status || 0),
+        status: toPostStatus(raw.status),
         tags: raw.tags || [],
         category: raw.category?.name || '未分类',
         categoryId: raw.category?.id || '',
@@ -148,7 +215,7 @@ export function normalizePostDetail(detail: PostDetail): BlogPostItem {
         title: info.title || '未命名文章',
         summary: info.summary || '暂无摘要',
         slug: info.slug || '',
-        status: info.status || POST_STATUS_DRAFT,
+        status: toPostStatus(info.status),
         tags: info.tags || [],
         category: info.category?.name || '未分类',
         categoryId: info.category?.id || '',
@@ -212,6 +279,79 @@ export async function fetchPostBySlug(slug: string): Promise<BlogPostItem | null
     if (!post) return null
 
     return normalizePostDetail(post)
+}
+
+export async function searchPosts(keyword: string, page = 1, pageSize = 20): Promise<{ results: SearchPostItem[]; total: number; totalPages: number }> {
+    const query = keyword.trim()
+    if (!query) {
+        return {
+            results: [],
+            total: 0,
+            totalPages: 0
+        }
+    }
+
+    const response = await $fetch<any>('/api/blog/search', {
+        query: {
+            query,
+            page,
+            pageSize,
+            page_size: pageSize
+        }
+    })
+
+    const items = (response?.results || response?.items || response?.data?.results || response?.data?.items || []) as Array<any>
+
+    return {
+        results: items.map(item => ({
+            id: String(item?.id || ''),
+            title: String(item?.title || '未命名文章'),
+            summary: String(item?.summary || '暂无摘要'),
+            slug: String(item?.slug || ''),
+            categoryName: String(item?.categoryName || item?.category_name || '未分类'),
+            tags: Array.isArray(item?.tags) ? item.tags.map((tag: any) => String(tag)) : [],
+            createdAt: typeof item?.createdAt === 'string'
+                ? item.createdAt
+                : (typeof item?.created_at === 'string' ? item.created_at : '')
+        })),
+        total: Number(response?.total || response?.data?.total || 0),
+        totalPages: Number(response?.totalPages || response?.total_pages || response?.data?.totalPages || response?.data?.total_pages || 0)
+    }
+}
+
+export async function fetchComments(postId: string, page = 1, pageSize = 50): Promise<{ comments: CommentInfo[]; total: number }> {
+    const response = await $fetch<any>('/api/blog/comments', {
+        query: {
+            postId,
+            page,
+            pageSize
+        }
+    })
+
+    return {
+        comments: (response?.comments || response?.data?.comments || []).map((item: Record<string, any>) => normalizeComment(item)),
+        total: Number(response?.total || response?.data?.total || 0)
+    }
+}
+
+export async function createComment(payload: { postId: string; content: string; parentId?: string }): Promise<CommentInfo | null> {
+    const response = await $fetch<any>('/api/blog/comments', {
+        method: 'POST',
+        headers: withCsrfHeaders(withAuthHeaders()),
+        body: payload
+    })
+
+    const comment = response?.comment || response?.data?.comment || response?.data || response
+    return comment ? normalizeComment(comment as Record<string, any>) : null
+}
+
+export async function deleteComment(id: string): Promise<boolean> {
+    const response = await $fetch<any>(`/api/blog/comments/${id}`, {
+        method: 'DELETE',
+        headers: withCsrfHeaders(withAuthHeaders())
+    })
+
+    return Boolean(response?.success ?? response?.data?.success ?? true)
 }
 
 export async function createPost(payload: {
