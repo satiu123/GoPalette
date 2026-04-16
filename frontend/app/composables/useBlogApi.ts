@@ -147,10 +147,6 @@ function buildCover(seed: string) {
 
 type PostInfoLike = PostInfo | { info?: PostInfo } | Record<string, any>
 
-interface AuthSessionLike {
-    accessToken?: string
-}
-
 function withCsrfHeaders(headers?: Record<string, string>) {
     const { csrf, headerName } = useCsrf()
     const token = unref(csrf)
@@ -163,20 +159,6 @@ function withCsrfHeaders(headers?: Record<string, string>) {
     return {
         ...(headers || {}),
         [name]: token
-    }
-}
-
-function withAuthHeaders(headers?: Record<string, string>) {
-    const session = useState<AuthSessionLike>('auth.session', () => ({ accessToken: '' }))
-    const accessToken = session.value?.accessToken || ''
-
-    if (!accessToken) {
-        return headers
-    }
-
-    return {
-        ...(headers || {}),
-        authorization: `Bearer ${accessToken}`
     }
 }
 
@@ -335,9 +317,10 @@ export async function fetchComments(postId: string, page = 1, pageSize = 50): Pr
 }
 
 export async function createComment(payload: { postId: string; content: string; parentId?: string }): Promise<CommentInfo | null> {
-    const response = await $fetch<any>('/api/blog/comments', {
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>('/api/blog/comments', {
         method: 'POST',
-        headers: withCsrfHeaders(withAuthHeaders()),
+        headers: withCsrfHeaders(),
         body: payload
     })
 
@@ -346,9 +329,10 @@ export async function createComment(payload: { postId: string; content: string; 
 }
 
 export async function deleteComment(id: string): Promise<boolean> {
-    const response = await $fetch<any>(`/api/blog/comments/${id}`, {
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>(`/api/blog/comments/${id}`, {
         method: 'DELETE',
-        headers: withCsrfHeaders(withAuthHeaders())
+        headers: withCsrfHeaders()
     })
 
     return Boolean(response?.success ?? response?.data?.success ?? true)
@@ -363,9 +347,10 @@ export async function createPost(payload: {
     categoryId?: string
     tags?: string[]
 }): Promise<BlogPostItem | null> {
-    const response = await $fetch<any>('/api/blog/posts', {
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>('/api/blog/posts', {
         method: 'POST',
-        headers: withCsrfHeaders(withAuthHeaders()),
+        headers: withCsrfHeaders(),
         body: payload
     })
 
@@ -384,9 +369,10 @@ export async function updatePost(id: string, payload: {
     tags?: string[]
     updateMask?: string
 }): Promise<BlogPostItem | null> {
-    const response = await $fetch<any>(`/api/blog/posts/${id}`, {
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>(`/api/blog/posts/${id}`, {
         method: 'PATCH',
-        headers: withCsrfHeaders(withAuthHeaders()),
+        headers: withCsrfHeaders(),
         body: {
             id,
             ...payload,

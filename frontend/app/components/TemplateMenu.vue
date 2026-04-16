@@ -31,7 +31,7 @@ function isActive(path: string) {
 
 <template>
   <div class="flex items-center gap-1 rounded-full bg-muted/60 p-1">
-    <UButton v-for="item in items" :key="item.to" :to="item.to" size="xs" :label="item.label" class="rounded-full"
+    <UButton v-for="item in items" :key="item.to" :to="item.to" :prefetch="false" size="xs" :label="item.label" class="rounded-full"
       :variant="isActive(item.to) ? 'solid' : 'ghost'" :color="isActive(item.to) ? 'primary' : 'neutral'" />
   </div>
 </template>

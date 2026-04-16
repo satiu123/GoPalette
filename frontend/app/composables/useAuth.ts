@@ -15,6 +15,20 @@ interface AuthSession {
   userId: string
 }
 
+interface AuthTokenResponse {
+  accessToken?: string
+  refreshToken?: string
+  access_token?: string
+  refresh_token?: string
+}
+
+interface AuthRequestOptions {
+  method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
+  query?: Record<string, unknown>
+  body?: Record<string, unknown> | BodyInit | null
+  headers?: Record<string, string>
+}
+
 const STORAGE_KEY = 'gopalette.auth.session'
 
 function decodeJwtPayload(token: string) {
@@ -37,7 +51,19 @@ function extractUserIdFromToken(token: string) {
   if (!payload) return ''
 
   const candidate = payload.userId || payload.user_id || payload.sub || payload.id
-  return typeof candidate === 'string' ? candidate : ''
+  if (typeof candidate === 'string') return candidate
+  if (typeof candidate === 'number' && Number.isFinite(candidate)) return String(Math.trunc(candidate))
+
+  return ''
+}
+
+function isUnauthorizedError(error: unknown) {
+  if (!error || typeof error !== 'object') return false
+
+  const typed = error as { status?: unknown, statusCode?: unknown, response?: { status?: unknown } }
+  const status = Number(typed.status ?? typed.statusCode ?? typed.response?.status ?? 0)
+
+  return status === 401
 }
 
 export function useAuth() {
@@ -51,6 +77,7 @@ export function useAuth() {
 
   const user = useState<AuthUser | null>('auth.user', () => null)
   const initialized = useState<boolean>('auth.initialized', () => false)
+  const refreshingPromise = useState<Promise<boolean> | null>('auth.refreshing.promise', () => null)
 
   function saveSession(next: AuthSession) {
     session.value = next
@@ -82,10 +109,14 @@ export function useAuth() {
 
     try {
       const parsed = JSON.parse(raw) as Partial<AuthSession>
+      const accessToken = parsed.accessToken || ''
+      const refreshToken = parsed.refreshToken || ''
+      const userId = parsed.userId || extractUserIdFromToken(accessToken)
+
       session.value = {
-        accessToken: parsed.accessToken || '',
-        refreshToken: parsed.refreshToken || '',
-        userId: parsed.userId || ''
+        accessToken,
+        refreshToken,
+        userId
       }
     } catch {
       clearSession()
@@ -106,15 +137,101 @@ export function useAuth() {
     }
   }
 
+  function withAuthHeaders(headers?: Record<string, string>) {
+    if (!session.value.accessToken) {
+      return headers
+    }
+
+    return {
+      ...(headers || {}),
+      authorization: `Bearer ${session.value.accessToken}`
+    }
+  }
+
+  function normalizeTokenResponse(response: AuthTokenResponse) {
+    return {
+      accessToken: response.accessToken || response.access_token || '',
+      refreshToken: response.refreshToken || response.refresh_token || ''
+    }
+  }
+
+  async function refreshTokens() {
+    if (!session.value.refreshToken) {
+      return false
+    }
+
+    if (refreshingPromise.value) {
+      return await refreshingPromise.value
+    }
+
+    refreshingPromise.value = (async () => {
+      try {
+        const response = await $fetch<AuthTokenResponse>('/api/user/refresh', {
+          method: 'POST',
+          headers: withCsrfHeaders(),
+          body: {
+            refreshToken: session.value.refreshToken
+          }
+        })
+
+        const next = normalizeTokenResponse(response)
+        if (!next.accessToken || !next.refreshToken) {
+          return false
+        }
+
+        const userId = extractUserIdFromToken(next.accessToken) || session.value.userId
+        saveSession({
+          accessToken: next.accessToken,
+          refreshToken: next.refreshToken,
+          userId
+        })
+
+        return true
+      } catch (error: unknown) {
+        if (isUnauthorizedError(error)) {
+          clearSession()
+        }
+        return false
+      } finally {
+        refreshingPromise.value = null
+      }
+    })()
+
+    return await refreshingPromise.value
+  }
+
+  async function authFetch<T>(url: string, options: AuthRequestOptions = {}, retry = true): Promise<T> {
+    async function execute() {
+      return await $fetch(url, {
+        ...options,
+        headers: withAuthHeaders(options.headers)
+      }) as T
+    }
+
+    try {
+      return await execute()
+    } catch (error: unknown) {
+      if (!retry || !isUnauthorizedError(error)) {
+        throw error
+      }
+
+      const refreshed = await refreshTokens()
+      if (!refreshed) {
+        throw error
+      }
+
+      return await execute()
+    }
+  }
+
   async function login(payload: { email: string; password: string }) {
-    const response = await $fetch<{ accessToken?: string; refreshToken?: string }>('/api/user/login', {
+    const response = await $fetch<AuthTokenResponse>('/api/user/login', {
       method: 'POST',
       headers: withCsrfHeaders(),
       body: payload
     })
 
-    const accessToken = response.accessToken || ''
-    const refreshToken = response.refreshToken || ''
+    const { accessToken, refreshToken } = normalizeTokenResponse(response)
 
     if (!accessToken || !refreshToken) {
       throw new Error('登录失败：服务端未返回令牌')
@@ -144,17 +261,20 @@ export function useAuth() {
   }
 
   async function fetchProfile(id?: string) {
-    const userId = id || session.value.userId
+    const userId = id || session.value.userId || extractUserIdFromToken(session.value.accessToken)
     if (!userId) {
       return null
     }
 
-    const response = await $fetch<{ user?: AuthUser }>(`/api/user/profile/${userId}`, {
-      headers: session.value.accessToken
-        ? {
-          authorization: `Bearer ${session.value.accessToken}`
-        }
-        : undefined
+    if (!session.value.userId) {
+      saveSession({
+        ...session.value,
+        userId
+      })
+    }
+
+    const response = await authFetch<{ user?: AuthUser }>(`/api/user/profile/${userId}`, {
+      method: 'GET'
     })
 
     user.value = response.user || null
@@ -167,18 +287,12 @@ export function useAuth() {
       throw new Error('当前未登录，无法更新个人信息')
     }
 
-    const response = await $fetch<{ user?: AuthUser }>(`/api/user/profile/${userId}`, {
+    const response = await authFetch<{ user?: AuthUser }>(`/api/user/profile/${userId}`, {
       method: 'PATCH',
       query: {
         updateMask: 'username,email,avatarURL'
       },
-      headers: withCsrfHeaders(
-        session.value.accessToken
-          ? {
-            authorization: `Bearer ${session.value.accessToken}`
-          }
-          : undefined
-      ),
+      headers: withCsrfHeaders(),
       body: {
         id: userId,
         username: payload.username,
@@ -199,6 +313,8 @@ export function useAuth() {
     initAuth,
     login,
     register,
+    refreshTokens,
+    authFetch,
     fetchProfile,
     updateProfile,
     clearSession
