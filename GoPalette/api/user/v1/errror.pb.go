@@ -133,8 +133,8 @@ const file_user_v1_errror_proto_rawDesc = "" +
 	"\x0eEMAIL_CONFLICT\x10\v\x1a\x04\xa8E\x99\x03\x12\x1a\n" +
 	"\x10INVALID_ARGUMENT\x10\f\x1a\x04\xa8E\x90\x03\x12\x18\n" +
 	"\x0eDATABASE_ERROR\x10\x14\x1a\x04\xa8E\xf4\x03\x12\x1f\n" +
-	"\x15INTERNAL_SERVER_ERROR\x10c\x1a\x04\xa8E\xf4\x03\x1a\x04\xa0E\xf4\x03B)\n" +
-	"\vapi.user.v1P\x01Z\x18GoPalette/api/user/v1;v1b\x06proto3"
+	"\x15INTERNAL_SERVER_ERROR\x10c\x1a\x04\xa8E\xf4\x03\x1a\x04\xa0E\xf4\x03B=\n" +
+	"\vapi.user.v1P\x01Z,github.com/satiu123/GoPalette/api/user/v1;v1b\x06proto3"
 
 var (
 	file_user_v1_errror_proto_rawDescOnce sync.Once

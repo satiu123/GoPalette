@@ -782,8 +782,8 @@ const file_comment_v1_comment_proto_rawDesc = "" +
 	"\fListComments\x12#.api.comment.v1.ListCommentsRequest\x1a!.api.comment.v1.ListCommentsReply\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/comments\x12t\n" +
 	"\rDeleteComment\x12$.api.comment.v1.DeleteCommentRequest\x1a\".api.comment.v1.DeleteCommentReply\"\x19\x82\xd3\xe4\x93\x02\x13*\x11/v1/comments/{id}\x12\x97\x01\n" +
 	"\x13GetUserCommentStats\x12*.api.comment.v1.GetUserCommentStatsRequest\x1a(.api.comment.v1.GetUserCommentStatsReply\"*\x82\xd3\xe4\x93\x02$\x12\"/v1/users/{user_id}/comments/stats\x12\xa1\x01\n" +
-	"\x16ListUserRecentComments\x12-.api.comment.v1.ListUserRecentCommentsRequest\x1a+.api.comment.v1.ListUserRecentCommentsReply\"+\x82\xd3\xe4\x93\x02%\x12#/v1/users/{user_id}/comments/recentB/\n" +
-	"\x0eapi.comment.v1P\x01Z\x1bGoPalette/api/comment/v1;v1b\x06proto3"
+	"\x16ListUserRecentComments\x12-.api.comment.v1.ListUserRecentCommentsRequest\x1a+.api.comment.v1.ListUserRecentCommentsReply\"+\x82\xd3\xe4\x93\x02%\x12#/v1/users/{user_id}/comments/recentBC\n" +
+	"\x0eapi.comment.v1P\x01Z/github.com/satiu123/GoPalette/api/comment/v1;v1b\x06proto3"
 
 var (
 	file_comment_v1_comment_proto_rawDescOnce sync.Once

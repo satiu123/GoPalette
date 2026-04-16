@@ -79,8 +79,8 @@ const file_search_v1_error_proto_rawDesc = "" +
 	"\vErrorReason\x12\x1a\n" +
 	"\x10INVALID_ARGUMENT\x10\x00\x1a\x04\xa8E\x90\x03\x12\x1b\n" +
 	"\x11INDEX_SYNC_FAILED\x10\x01\x1a\x04\xa8E\xf4\x03\x12\x17\n" +
-	"\rSEARCH_FAILED\x10\x02\x1a\x04\xa8E\xf4\x03\x1a\x04\xa0E\xf4\x03B-\n" +
-	"\rapi.search.v1P\x01Z\x1aGoPalette/api/search/v1;v1b\x06proto3"
+	"\rSEARCH_FAILED\x10\x02\x1a\x04\xa8E\xf4\x03\x1a\x04\xa0E\xf4\x03BA\n" +
+	"\rapi.search.v1P\x01Z.github.com/satiu123/GoPalette/api/search/v1;v1b\x06proto3"
 
 var (
 	file_search_v1_error_proto_rawDescOnce sync.Once

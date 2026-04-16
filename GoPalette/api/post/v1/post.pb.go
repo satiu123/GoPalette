@@ -3303,8 +3303,8 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\tDeleteTag\x12\x1d.api.post.v1.DeleteTagRequest\x1a\x1b.api.post.v1.DeleteTagReply\"\x15\x82\xd3\xe4\x93\x02\x0f*\r/v1/tags/{id}\x12U\n" +
 	"\x06GetTag\x12\x1a.api.post.v1.GetTagRequest\x1a\x18.api.post.v1.GetTagReply\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/v1/tags/{id}\x12V\n" +
 	"\bListTags\x12\x1c.api.post.v1.ListTagsRequest\x1a\x1a.api.post.v1.ListTagsReply\"\x10\x82\xd3\xe4\x93\x02\n" +
-	"\x12\b/v1/tagsB)\n" +
-	"\vapi.post.v1P\x01Z\x18GoPalette/api/post/v1;v1b\x06proto3"
+	"\x12\b/v1/tagsB=\n" +
+	"\vapi.post.v1P\x01Z,github.com/satiu123/GoPalette/api/post/v1;v1b\x06proto3"
 
 var (
 	file_post_v1_post_proto_rawDescOnce sync.Once

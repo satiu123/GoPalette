@@ -102,8 +102,8 @@ const file_post_v1_error_proto_rawDesc = "" +
 	"\rSLUG_CONFLICT\x10\x03\x1a\x04\xa8E\x99\x03\x12\x17\n" +
 	"\rACCESS_DENIED\x10\x04\x1a\x04\xa8E\x93\x03\x12\x1c\n" +
 	"\x12CATEGORY_NOT_FOUND\x10\x05\x1a\x04\xa8E\x94\x03\x12\x17\n" +
-	"\rTAG_NOT_FOUND\x10\x06\x1a\x04\xa8E\x94\x03\x1a\x04\xa0E\xf4\x03B)\n" +
-	"\vapi.post.v1P\x01Z\x18GoPalette/api/post/v1;v1b\x06proto3"
+	"\rTAG_NOT_FOUND\x10\x06\x1a\x04\xa8E\x94\x03\x1a\x04\xa0E\xf4\x03B=\n" +
+	"\vapi.post.v1P\x01Z,github.com/satiu123/GoPalette/api/post/v1;v1b\x06proto3"
 
 var (
 	file_post_v1_error_proto_rawDescOnce sync.Once

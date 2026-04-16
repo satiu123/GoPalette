@@ -4,7 +4,7 @@ package api.comment.v1;
 
 import "errors/errors.proto";
 
-option go_package = "GoPalette/api/comment/v1;v1";
+option go_package = "github.com/satiu123/GoPalette/api/comment/v1;v1";
 option java_multiple_files = true;
 option java_package = "api.comment.v1";
 

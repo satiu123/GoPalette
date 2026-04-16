@@ -5,7 +5,7 @@ package api.search.v1;
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "GoPalette/api/search/v1;v1";
+option go_package = "github.com/satiu123/GoPalette/api/search/v1;v1";
 option java_multiple_files = true;
 option java_package = "api.search.v1";
 

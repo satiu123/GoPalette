@@ -95,8 +95,8 @@ const file_comment_v1_error_proto_rawDesc = "" +
 	"\x10INVALID_ARGUMENT\x10\x03\x1a\x04\xa8E\x90\x03\x12\x19\n" +
 	"\x0fUNAUTHENTICATED\x10\x04\x1a\x04\xa8E\x91\x03\x12\x17\n" +
 	"\rACCESS_DENIED\x10\x05\x1a\x04\xa8E\x93\x03\x12\x16\n" +
-	"\fRATE_LIMITED\x10\x06\x1a\x04\xa8E\xad\x03\x1a\x04\xa0E\xf4\x03B/\n" +
-	"\x0eapi.comment.v1P\x01Z\x1bGoPalette/api/comment/v1;v1b\x06proto3"
+	"\fRATE_LIMITED\x10\x06\x1a\x04\xa8E\xad\x03\x1a\x04\xa0E\xf4\x03BC\n" +
+	"\x0eapi.comment.v1P\x01Z/github.com/satiu123/GoPalette/api/comment/v1;v1b\x06proto3"
 
 var (
 	file_comment_v1_error_proto_rawDescOnce sync.Once

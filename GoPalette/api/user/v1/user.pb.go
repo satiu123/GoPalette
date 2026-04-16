@@ -1382,8 +1382,8 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\aGetUser\x12\x1b.api.user.v1.GetUserRequest\x1a\x19.api.user.v1.GetUserReply\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/v1/users/{id}\x12W\n" +
 	"\bListUser\x12\x1c.api.user.v1.ListUserRequest\x1a\x1a.api.user.v1.ListUserReply\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/v1/users\x12n\n" +
 	"\fRefreshToken\x12 .api.user.v1.RefreshTokenRequest\x1a\x1e.api.user.v1.RefreshTokenReply\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/v1/users/refresh\x12r\n" +
-	"\rBatchGetUsers\x12!.api.user.v1.BatchGetUsersRequest\x1a\x1f.api.user.v1.BatchGetUsersReply\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/v1/users:batchGetB)\n" +
-	"\vapi.user.v1P\x01Z\x18GoPalette/api/user/v1;v1b\x06proto3"
+	"\rBatchGetUsers\x12!.api.user.v1.BatchGetUsersRequest\x1a\x1f.api.user.v1.BatchGetUsersReply\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/v1/users:batchGetB=\n" +
+	"\vapi.user.v1P\x01Z,github.com/satiu123/GoPalette/api/user/v1;v1b\x06proto3"
 
 var (
 	file_user_v1_user_proto_rawDescOnce sync.Once
