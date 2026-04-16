@@ -5,7 +5,7 @@ const { isLoggedIn, isAdmin, initAuth, session, user, fetchProfile } = useAuth()
 onMounted(() => {
   initAuth()
   if (session.value.userId && !user.value) {
-    void fetchProfile(session.value.userId)
+    void fetchProfile().catch(() => {})
   }
 })
 

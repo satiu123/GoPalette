@@ -40,7 +40,8 @@ function decodeJwtPayload(token: string) {
 
     const normalized = part.replace(/-/g, '+').replace(/_/g, '/')
     const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
-    const json = atob(padded)
+    if (typeof globalThis.atob !== 'function') return null
+    const json = globalThis.atob(padded)
 
     return JSON.parse(json) as Record<string, unknown>
   } catch {
@@ -66,6 +67,29 @@ function isUnauthorizedError(error: unknown) {
   const status = Number(typed.status ?? typed.statusCode ?? typed.response?.status ?? 0)
 
   return status === 401
+}
+
+function extractTokenExpiresAt(token: string) {
+  const payload = decodeJwtPayload(token)
+  if (!payload) return 0
+
+  const exp = payload.exp
+  if (typeof exp === 'number' && Number.isFinite(exp)) return exp
+  if (typeof exp === 'string') {
+    const value = Number(exp)
+    return Number.isFinite(value) ? value : 0
+  }
+
+  return 0
+}
+
+function shouldRefreshSoon(token: string, advanceSeconds = 45) {
+  if (!token) return false
+  const exp = extractTokenExpiresAt(token)
+  if (!exp) return false
+
+  const now = Math.floor(Date.now() / 1000)
+  return exp <= now + advanceSeconds
 }
 
 function normalizeAuthUser(input?: Record<string, unknown> | null): AuthUser | null {
@@ -103,10 +127,15 @@ export function useAuth() {
   const refreshingPromise = useState<Promise<boolean> | null>('auth.refreshing.promise', () => null)
 
   function saveSession(next: AuthSession) {
-    session.value = next
+    const derivedUserId = extractUserIdFromToken(next.accessToken)
+    session.value = {
+      accessToken: next.accessToken || '',
+      refreshToken: next.refreshToken || '',
+      userId: derivedUserId || next.userId || ''
+    }
 
     if (import.meta.client) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(session.value))
     }
   }
 
@@ -134,13 +163,13 @@ export function useAuth() {
       const parsed = JSON.parse(raw) as Partial<AuthSession>
       const accessToken = parsed.accessToken || ''
       const refreshToken = parsed.refreshToken || ''
-      const userId = parsed.userId || extractUserIdFromToken(accessToken)
+      const userId = extractUserIdFromToken(accessToken) || parsed.userId || ''
 
-      session.value = {
+      saveSession({
         accessToken,
         refreshToken,
         userId
-      }
+      })
     } catch {
       clearSession()
     }
@@ -223,6 +252,23 @@ export function useAuth() {
     return await refreshingPromise.value
   }
 
+  async function ensureAccessTokenFresh() {
+    if (!session.value.accessToken || !session.value.refreshToken) return
+    if (!shouldRefreshSoon(session.value.accessToken)) return
+    await refreshTokens()
+  }
+
+  function getCurrentUserId() {
+    const tokenUserId = extractUserIdFromToken(session.value.accessToken)
+    if (tokenUserId && session.value.userId !== tokenUserId) {
+      saveSession({
+        ...session.value,
+        userId: tokenUserId
+      })
+    }
+    return tokenUserId || session.value.userId
+  }
+
   async function authFetch<T>(url: string, options: AuthRequestOptions = {}, retry = true): Promise<T> {
     async function execute() {
       return await $fetch(url, {
@@ -232,6 +278,7 @@ export function useAuth() {
     }
 
     try {
+      await ensureAccessTokenFresh()
       return await execute()
     } catch (error: unknown) {
       if (!retry || !isUnauthorizedError(error)) {
@@ -284,16 +331,10 @@ export function useAuth() {
   }
 
   async function fetchProfile(id?: string) {
-    const userId = id || session.value.userId || extractUserIdFromToken(session.value.accessToken)
+    const currentUserId = getCurrentUserId()
+    const userId = id && id === currentUserId ? id : currentUserId
     if (!userId) {
       return null
-    }
-
-    if (!session.value.userId) {
-      saveSession({
-        ...session.value,
-        userId
-      })
     }
 
     const response = await authFetch<{ user?: Record<string, unknown> }>(`/api/user/profile/${userId}`, {
@@ -305,7 +346,7 @@ export function useAuth() {
   }
 
   async function updateProfile(payload: { username: string; email: string; avatarURL?: string }) {
-    const userId = session.value.userId
+    const userId = getCurrentUserId()
     if (!userId) {
       throw new Error('当前未登录，无法更新个人信息')
     }

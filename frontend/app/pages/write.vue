@@ -300,6 +300,7 @@ function publishNow() {
 
 async function removeCurrentPost() {
   if (!postMeta.id || deletingPost.value) return
+  if (import.meta.client && !window.confirm('确认删除当前文章吗？此操作不可恢复。')) return
 
   deletingPost.value = true
   try {

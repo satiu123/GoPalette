@@ -79,6 +79,11 @@ function getErrorMessage(error: unknown, fallback: string) {
   return typeof value === 'string' && value.trim() ? value : fallback
 }
 
+function askConfirm(message: string) {
+  if (!import.meta.client) return true
+  return window.confirm(message)
+}
+
 function postStatusText(status: number) {
   if (status === POST_STATUS_PUBLISHED) return '已发布'
   if (status === POST_STATUS_ARCHIVED) return '已归档'
@@ -159,6 +164,7 @@ async function loadComments() {
 
 async function removeComment(id: string) {
   if (!id) return
+  if (!askConfirm('确认删除这条评论吗？')) return
 
   deletingCommentId.value = id
   try {
@@ -205,6 +211,7 @@ async function setPostStatus(item: BlogPostItem, status: number) {
 
 async function removePost(id: string) {
   if (!id || deletingPostId.value) return
+  if (!askConfirm('确认删除这篇文章吗？此操作不可恢复。')) return
 
   deletingPostId.value = id
   try {
@@ -289,6 +296,7 @@ async function renameCategory(id: string) {
 
 async function removeCategory(id: string) {
   if (!id || deletingCategoryId.value) return
+  if (!askConfirm('确认删除该分类吗？')) return
 
   deletingCategoryId.value = id
   try {
@@ -353,6 +361,7 @@ async function renameTag(id: string) {
 
 async function removeTag(id: string) {
   if (!id || deletingTagId.value) return
+  if (!askConfirm('确认删除该标签吗？')) return
 
   deletingTagId.value = id
   try {
@@ -385,7 +394,7 @@ onMounted(async () => {
   }
 
   if (!user.value && session.value.userId) {
-    await fetchProfile(session.value.userId)
+    await fetchProfile()
   }
 
   if (!isAdmin.value) {
