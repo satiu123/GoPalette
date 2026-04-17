@@ -75,6 +75,7 @@ type GetFullUserProfileReply struct {
 	PostStats      *v11.GetAuthorPostStatsReply `protobuf:"bytes,2,opt,name=post_stats,json=postStats,proto3" json:"post_stats,omitempty"`
 	RecentComments []*v12.CommentInfo           `protobuf:"bytes,3,rep,name=recent_comments,json=recentComments,proto3" json:"recent_comments,omitempty"`
 	TopPosts       []*v11.PostInfo              `protobuf:"bytes,4,rep,name=top_posts,json=topPosts,proto3" json:"top_posts,omitempty"`
+	AuthorPosts    []*v11.PostInfo              `protobuf:"bytes,5,rep,name=author_posts,json=authorPosts,proto3" json:"author_posts,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -137,6 +138,13 @@ func (x *GetFullUserProfileReply) GetTopPosts() []*v11.PostInfo {
 	return nil
 }
 
+func (x *GetFullUserProfileReply) GetAuthorPosts() []*v11.PostInfo {
+	if x != nil {
+		return x.AuthorPosts
+	}
+	return nil
+}
+
 var File_bff_v1_bff_proto protoreflect.FileDescriptor
 
 const file_bff_v1_bff_proto_rawDesc = "" +
@@ -144,17 +152,18 @@ const file_bff_v1_bff_proto_rawDesc = "" +
 	"\x10bff/v1/bff.proto\x12\n" +
 	"api.bff.v1\x1a\x18comment/v1/comment.proto\x1a\x12post/v1/post.proto\x1a\x12user/v1/user.proto\x1a\x1cgoogle/api/annotations.proto\"4\n" +
 	"\x19GetFullUserProfileRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"\x8c\x02\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"\xc6\x02\n" +
 	"\x17GetFullUserProfileReply\x122\n" +
 	"\tuser_info\x18\x01 \x01(\v2\x15.api.user.v1.UserInfoR\buserInfo\x12C\n" +
 	"\n" +
 	"post_stats\x18\x02 \x01(\v2$.api.post.v1.GetAuthorPostStatsReplyR\tpostStats\x12D\n" +
 	"\x0frecent_comments\x18\x03 \x03(\v2\x1b.api.comment.v1.CommentInfoR\x0erecentComments\x122\n" +
-	"\ttop_posts\x18\x04 \x03(\v2\x15.api.post.v1.PostInfoR\btopPosts2\x8c\x01\n" +
+	"\ttop_posts\x18\x04 \x03(\v2\x15.api.post.v1.PostInfoR\btopPosts\x128\n" +
+	"\fauthor_posts\x18\x05 \x03(\v2\x15.api.post.v1.PostInfoR\vauthorPosts2\x8c\x01\n" +
 	"\aBlogBff\x12\x80\x01\n" +
-	"\x12GetFullUserProfile\x12%.api.bff.v1.GetFullUserProfileRequest\x1a#.api.bff.v1.GetFullUserProfileReply\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/profiles/{user_id}B'\n" +
+	"\x12GetFullUserProfile\x12%.api.bff.v1.GetFullUserProfileRequest\x1a#.api.bff.v1.GetFullUserProfileReply\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/profiles/{user_id}B;\n" +
 	"\n" +
-	"api.bff.v1P\x01Z\x17GoPalette/api/bff/v1;v1b\x06proto3"
+	"api.bff.v1P\x01Z+github.com/satiu123/GoPalette/api/bff/v1;v1b\x06proto3"
 
 var (
 	file_bff_v1_bff_proto_rawDescOnce sync.Once
@@ -182,13 +191,14 @@ var file_bff_v1_bff_proto_depIdxs = []int32{
 	3, // 1: api.bff.v1.GetFullUserProfileReply.post_stats:type_name -> api.post.v1.GetAuthorPostStatsReply
 	4, // 2: api.bff.v1.GetFullUserProfileReply.recent_comments:type_name -> api.comment.v1.CommentInfo
 	5, // 3: api.bff.v1.GetFullUserProfileReply.top_posts:type_name -> api.post.v1.PostInfo
-	0, // 4: api.bff.v1.BlogBff.GetFullUserProfile:input_type -> api.bff.v1.GetFullUserProfileRequest
-	1, // 5: api.bff.v1.BlogBff.GetFullUserProfile:output_type -> api.bff.v1.GetFullUserProfileReply
-	5, // [5:6] is the sub-list for method output_type
-	4, // [4:5] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	5, // 4: api.bff.v1.GetFullUserProfileReply.author_posts:type_name -> api.post.v1.PostInfo
+	0, // 5: api.bff.v1.BlogBff.GetFullUserProfile:input_type -> api.bff.v1.GetFullUserProfileRequest
+	1, // 6: api.bff.v1.BlogBff.GetFullUserProfile:output_type -> api.bff.v1.GetFullUserProfileReply
+	6, // [6:7] is the sub-list for method output_type
+	5, // [5:6] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_bff_v1_bff_proto_init() }

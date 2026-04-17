@@ -39,6 +39,24 @@ function toCover(seed: string) {
   return `https://picsum.photos/seed/${encodeURIComponent(seed || 'gopalette')}/1200/640`
 }
 
+function renderHighlightedText(input: string) {
+  const source = String(input || '')
+  const marked = source
+    .replace(/<em>/gi, '[[EM_OPEN]]')
+    .replace(/<\/em>/gi, '[[EM_CLOSE]]')
+
+  const escaped = marked
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+  return escaped
+    .replace(/\[\[EM_OPEN\]\]/g, '<mark class="rounded bg-primary/20 px-0.5 text-highlighted">')
+    .replace(/\[\[EM_CLOSE\]\]/g, '</mark>')
+}
+
 async function runSearch() {
   const query = keyword.value.trim()
   if (!query) {
@@ -241,12 +259,13 @@ useSeoMeta({
 
             <NuxtLink :to="`/posts/${post.slug}`"
               class="block text-lg font-semibold text-highlighted transition-colors hover:text-primary">
-              {{ post.title }}
+              <span v-html="renderHighlightedText(post.title)" />
             </NuxtLink>
 
-            <p class="line-clamp-2 text-sm text-toned">
-              {{ post.summary }}
-            </p>
+            <p
+              class="line-clamp-2 text-sm text-toned"
+              v-html="renderHighlightedText(post.summary)"
+            />
 
             <div class="flex flex-wrap gap-2">
               <UBadge v-for="tag in post.tags" :key="tag" :label="`#${tag}`" color="neutral" variant="outline" />

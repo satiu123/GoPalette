@@ -885,6 +885,10 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/api.post.v1.PostInfo'
+                authorPosts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.post.v1.PostInfo'
         api.comment.v1.AuthorInfo:
             type: object
             properties:

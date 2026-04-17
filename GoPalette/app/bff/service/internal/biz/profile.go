@@ -42,8 +42,11 @@ func (uc *ProfileUsecase) GetFullUserProfile(ctx context.Context, req *bffv1.Get
 		userInfo       *userv1.UserInfo
 		postStats      *postv1.GetAuthorPostStatsReply
 		topPosts       []*postv1.PostInfo
+		authorPosts    []*postv1.PostInfo
 		recentComments []*commentv1.CommentInfo
 	)
+	claims, hasClaims := auth.FromContext(ctx)
+	includeNonPublished := hasClaims && claims.UserID == userID
 
 	downstreamCtx := auth.ForwardMetadataToClientContext(ctx)
 	g, gctx := errgroup.WithContext(downstreamCtx)
@@ -60,12 +63,26 @@ func (uc *ProfileUsecase) GetFullUserProfile(ctx context.Context, req *bffv1.Get
 	g.Go(func() error {
 		res, err := uc.data.PostClient().GetAuthorPostStats(gctx, &postv1.GetAuthorPostStatsRequest{
 			AuthorId:            userID,
-			IncludeNonPublished: false,
+			IncludeNonPublished: includeNonPublished,
 		})
 		if err != nil {
 			return err
 		}
 		postStats = res
+		return nil
+	})
+
+	g.Go(func() error {
+		res, err := uc.data.PostClient().ListAuthorPosts(gctx, &postv1.ListAuthorPostsRequest{
+			AuthorId:            userID,
+			Page:                1,
+			PageSize:            20,
+			IncludeNonPublished: includeNonPublished,
+		})
+		if err != nil {
+			return err
+		}
+		authorPosts = res.Posts
 		return nil
 	})
 
@@ -105,5 +122,6 @@ func (uc *ProfileUsecase) GetFullUserProfile(ctx context.Context, req *bffv1.Get
 		PostStats:      postStats,
 		RecentComments: recentComments,
 		TopPosts:       topPosts,
+		AuthorPosts:    authorPosts,
 	}, nil
 }

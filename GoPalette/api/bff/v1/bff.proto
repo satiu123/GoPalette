@@ -7,7 +7,7 @@ import "post/v1/post.proto";
 import "user/v1/user.proto";
 import "google/api/annotations.proto";
 
-option go_package = "GoPalette/api/bff/v1;v1";
+option go_package = "github.com/satiu123/GoPalette/api/bff/v1;v1";
 option java_multiple_files = true;
 option java_package = "api.bff.v1";
 
@@ -29,4 +29,5 @@ message GetFullUserProfileReply {
   api.post.v1.GetAuthorPostStatsReply post_stats = 2;
   repeated api.comment.v1.CommentInfo recent_comments = 3;
   repeated api.post.v1.PostInfo top_posts = 4;
+  repeated api.post.v1.PostInfo author_posts = 5;
 }

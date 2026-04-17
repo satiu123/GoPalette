@@ -100,6 +100,24 @@ function toCover(seed: string) {
   return `https://picsum.photos/seed/${encodeURIComponent(seed || 'gopalette')}/1200/640`
 }
 
+function renderHighlightedText(input: string) {
+  const source = String(input || '')
+  const marked = source
+    .replace(/<em>/gi, '[[EM_OPEN]]')
+    .replace(/<\/em>/gi, '[[EM_CLOSE]]')
+
+  const escaped = marked
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+  return escaped
+    .replace(/\[\[EM_OPEN\]\]/g, '<mark class="rounded bg-primary/20 px-0.5 text-highlighted">')
+    .replace(/\[\[EM_CLOSE\]\]/g, '</mark>')
+}
+
 async function loadPosts() {
   postLoading.value = true
   try {
@@ -457,9 +475,7 @@ useSeoMeta({
               <div class="flex flex-wrap items-start justify-between gap-3">
                 <div class="space-y-1">
                   <div class="flex items-center gap-2">
-                    <p class="text-base font-semibold text-highlighted">
-                      {{ item.title }}
-                    </p>
+                    <p class="text-base font-semibold text-highlighted" v-html="renderHighlightedText(item.title)" />
                     <UBadge size="xs" :label="postStatusText(item.status)" :color="postStatusColor(item.status)" variant="subtle" />
                   </div>
                   <p class="text-xs text-toned">

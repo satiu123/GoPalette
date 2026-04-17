@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { POST_STATUS_ARCHIVED, POST_STATUS_DRAFT, POST_STATUS_PUBLISHED, deletePost, updatePost } from '~/composables/useBlogApi'
+
 interface UserDashboardInfo {
   id: string
   username: string
@@ -43,6 +45,7 @@ interface UserDashboardResponse {
   userInfo: UserDashboardInfo | null
   postStats: UserDashboardStats
   topPosts: UserDashboardPost[]
+  authorPosts: UserDashboardPost[]
   recentComments: UserDashboardComment[]
 }
 
@@ -55,6 +58,8 @@ const { session, user, isLoggedIn, initAuth, authFetch, fetchProfile, updateProf
 
 const loading = ref(true)
 const saving = ref(false)
+const updatingPostId = ref('')
+const deletingPostId = ref('')
 const dashboard = ref<UserDashboardResponse | null>(null)
 const dashboardError = ref('')
 
@@ -94,6 +99,19 @@ function toText(value: unknown, fallback = '') {
 function toNumber(value: unknown, fallback = 0) {
   const numeric = Number(value)
   return Number.isFinite(numeric) ? numeric : fallback
+}
+
+function toPostStatus(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+
+  const text = String(value || '').trim().toUpperCase()
+  if (!text) return POST_STATUS_DRAFT
+  if (text === 'PUBLISHED') return POST_STATUS_PUBLISHED
+  if (text === 'ARCHIVED') return POST_STATUS_ARCHIVED
+  if (text === 'DRAFT') return POST_STATUS_DRAFT
+
+  const parsed = Number(text)
+  return Number.isFinite(parsed) ? parsed : POST_STATUS_DRAFT
 }
 
 function formatDate(input: unknown, withTime = false) {
@@ -192,7 +210,18 @@ function normalizeDashboard(raw: DataRecord): UserDashboardResponse {
       title: toText(pick(item, ['title']), '未命名文章'),
       slug: toText(pick(item, ['slug'])),
       summary: toText(pick(item, ['summary']), '暂无摘要'),
-      status: toNumber(pick(item, ['status']), 0),
+      status: toPostStatus(pick(item, ['status'])),
+      views: toNumber(pick(item, ['viewCount', 'view_count'])),
+      likes: toNumber(pick(item, ['likeCount', 'like_count'])),
+      comments: toNumber(pick(item, ['commentCount', 'comment_count'])),
+      createdAt: formatDate(pick(item, ['createdAt', 'created_at']))
+    })),
+    authorPosts: toRecordArray(pick(raw, ['authorPosts', 'author_posts'])).map(item => ({
+      id: toText(pick(item, ['id'])),
+      title: toText(pick(item, ['title']), '未命名文章'),
+      slug: toText(pick(item, ['slug'])),
+      summary: toText(pick(item, ['summary']), '暂无摘要'),
+      status: toPostStatus(pick(item, ['status'])),
       views: toNumber(pick(item, ['viewCount', 'view_count'])),
       likes: toNumber(pick(item, ['likeCount', 'like_count'])),
       comments: toNumber(pick(item, ['commentCount', 'comment_count'])),
@@ -246,6 +275,11 @@ const statsItems = computed(() => {
     { label: '总点赞', value: formatCount(stats.likes), icon: 'i-lucide-heart' },
     { label: '总评论', value: formatCount(stats.comments), icon: 'i-lucide-message-circle' }
   ]
+})
+
+const canManagePosts = computed(() => {
+  if (!isLoggedIn.value) return false
+  return String(session.value.userId || '') === String(displayUser.value.id || '')
 })
 
 function fillFormFromUser() {
@@ -327,6 +361,69 @@ async function onSave() {
     })
   } finally {
     saving.value = false
+  }
+}
+
+function askConfirm(message: string) {
+  if (!import.meta.client) return true
+  return window.confirm(message)
+}
+
+async function changePostStatus(item: UserDashboardPost, status: number) {
+  if (!canManagePosts.value || !item.id || updatingPostId.value) return
+
+  updatingPostId.value = item.id
+  try {
+    await updatePost(item.id, {
+      title: item.title,
+      summary: item.summary,
+      slug: item.slug,
+      content: '',
+      status,
+      updateMask: 'status'
+    })
+
+    if (session.value.userId) {
+      await loadDashboard(session.value.userId)
+    }
+
+    toast.add({
+      color: 'success',
+      title: '文章状态已更新'
+    })
+  } catch (error: unknown) {
+    toast.add({
+      color: 'error',
+      title: '更新状态失败',
+      description: getErrorMessage(error, '请稍后再试')
+    })
+  } finally {
+    updatingPostId.value = ''
+  }
+}
+
+async function removePostItem(item: UserDashboardPost) {
+  if (!canManagePosts.value || !item.id || deletingPostId.value) return
+  if (!askConfirm('确认删除这篇文章吗？此操作不可恢复。')) return
+
+  deletingPostId.value = item.id
+  try {
+    await deletePost(item.id)
+    if (session.value.userId) {
+      await loadDashboard(session.value.userId)
+    }
+    toast.add({
+      color: 'success',
+      title: '文章已删除'
+    })
+  } catch (error: unknown) {
+    toast.add({
+      color: 'error',
+      title: '删除失败',
+      description: getErrorMessage(error, '请稍后再试')
+    })
+  } finally {
+    deletingPostId.value = ''
   }
 }
 
@@ -516,6 +613,102 @@ useSeoMeta({
             </div>
           </UCard>
         </div>
+      </section>
+
+      <section class="mt-8">
+        <UCard>
+          <template #header>
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="text-lg font-semibold text-highlighted">
+                我的文章管理
+              </h2>
+              <UButton to="/write" size="xs" icon="i-lucide-plus" label="新建文章" />
+            </div>
+          </template>
+
+          <div v-if="dashboardError" class="text-sm text-toned">
+            暂时无法拉取文章列表
+          </div>
+
+          <div v-else-if="!dashboard?.authorPosts?.length" class="text-sm text-toned">
+            你还没有文章，点击右上角开始写作。
+          </div>
+
+          <div v-else class="space-y-3">
+            <article
+              v-for="item in dashboard.authorPosts"
+              :key="item.id"
+              class="rounded-xl border border-default p-4"
+            >
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <p class="text-base font-semibold text-highlighted">
+                      {{ item.title }}
+                    </p>
+                    <UBadge
+                      size="xs"
+                      :label="toPostStatusText(item.status)"
+                      :color="toPostStatusColor(item.status)"
+                      variant="subtle"
+                    />
+                  </div>
+                  <p class="text-xs text-toned">
+                    {{ item.createdAt }} · 👁 {{ formatCount(item.views) }} · ❤️ {{ formatCount(item.likes) }} · 💬 {{ formatCount(item.comments) }}
+                  </p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                  <UButton
+                    :to="`/write?slug=${item.slug}`"
+                    size="xs"
+                    color="primary"
+                    variant="soft"
+                    icon="i-lucide-square-pen"
+                    label="编辑"
+                  />
+                  <UButton
+                    v-if="canManagePosts && item.status !== POST_STATUS_PUBLISHED"
+                    size="xs"
+                    color="success"
+                    variant="soft"
+                    :loading="updatingPostId === item.id"
+                    label="发布"
+                    @click="changePostStatus(item, POST_STATUS_PUBLISHED)"
+                  />
+                  <UButton
+                    v-if="canManagePosts && item.status !== POST_STATUS_DRAFT"
+                    size="xs"
+                    color="neutral"
+                    variant="soft"
+                    :loading="updatingPostId === item.id"
+                    label="转草稿"
+                    @click="changePostStatus(item, POST_STATUS_DRAFT)"
+                  />
+                  <UButton
+                    v-if="canManagePosts && item.status !== POST_STATUS_ARCHIVED"
+                    size="xs"
+                    color="warning"
+                    variant="soft"
+                    :loading="updatingPostId === item.id"
+                    label="归档"
+                    @click="changePostStatus(item, POST_STATUS_ARCHIVED)"
+                  />
+                  <UButton
+                    v-if="canManagePosts"
+                    size="xs"
+                    color="error"
+                    variant="ghost"
+                    :loading="deletingPostId === item.id"
+                    icon="i-lucide-trash-2"
+                    label="删除"
+                    @click="removePostItem(item)"
+                  />
+                </div>
+              </div>
+            </article>
+          </div>
+        </UCard>
       </section>
     </main>
   </div>
