@@ -1,29 +1,26 @@
 FROM golang:1.25 AS builder
 
-# 定义构建参数，用来指定我们要编译哪个服务
-# 例如：app/user/service
 ARG APP_RELATIVE_PATH
-ARG HTTP_PORT
-ARG GRPC_PORT
 
 WORKDIR /src
-
 COPY . .
 
+#CGO_ENABLED=0 静态编译
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    GOPROXY=https://goproxy.cn go build \
-    -ldflags "-s -w" \
+    CGO_ENABLED=0 GOPROXY=https://goproxy.cn go build \
+    -ldflags "-s -w -extldflags '-static'" \
     -o /src/bin/server \
     ./${APP_RELATIVE_PATH}/cmd/server/...
 
-FROM debian:stable-slim
+# 使用 alpine 作为最终运行环境
+FROM alpine:latest
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates  \
-    netbase \
-    && rm -rf /var/lib/apt/lists/ \
-    && apt-get autoremove -y && apt-get autoclean -y
+ARG HTTP_PORT
+ARG GRPC_PORT
+
+# 安装 ca-certificates 和 tzdata（时区数据），并清理缓存
+RUN apk --no-cache add ca-certificates tzdata
 
 COPY --from=builder /src/bin/server /app/server
 
@@ -33,5 +30,4 @@ EXPOSE ${HTTP_PORT}
 EXPOSE ${GRPC_PORT}
 VOLUME /data/conf
 
-# 启动命令
 CMD ["./server", "-conf", "/data/conf"]
