@@ -529,8 +529,8 @@ func (x *RebuildIndexRequest) GetIncludeNonPublished() bool {
 
 type RebuildIndexReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	IndexedCount  int64                  `protobuf:"varint,2,opt,name=indexed_count,json=indexedCount,proto3" json:"indexed_count,omitempty"`
+	Accepted      bool                   `protobuf:"varint,1,opt,name=accepted,proto3" json:"accepted,omitempty"`
+	Task          *RebuildTaskInfo       `protobuf:"bytes,2,opt,name=task,proto3" json:"task,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -565,18 +565,214 @@ func (*RebuildIndexReply) Descriptor() ([]byte, []int) {
 	return file_search_v1_search_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *RebuildIndexReply) GetSuccess() bool {
+func (x *RebuildIndexReply) GetAccepted() bool {
 	if x != nil {
-		return x.Success
+		return x.Accepted
 	}
 	return false
 }
 
-func (x *RebuildIndexReply) GetIndexedCount() int64 {
+func (x *RebuildIndexReply) GetTask() *RebuildTaskInfo {
+	if x != nil {
+		return x.Task
+	}
+	return nil
+}
+
+type GetRebuildStatusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TaskId        string                 `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRebuildStatusRequest) Reset() {
+	*x = GetRebuildStatusRequest{}
+	mi := &file_search_v1_search_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRebuildStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRebuildStatusRequest) ProtoMessage() {}
+
+func (x *GetRebuildStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_search_v1_search_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRebuildStatusRequest.ProtoReflect.Descriptor instead.
+func (*GetRebuildStatusRequest) Descriptor() ([]byte, []int) {
+	return file_search_v1_search_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *GetRebuildStatusRequest) GetTaskId() string {
+	if x != nil {
+		return x.TaskId
+	}
+	return ""
+}
+
+type GetRebuildStatusReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Task          *RebuildTaskInfo       `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRebuildStatusReply) Reset() {
+	*x = GetRebuildStatusReply{}
+	mi := &file_search_v1_search_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRebuildStatusReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRebuildStatusReply) ProtoMessage() {}
+
+func (x *GetRebuildStatusReply) ProtoReflect() protoreflect.Message {
+	mi := &file_search_v1_search_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRebuildStatusReply.ProtoReflect.Descriptor instead.
+func (*GetRebuildStatusReply) Descriptor() ([]byte, []int) {
+	return file_search_v1_search_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *GetRebuildStatusReply) GetTask() *RebuildTaskInfo {
+	if x != nil {
+		return x.Task
+	}
+	return nil
+}
+
+type RebuildTaskInfo struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	TaskId              string                 `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
+	Status              string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	ResetFirst          bool                   `protobuf:"varint,3,opt,name=reset_first,json=resetFirst,proto3" json:"reset_first,omitempty"`
+	IncludeNonPublished bool                   `protobuf:"varint,4,opt,name=include_non_published,json=includeNonPublished,proto3" json:"include_non_published,omitempty"`
+	IndexedCount        int64                  `protobuf:"varint,5,opt,name=indexed_count,json=indexedCount,proto3" json:"indexed_count,omitempty"`
+	Total               int64                  `protobuf:"varint,6,opt,name=total,proto3" json:"total,omitempty"`
+	ErrorMessage        string                 `protobuf:"bytes,7,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	StartedAt           *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
+	FinishedAt          *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=finished_at,json=finishedAt,proto3" json:"finished_at,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *RebuildTaskInfo) Reset() {
+	*x = RebuildTaskInfo{}
+	mi := &file_search_v1_search_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RebuildTaskInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RebuildTaskInfo) ProtoMessage() {}
+
+func (x *RebuildTaskInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_search_v1_search_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RebuildTaskInfo.ProtoReflect.Descriptor instead.
+func (*RebuildTaskInfo) Descriptor() ([]byte, []int) {
+	return file_search_v1_search_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *RebuildTaskInfo) GetTaskId() string {
+	if x != nil {
+		return x.TaskId
+	}
+	return ""
+}
+
+func (x *RebuildTaskInfo) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *RebuildTaskInfo) GetResetFirst() bool {
+	if x != nil {
+		return x.ResetFirst
+	}
+	return false
+}
+
+func (x *RebuildTaskInfo) GetIncludeNonPublished() bool {
+	if x != nil {
+		return x.IncludeNonPublished
+	}
+	return false
+}
+
+func (x *RebuildTaskInfo) GetIndexedCount() int64 {
 	if x != nil {
 		return x.IndexedCount
 	}
 	return 0
+}
+
+func (x *RebuildTaskInfo) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+func (x *RebuildTaskInfo) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+func (x *RebuildTaskInfo) GetStartedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.StartedAt
+	}
+	return nil
+}
+
+func (x *RebuildTaskInfo) GetFinishedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.FinishedAt
+	}
+	return nil
 }
 
 var File_search_v1_search_proto protoreflect.FileDescriptor
@@ -622,15 +818,33 @@ const file_search_v1_search_proto_rawDesc = "" +
 	"\x13RebuildIndexRequest\x12\x1f\n" +
 	"\vreset_first\x18\x01 \x01(\bR\n" +
 	"resetFirst\x122\n" +
-	"\x15include_non_published\x18\x02 \x01(\bR\x13includeNonPublished\"R\n" +
-	"\x11RebuildIndexReply\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\x12#\n" +
-	"\rindexed_count\x18\x02 \x01(\x03R\findexedCount2\x87\x03\n" +
+	"\x15include_non_published\x18\x02 \x01(\bR\x13includeNonPublished\"c\n" +
+	"\x11RebuildIndexReply\x12\x1a\n" +
+	"\baccepted\x18\x01 \x01(\bR\baccepted\x122\n" +
+	"\x04task\x18\x02 \x01(\v2\x1e.api.search.v1.RebuildTaskInfoR\x04task\"2\n" +
+	"\x17GetRebuildStatusRequest\x12\x17\n" +
+	"\atask_id\x18\x01 \x01(\tR\x06taskId\"K\n" +
+	"\x15GetRebuildStatusReply\x122\n" +
+	"\x04task\x18\x01 \x01(\v2\x1e.api.search.v1.RebuildTaskInfoR\x04task\"\xef\x02\n" +
+	"\x0fRebuildTaskInfo\x12\x17\n" +
+	"\atask_id\x18\x01 \x01(\tR\x06taskId\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\x12\x1f\n" +
+	"\vreset_first\x18\x03 \x01(\bR\n" +
+	"resetFirst\x122\n" +
+	"\x15include_non_published\x18\x04 \x01(\bR\x13includeNonPublished\x12#\n" +
+	"\rindexed_count\x18\x05 \x01(\x03R\findexedCount\x12\x14\n" +
+	"\x05total\x18\x06 \x01(\x03R\x05total\x12#\n" +
+	"\rerror_message\x18\a \x01(\tR\ferrorMessage\x129\n" +
+	"\n" +
+	"started_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x12;\n" +
+	"\vfinished_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"finishedAt2\xad\x04\n" +
 	"\x06Search\x12k\n" +
 	"\vSearchPosts\x12!.api.search.v1.SearchPostsRequest\x1a\x1f.api.search.v1.SearchPostsReply\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/search/posts\x12H\n" +
 	"\bSyncPost\x12\x1e.api.search.v1.SyncPostRequest\x1a\x1c.api.search.v1.SyncPostReply\x12Q\n" +
 	"\vDeleteIndex\x12!.api.search.v1.DeleteIndexRequest\x1a\x1f.api.search.v1.DeleteIndexReply\x12s\n" +
-	"\fRebuildIndex\x12\".api.search.v1.RebuildIndexRequest\x1a .api.search.v1.RebuildIndexReply\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/v1/search/rebuildBA\n" +
+	"\fRebuildIndex\x12\".api.search.v1.RebuildIndexRequest\x1a .api.search.v1.RebuildIndexReply\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/v1/search/rebuild\x12\xa3\x01\n" +
+	"\x10GetRebuildStatus\x12&.api.search.v1.GetRebuildStatusRequest\x1a$.api.search.v1.GetRebuildStatusReply\"A\x82\xd3\xe4\x93\x02;Z\x1e\x12\x1c/v1/search/rebuild/{task_id}\x12\x19/v1/search/rebuild/statusBA\n" +
 	"\rapi.search.v1P\x01Z.github.com/satiu123/GoPalette/api/search/v1;v1b\x06proto3"
 
 var (
@@ -645,36 +859,45 @@ func file_search_v1_search_proto_rawDescGZIP() []byte {
 	return file_search_v1_search_proto_rawDescData
 }
 
-var file_search_v1_search_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_search_v1_search_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_search_v1_search_proto_goTypes = []any{
-	(*SearchPostsRequest)(nil),    // 0: api.search.v1.SearchPostsRequest
-	(*PostSearchInfo)(nil),        // 1: api.search.v1.PostSearchInfo
-	(*SearchPostsReply)(nil),      // 2: api.search.v1.SearchPostsReply
-	(*SyncPostRequest)(nil),       // 3: api.search.v1.SyncPostRequest
-	(*SyncPostReply)(nil),         // 4: api.search.v1.SyncPostReply
-	(*DeleteIndexRequest)(nil),    // 5: api.search.v1.DeleteIndexRequest
-	(*DeleteIndexReply)(nil),      // 6: api.search.v1.DeleteIndexReply
-	(*RebuildIndexRequest)(nil),   // 7: api.search.v1.RebuildIndexRequest
-	(*RebuildIndexReply)(nil),     // 8: api.search.v1.RebuildIndexReply
-	(*timestamppb.Timestamp)(nil), // 9: google.protobuf.Timestamp
+	(*SearchPostsRequest)(nil),      // 0: api.search.v1.SearchPostsRequest
+	(*PostSearchInfo)(nil),          // 1: api.search.v1.PostSearchInfo
+	(*SearchPostsReply)(nil),        // 2: api.search.v1.SearchPostsReply
+	(*SyncPostRequest)(nil),         // 3: api.search.v1.SyncPostRequest
+	(*SyncPostReply)(nil),           // 4: api.search.v1.SyncPostReply
+	(*DeleteIndexRequest)(nil),      // 5: api.search.v1.DeleteIndexRequest
+	(*DeleteIndexReply)(nil),        // 6: api.search.v1.DeleteIndexReply
+	(*RebuildIndexRequest)(nil),     // 7: api.search.v1.RebuildIndexRequest
+	(*RebuildIndexReply)(nil),       // 8: api.search.v1.RebuildIndexReply
+	(*GetRebuildStatusRequest)(nil), // 9: api.search.v1.GetRebuildStatusRequest
+	(*GetRebuildStatusReply)(nil),   // 10: api.search.v1.GetRebuildStatusReply
+	(*RebuildTaskInfo)(nil),         // 11: api.search.v1.RebuildTaskInfo
+	(*timestamppb.Timestamp)(nil),   // 12: google.protobuf.Timestamp
 }
 var file_search_v1_search_proto_depIdxs = []int32{
-	9, // 0: api.search.v1.PostSearchInfo.created_at:type_name -> google.protobuf.Timestamp
-	1, // 1: api.search.v1.SearchPostsReply.results:type_name -> api.search.v1.PostSearchInfo
-	9, // 2: api.search.v1.SyncPostRequest.created_at:type_name -> google.protobuf.Timestamp
-	0, // 3: api.search.v1.Search.SearchPosts:input_type -> api.search.v1.SearchPostsRequest
-	3, // 4: api.search.v1.Search.SyncPost:input_type -> api.search.v1.SyncPostRequest
-	5, // 5: api.search.v1.Search.DeleteIndex:input_type -> api.search.v1.DeleteIndexRequest
-	7, // 6: api.search.v1.Search.RebuildIndex:input_type -> api.search.v1.RebuildIndexRequest
-	2, // 7: api.search.v1.Search.SearchPosts:output_type -> api.search.v1.SearchPostsReply
-	4, // 8: api.search.v1.Search.SyncPost:output_type -> api.search.v1.SyncPostReply
-	6, // 9: api.search.v1.Search.DeleteIndex:output_type -> api.search.v1.DeleteIndexReply
-	8, // 10: api.search.v1.Search.RebuildIndex:output_type -> api.search.v1.RebuildIndexReply
-	7, // [7:11] is the sub-list for method output_type
-	3, // [3:7] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	12, // 0: api.search.v1.PostSearchInfo.created_at:type_name -> google.protobuf.Timestamp
+	1,  // 1: api.search.v1.SearchPostsReply.results:type_name -> api.search.v1.PostSearchInfo
+	12, // 2: api.search.v1.SyncPostRequest.created_at:type_name -> google.protobuf.Timestamp
+	11, // 3: api.search.v1.RebuildIndexReply.task:type_name -> api.search.v1.RebuildTaskInfo
+	11, // 4: api.search.v1.GetRebuildStatusReply.task:type_name -> api.search.v1.RebuildTaskInfo
+	12, // 5: api.search.v1.RebuildTaskInfo.started_at:type_name -> google.protobuf.Timestamp
+	12, // 6: api.search.v1.RebuildTaskInfo.finished_at:type_name -> google.protobuf.Timestamp
+	0,  // 7: api.search.v1.Search.SearchPosts:input_type -> api.search.v1.SearchPostsRequest
+	3,  // 8: api.search.v1.Search.SyncPost:input_type -> api.search.v1.SyncPostRequest
+	5,  // 9: api.search.v1.Search.DeleteIndex:input_type -> api.search.v1.DeleteIndexRequest
+	7,  // 10: api.search.v1.Search.RebuildIndex:input_type -> api.search.v1.RebuildIndexRequest
+	9,  // 11: api.search.v1.Search.GetRebuildStatus:input_type -> api.search.v1.GetRebuildStatusRequest
+	2,  // 12: api.search.v1.Search.SearchPosts:output_type -> api.search.v1.SearchPostsReply
+	4,  // 13: api.search.v1.Search.SyncPost:output_type -> api.search.v1.SyncPostReply
+	6,  // 14: api.search.v1.Search.DeleteIndex:output_type -> api.search.v1.DeleteIndexReply
+	8,  // 15: api.search.v1.Search.RebuildIndex:output_type -> api.search.v1.RebuildIndexReply
+	10, // 16: api.search.v1.Search.GetRebuildStatus:output_type -> api.search.v1.GetRebuildStatusReply
+	12, // [12:17] is the sub-list for method output_type
+	7,  // [7:12] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_search_v1_search_proto_init() }
@@ -688,7 +911,7 @@ func file_search_v1_search_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_search_v1_search_proto_rawDesc), len(file_search_v1_search_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

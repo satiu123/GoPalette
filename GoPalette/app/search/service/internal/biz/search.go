@@ -2,8 +2,10 @@ package biz
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"strings"
+	"sync"
 	"time"
 
 	pb "github.com/satiu123/GoPalette/api/search/v1"
@@ -32,6 +34,25 @@ type SyncPost struct {
 	CreatedAt    time.Time
 }
 
+type RebuildTask struct {
+	TaskID              string
+	Status              string
+	ResetFirst          bool
+	IncludeNonPublished bool
+	IndexedCount        int64
+	Total               int64
+	ErrorMessage        string
+	StartedAt           time.Time
+	FinishedAt          time.Time
+}
+
+const (
+	RebuildStatusRunning   = "RUNNING"
+	RebuildStatusSucceeded = "SUCCEEDED"
+	RebuildStatusFailed    = "FAILED"
+	rebuildPageSize        = 2000
+)
+
 type SearchRepo interface {
 	SearchPosts(ctx context.Context, query string, offset, limit int64, category string) ([]*PostSearch, int64, error)
 	SyncPost(ctx context.Context, p *SyncPost) error
@@ -41,13 +62,18 @@ type SearchRepo interface {
 }
 
 type PostSourceRepo interface {
-	ListPosts(ctx context.Context, page, pageSize int64, includeNonPublished bool) ([]*SyncPost, int64, error)
+	ListPostsByCursor(ctx context.Context, cursorID, pageSize int64, includeNonPublished bool) ([]*SyncPost, int64, int64, bool, error)
 }
 
 type SearchUsecase struct {
 	repo       SearchRepo
 	postSource PostSourceRepo
 	logger     *log.Helper
+
+	mu           sync.RWMutex
+	tasks        map[string]*RebuildTask
+	latestTaskID string
+	activeTaskID string
 }
 
 func NewSearchUsecase(repo SearchRepo, postSource PostSourceRepo, logger log.Logger) *SearchUsecase {
@@ -55,6 +81,7 @@ func NewSearchUsecase(repo SearchRepo, postSource PostSourceRepo, logger log.Log
 		repo:       repo,
 		postSource: postSource,
 		logger:     log.NewHelper(log.With(logger, "module", "usecase/search")),
+		tasks:      make(map[string]*RebuildTask),
 	}
 }
 
@@ -98,32 +125,151 @@ func (uc *SearchUsecase) DeleteIndex(ctx context.Context, postID int64) error {
 	return uc.repo.DeletePost(ctx, postID)
 }
 
-func (uc *SearchUsecase) RebuildIndex(ctx context.Context, resetFirst bool, includeNonPublished bool) (int64, error) {
-	if resetFirst {
-		if err := uc.repo.ResetIndex(ctx); err != nil {
-			return 0, err
+func (uc *SearchUsecase) StartRebuildIndex(resetFirst bool, includeNonPublished bool) (*RebuildTask, error) {
+	uc.mu.Lock()
+	if uc.activeTaskID != "" {
+		if active, ok := uc.tasks[uc.activeTaskID]; ok && active.Status == RebuildStatusRunning {
+			uc.mu.Unlock()
+			return nil, pb.ErrorRebuildInProgress("已有重建任务在执行中: %s", active.TaskID)
 		}
 	}
 
-	const pageSize int64 = 100
-	var page int64 = 1
+	taskID := fmt.Sprintf("rebuild-%d", time.Now().UnixNano())
+	task := &RebuildTask{
+		TaskID:              taskID,
+		Status:              RebuildStatusRunning,
+		ResetFirst:          resetFirst,
+		IncludeNonPublished: includeNonPublished,
+		StartedAt:           time.Now(),
+	}
+	uc.tasks[taskID] = task
+	uc.latestTaskID = taskID
+	uc.activeTaskID = taskID
+	uc.mu.Unlock()
+
+	go uc.runRebuildTask(taskID)
+	return cloneRebuildTask(task), nil
+}
+
+func (uc *SearchUsecase) GetRebuildStatus(taskID string) (*RebuildTask, error) {
+	uc.mu.RLock()
+	defer uc.mu.RUnlock()
+
+	if strings.TrimSpace(taskID) == "" {
+		taskID = uc.latestTaskID
+	}
+	if taskID == "" {
+		return nil, pb.ErrorInvalidArgument("%s", "暂无重建任务，请先调用 RebuildIndex")
+	}
+	task, ok := uc.tasks[taskID]
+	if !ok {
+		return nil, pb.ErrorInvalidArgument("task_id=%s 不存在", taskID)
+	}
+	return cloneRebuildTask(task), nil
+}
+
+func (uc *SearchUsecase) runRebuildTask(taskID string) {
+	ctx := context.Background()
+	task, ok := uc.getTask(taskID)
+	if !ok {
+		return
+	}
+
+	if task.ResetFirst {
+		if err := uc.repo.ResetIndex(ctx); err != nil {
+			uc.finishTaskFailed(taskID, err)
+			return
+		}
+	}
+
+	const pageSize int64 = rebuildPageSize
+	var cursorID int64
 	var indexed int64
 	for {
-		posts, total, err := uc.postSource.ListPosts(ctx, page, pageSize, includeNonPublished)
+		posts, total, nextCursorID, hasMore, err := uc.postSource.ListPostsByCursor(ctx, cursorID, pageSize, task.IncludeNonPublished)
 		if err != nil {
-			return indexed, err
+			uc.finishTaskFailed(taskID, err)
+			return
 		}
+		if total > 0 {
+			uc.updateTaskTotal(taskID, total)
+		}
+
 		if len(posts) == 0 {
 			break
 		}
 		if err := uc.repo.SyncPostsBatch(ctx, posts); err != nil {
-			return indexed, err
+			uc.finishTaskFailed(taskID, err)
+			return
 		}
 		indexed += int64(len(posts))
-		if page*pageSize >= total {
+		uc.updateTaskIndexed(taskID, indexed)
+		if !hasMore || nextCursorID <= 0 {
 			break
 		}
-		page++
+		cursorID = nextCursorID
 	}
-	return indexed, nil
+	uc.finishTaskSucceeded(taskID, indexed)
+}
+
+func (uc *SearchUsecase) getTask(taskID string) (*RebuildTask, bool) {
+	uc.mu.RLock()
+	defer uc.mu.RUnlock()
+	task, ok := uc.tasks[taskID]
+	return task, ok
+}
+
+func (uc *SearchUsecase) updateTaskTotal(taskID string, total int64) {
+	uc.mu.Lock()
+	defer uc.mu.Unlock()
+	if task, ok := uc.tasks[taskID]; ok {
+		task.Total = total
+	}
+}
+
+func (uc *SearchUsecase) updateTaskIndexed(taskID string, indexed int64) {
+	uc.mu.Lock()
+	defer uc.mu.Unlock()
+	if task, ok := uc.tasks[taskID]; ok {
+		task.IndexedCount = indexed
+	}
+}
+
+func (uc *SearchUsecase) finishTaskSucceeded(taskID string, indexed int64) {
+	uc.mu.Lock()
+	defer uc.mu.Unlock()
+	task, ok := uc.tasks[taskID]
+	if !ok {
+		return
+	}
+	task.Status = RebuildStatusSucceeded
+	task.IndexedCount = indexed
+	task.ErrorMessage = ""
+	task.FinishedAt = time.Now()
+	if uc.activeTaskID == taskID {
+		uc.activeTaskID = ""
+	}
+}
+
+func (uc *SearchUsecase) finishTaskFailed(taskID string, err error) {
+	uc.mu.Lock()
+	defer uc.mu.Unlock()
+	task, ok := uc.tasks[taskID]
+	if !ok {
+		return
+	}
+	task.Status = RebuildStatusFailed
+	task.ErrorMessage = err.Error()
+	task.FinishedAt = time.Now()
+	if uc.activeTaskID == taskID {
+		uc.activeTaskID = ""
+	}
+}
+
+func cloneRebuildTask(task *RebuildTask) *RebuildTask {
+	if task == nil {
+		return nil
+	}
+	cp := *task
+	return &cp
 }

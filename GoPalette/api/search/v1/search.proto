@@ -31,6 +31,16 @@ service Search {
 			body: "*"
 		};
 	}
+
+	// 查询异步重建任务状态，不传 task_id 返回最近一次任务状态
+	rpc GetRebuildStatus (GetRebuildStatusRequest) returns (GetRebuildStatusReply) {
+		option (google.api.http) = {
+			get: "/v1/search/rebuild/status"
+			additional_bindings {
+				get: "/v1/search/rebuild/{task_id}"
+			}
+		};
+	}
 }
 
 message SearchPostsRequest {
@@ -85,6 +95,26 @@ message RebuildIndexRequest {
 }
 
 message RebuildIndexReply {
-	bool success = 1;
-	int64 indexed_count = 2;
+	bool accepted = 1;
+	RebuildTaskInfo task = 2;
+}
+
+message GetRebuildStatusRequest {
+	string task_id = 1;
+}
+
+message GetRebuildStatusReply {
+	RebuildTaskInfo task = 1;
+}
+
+message RebuildTaskInfo {
+	string task_id = 1;
+	string status = 2;
+	bool reset_first = 3;
+	bool include_non_published = 4;
+	int64 indexed_count = 5;
+	int64 total = 6;
+	string error_message = 7;
+	google.protobuf.Timestamp started_at = 8;
+	google.protobuf.Timestamp finished_at = 9;
 }

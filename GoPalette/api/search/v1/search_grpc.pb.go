@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Search_SearchPosts_FullMethodName  = "/api.search.v1.Search/SearchPosts"
-	Search_SyncPost_FullMethodName     = "/api.search.v1.Search/SyncPost"
-	Search_DeleteIndex_FullMethodName  = "/api.search.v1.Search/DeleteIndex"
-	Search_RebuildIndex_FullMethodName = "/api.search.v1.Search/RebuildIndex"
+	Search_SearchPosts_FullMethodName      = "/api.search.v1.Search/SearchPosts"
+	Search_SyncPost_FullMethodName         = "/api.search.v1.Search/SyncPost"
+	Search_DeleteIndex_FullMethodName      = "/api.search.v1.Search/DeleteIndex"
+	Search_RebuildIndex_FullMethodName     = "/api.search.v1.Search/RebuildIndex"
+	Search_GetRebuildStatus_FullMethodName = "/api.search.v1.Search/GetRebuildStatus"
 )
 
 // SearchClient is the client API for Search service.
@@ -39,6 +40,8 @@ type SearchClient interface {
 	DeleteIndex(ctx context.Context, in *DeleteIndexRequest, opts ...grpc.CallOption) (*DeleteIndexReply, error)
 	// 管理员触发：从 Post Service 拉取全量并重建索引
 	RebuildIndex(ctx context.Context, in *RebuildIndexRequest, opts ...grpc.CallOption) (*RebuildIndexReply, error)
+	// 查询异步重建任务状态，不传 task_id 返回最近一次任务状态
+	GetRebuildStatus(ctx context.Context, in *GetRebuildStatusRequest, opts ...grpc.CallOption) (*GetRebuildStatusReply, error)
 }
 
 type searchClient struct {
@@ -89,6 +92,16 @@ func (c *searchClient) RebuildIndex(ctx context.Context, in *RebuildIndexRequest
 	return out, nil
 }
 
+func (c *searchClient) GetRebuildStatus(ctx context.Context, in *GetRebuildStatusRequest, opts ...grpc.CallOption) (*GetRebuildStatusReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRebuildStatusReply)
+	err := c.cc.Invoke(ctx, Search_GetRebuildStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SearchServer is the server API for Search service.
 // All implementations must embed UnimplementedSearchServer
 // for forward compatibility.
@@ -103,6 +116,8 @@ type SearchServer interface {
 	DeleteIndex(context.Context, *DeleteIndexRequest) (*DeleteIndexReply, error)
 	// 管理员触发：从 Post Service 拉取全量并重建索引
 	RebuildIndex(context.Context, *RebuildIndexRequest) (*RebuildIndexReply, error)
+	// 查询异步重建任务状态，不传 task_id 返回最近一次任务状态
+	GetRebuildStatus(context.Context, *GetRebuildStatusRequest) (*GetRebuildStatusReply, error)
 	mustEmbedUnimplementedSearchServer()
 }
 
@@ -124,6 +139,9 @@ func (UnimplementedSearchServer) DeleteIndex(context.Context, *DeleteIndexReques
 }
 func (UnimplementedSearchServer) RebuildIndex(context.Context, *RebuildIndexRequest) (*RebuildIndexReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method RebuildIndex not implemented")
+}
+func (UnimplementedSearchServer) GetRebuildStatus(context.Context, *GetRebuildStatusRequest) (*GetRebuildStatusReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRebuildStatus not implemented")
 }
 func (UnimplementedSearchServer) mustEmbedUnimplementedSearchServer() {}
 func (UnimplementedSearchServer) testEmbeddedByValue()                {}
@@ -218,6 +236,24 @@ func _Search_RebuildIndex_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Search_GetRebuildStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRebuildStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SearchServer).GetRebuildStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Search_GetRebuildStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SearchServer).GetRebuildStatus(ctx, req.(*GetRebuildStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Search_ServiceDesc is the grpc.ServiceDesc for Search service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -240,6 +276,10 @@ var Search_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RebuildIndex",
 			Handler:    _Search_RebuildIndex_Handler,
+		},
+		{
+			MethodName: "GetRebuildStatus",
+			Handler:    _Search_GetRebuildStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -1,0 +1,37 @@
+# VCS / IDE
+.git
+.gitignore
+.github
+.vscode
+.idea
+
+# OS / logs
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# Go build / test artifacts
+**/bin/
+**/dist/
+**/tmp/
+**/*.test
+**/*.out
+**/*.prof
+**/coverage/
+**/coverage.out
+
+
+
+# Generated load-test data
+posts.jsonl
+keywords.csv
+
+# Local scratch files
+openapi.txt

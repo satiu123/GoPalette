@@ -25,9 +25,10 @@ const (
 type ErrorReason int32
 
 const (
-	ErrorReason_INVALID_ARGUMENT  ErrorReason = 0
-	ErrorReason_INDEX_SYNC_FAILED ErrorReason = 1
-	ErrorReason_SEARCH_FAILED     ErrorReason = 2
+	ErrorReason_INVALID_ARGUMENT    ErrorReason = 0
+	ErrorReason_INDEX_SYNC_FAILED   ErrorReason = 1
+	ErrorReason_SEARCH_FAILED       ErrorReason = 2
+	ErrorReason_REBUILD_IN_PROGRESS ErrorReason = 3
 )
 
 // Enum value maps for ErrorReason.
@@ -36,11 +37,13 @@ var (
 		0: "INVALID_ARGUMENT",
 		1: "INDEX_SYNC_FAILED",
 		2: "SEARCH_FAILED",
+		3: "REBUILD_IN_PROGRESS",
 	}
 	ErrorReason_value = map[string]int32{
-		"INVALID_ARGUMENT":  0,
-		"INDEX_SYNC_FAILED": 1,
-		"SEARCH_FAILED":     2,
+		"INVALID_ARGUMENT":    0,
+		"INDEX_SYNC_FAILED":   1,
+		"SEARCH_FAILED":       2,
+		"REBUILD_IN_PROGRESS": 3,
 	}
 )
 
@@ -75,11 +78,12 @@ var File_search_v1_error_proto protoreflect.FileDescriptor
 
 const file_search_v1_error_proto_rawDesc = "" +
 	"\n" +
-	"\x15search/v1/error.proto\x12\rapi.search.v1\x1a\x13errors/errors.proto*e\n" +
+	"\x15search/v1/error.proto\x12\rapi.search.v1\x1a\x13errors/errors.proto*\x84\x01\n" +
 	"\vErrorReason\x12\x1a\n" +
 	"\x10INVALID_ARGUMENT\x10\x00\x1a\x04\xa8E\x90\x03\x12\x1b\n" +
 	"\x11INDEX_SYNC_FAILED\x10\x01\x1a\x04\xa8E\xf4\x03\x12\x17\n" +
-	"\rSEARCH_FAILED\x10\x02\x1a\x04\xa8E\xf4\x03\x1a\x04\xa0E\xf4\x03BA\n" +
+	"\rSEARCH_FAILED\x10\x02\x1a\x04\xa8E\xf4\x03\x12\x1d\n" +
+	"\x13REBUILD_IN_PROGRESS\x10\x03\x1a\x04\xa8E\x99\x03\x1a\x04\xa0E\xf4\x03BA\n" +
 	"\rapi.search.v1P\x01Z.github.com/satiu123/GoPalette/api/search/v1;v1b\x06proto3"
 
 var (

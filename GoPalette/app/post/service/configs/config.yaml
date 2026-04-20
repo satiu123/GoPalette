@@ -1,10 +1,10 @@
 server:
   http:
     addr: 0.0.0.0:8001
-    timeout: 1s
+    timeout: 10s
   grpc:
     addr: 0.0.0.0:9001
-    timeout: 1s
+    timeout: 30s
 data:
   database:
     driver: mysql
@@ -17,7 +17,7 @@ data:
   clients:
     user_endpoint: discovery:///user.service
     search_endpoint: discovery:///search.service
-    timeout: 1s
+    timeout: 5s
 registry:
   etcd:
     endpoints:

@@ -16,4 +16,4 @@ scrape_configs:
   - job_name: "gopalette-services"
     scrape_interval: 5s
     static_configs:
-      - targets: ["user:8000", "post:8001", "comment:8002", "search:8003"]
+      - targets: ["gateway:8080", "user:8000", "post:8001", "comment:8002", "search:8003"]

@@ -179,7 +179,7 @@ func (r *postRepo) List(ctx context.Context, page, pageSize int64) ([]*biz.Post,
 
 	err := db.Preload("Category").
 		Preload("Tags").
-		Order("created_at DESC").
+		Order("id DESC").
 		Scopes(pagination.Paginate(p)).
 		Find(&pos).Error
 	if err != nil {
@@ -213,7 +213,7 @@ func (r *postRepo) ListByAuthor(ctx context.Context, authorID, page, pageSize in
 
 	err := db.Preload("Category").
 		Preload("Tags").
-		Order("created_at DESC").
+		Order("id DESC").
 		Scopes(pagination.Paginate(p)).
 		Find(&pos).Error
 	if err != nil {
@@ -314,7 +314,7 @@ func (r *postRepo) ListForIndex(ctx context.Context, page, pageSize int64, publi
 
 	err := db.Preload("Category").
 		Preload("Tags").
-		Order("created_at DESC").
+		Order("id DESC").
 		Scopes(pagination.Paginate(p)).
 		Find(&pos).Error
 	if err != nil {
@@ -326,6 +326,55 @@ func (r *postRepo) ListForIndex(ctx context.Context, page, pageSize int64, publi
 		posts = append(posts, r.toBizPost(&po))
 	}
 	return posts, total, nil
+}
+
+func (r *postRepo) ListForIndexByCursor(ctx context.Context, cursorID, pageSize int64, publishedOnly bool) ([]*biz.Post, int64, int64, bool, error) {
+	if pageSize <= 0 {
+		pageSize = 1000
+	}
+	if pageSize > 5000 {
+		pageSize = 5000
+	}
+
+	db := r.data.db.WithContext(ctx).Model(&Post{})
+	if publishedOnly {
+		db = db.Where("status = ?", 1)
+	}
+	if cursorID > 0 {
+		db = db.Where("id < ?", cursorID)
+	}
+
+	var total int64
+	if cursorID == 0 {
+		if err := db.Count(&total).Error; err != nil {
+			return nil, 0, 0, false, err
+		}
+		if total == 0 {
+			return []*biz.Post{}, 0, 0, false, nil
+		}
+	}
+
+	var pos []Post
+	err := db.Preload("Category").
+		Preload("Tags").
+		Order("id DESC").
+		Limit(int(pageSize)).
+		Find(&pos).Error
+	if err != nil {
+		return nil, 0, 0, false, err
+	}
+	if len(pos) == 0 {
+		return []*biz.Post{}, total, 0, false, nil
+	}
+
+	posts := make([]*biz.Post, 0, len(pos))
+	for _, po := range pos {
+		posts = append(posts, r.toBizPost(&po))
+	}
+
+	nextCursorID := int64(pos[len(pos)-1].ID)
+	hasMore := len(pos) == int(pageSize)
+	return posts, total, nextCursorID, hasMore, nil
 }
 
 // 将数据层的 Post 转换为业务层的 Post

@@ -416,6 +416,43 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.search.v1.RebuildIndexReply'
+    /v1/search/rebuild/status:
+        get:
+            tags:
+                - Search
+            description: 查询异步重建任务状态，不传 task_id 返回最近一次任务状态
+            operationId: Search_GetRebuildStatus
+            parameters:
+                - name: taskId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.search.v1.GetRebuildStatusReply'
+    /v1/search/rebuild/{taskId}:
+        get:
+            tags:
+                - Search
+            description: 查询异步重建任务状态，不传 task_id 返回最近一次任务状态
+            operationId: Search_GetRebuildStatus
+            parameters:
+                - name: taskId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.search.v1.GetRebuildStatusReply'
     /v1/tags:
         get:
             tags:
@@ -1295,6 +1332,11 @@ components:
                 updateMask:
                     type: string
                     format: field-mask
+        api.search.v1.GetRebuildStatusReply:
+            type: object
+            properties:
+                task:
+                    $ref: '#/components/schemas/api.search.v1.RebuildTaskInfo'
         api.search.v1.PostSearchInfo:
             type: object
             properties:
@@ -1318,10 +1360,10 @@ components:
         api.search.v1.RebuildIndexReply:
             type: object
             properties:
-                success:
+                accepted:
                     type: boolean
-                indexedCount:
-                    type: string
+                task:
+                    $ref: '#/components/schemas/api.search.v1.RebuildTaskInfo'
         api.search.v1.RebuildIndexRequest:
             type: object
             properties:
@@ -1329,6 +1371,29 @@ components:
                     type: boolean
                 includeNonPublished:
                     type: boolean
+        api.search.v1.RebuildTaskInfo:
+            type: object
+            properties:
+                taskId:
+                    type: string
+                status:
+                    type: string
+                resetFirst:
+                    type: boolean
+                includeNonPublished:
+                    type: boolean
+                indexedCount:
+                    type: string
+                total:
+                    type: string
+                errorMessage:
+                    type: string
+                startedAt:
+                    type: string
+                    format: date-time
+                finishedAt:
+                    type: string
+                    format: date-time
         api.search.v1.SearchPostsReply:
             type: object
             properties:

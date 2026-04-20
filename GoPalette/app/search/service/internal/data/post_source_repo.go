@@ -19,10 +19,14 @@ func NewPostSourceRepo(data *Data, logger log.Logger) biz.PostSourceRepo {
 	return &postSourceRepo{data: data, log: log.NewHelper(log.With(logger, "module", "repo/post-source"))}
 }
 
-func (r *postSourceRepo) ListPosts(ctx context.Context, page, pageSize int64, includeNonPublished bool) ([]*biz.SyncPost, int64, error) {
-	resp, err := r.data.postClient.ListPostsForIndex(ctx, &postv1.ListPostsForIndexRequest{Page: page, PageSize: pageSize, IncludeNonPublished: includeNonPublished})
+func (r *postSourceRepo) ListPostsByCursor(ctx context.Context, cursorID, pageSize int64, includeNonPublished bool) ([]*biz.SyncPost, int64, int64, bool, error) {
+	resp, err := r.data.postClient.ListPostsForIndex(ctx, &postv1.ListPostsForIndexRequest{
+		CursorId:            cursorID,
+		PageSize:            pageSize,
+		IncludeNonPublished: includeNonPublished,
+	})
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, 0, false, err
 	}
 	items := make([]*biz.SyncPost, 0, len(resp.Posts))
 	for _, p := range resp.Posts {
@@ -40,5 +44,5 @@ func (r *postSourceRepo) ListPosts(ctx context.Context, page, pageSize int64, in
 		}
 		items = append(items, sp)
 	}
-	return items, resp.Total, nil
+	return items, resp.Total, resp.NextCursorId, resp.HasMore, nil
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/meilisearch/meilisearch-go"
+	grpcgo "google.golang.org/grpc"
 )
 
 // ProviderSet is data providers.
@@ -33,6 +34,11 @@ func NewPostClient(reg *etcd.Registry, c *conf.Data) postv1.PostClient {
 		grpc.WithTimeout(c.Clients.Timeout.AsDuration()),
 		grpc.WithDiscovery(reg),
 		grpc.WithMiddleware(tracing.Client()),
+		grpc.WithOptions(
+			grpcgo.WithDefaultCallOptions(
+				grpcgo.MaxCallRecvMsgSize(32 * 1024 * 1024),
+			),
+		),
 	)
 	if err != nil {
 		panic(err)

@@ -43,6 +43,7 @@ type PostRepo interface {
 	GetAuthorStats(ctx context.Context, authorID int64, publishedOnly bool) (*AuthorPostStats, error)
 	ListTopByAuthor(ctx context.Context, authorID, limit int64, publishedOnly bool) ([]*Post, error)
 	ListForIndex(ctx context.Context, page, pageSize int64, publishedOnly bool) ([]*Post, int64, error)
+	ListForIndexByCursor(ctx context.Context, cursorID, pageSize int64, publishedOnly bool) ([]*Post, int64, int64, bool, error)
 	IncrCommentCount(ctx context.Context, id int64, delta int64) error
 	ToggleLike(ctx context.Context, postID, userID int64) (bool, int64, error)
 	ListLikedByUser(ctx context.Context, userID, page, pageSize int64) ([]*Post, int64, error)
@@ -171,6 +172,10 @@ func (uc *PostUsecase) ListTopAuthorPosts(ctx context.Context, authorID, limit i
 
 func (uc *PostUsecase) ListPostsForIndex(ctx context.Context, page, pageSize int64, publishedOnly bool) ([]*Post, int64, error) {
 	return uc.repo.ListForIndex(ctx, page, pageSize, publishedOnly)
+}
+
+func (uc *PostUsecase) ListPostsForIndexByCursor(ctx context.Context, cursorID, pageSize int64, publishedOnly bool) ([]*Post, int64, int64, bool, error) {
+	return uc.repo.ListForIndexByCursor(ctx, cursorID, pageSize, publishedOnly)
 }
 
 func (uc *PostUsecase) IncrCommentCount(ctx context.Context, id int64, delta int64) error {

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 
 	"github.com/satiu123/GoPalette/pkg/auth"
 
@@ -219,32 +220,53 @@ func (s *PostService) ListTopAuthorPosts(ctx context.Context, req *pb.ListTopAut
 
 func (s *PostService) ListPostsForIndex(ctx context.Context, req *pb.ListPostsForIndexRequest) (*pb.ListPostsForIndexReply, error) {
 	publishedOnly := !req.IncludeNonPublished
+	pageSize := req.PageSize
+	if pageSize <= 0 {
+		pageSize = 1000
+	}
 
-	res, total, err := s.uc.ListPostsForIndex(ctx, req.Page, req.PageSize, publishedOnly)
+	var (
+		res          []*biz.Post
+		total        int64
+		nextCursorID int64
+		hasMore      bool
+		err          error
+	)
+	if req.CursorId > 0 || req.Page == 0 {
+		res, total, nextCursorID, hasMore, err = s.uc.ListPostsForIndexByCursor(ctx, req.CursorId, pageSize, publishedOnly)
+	} else {
+		res, total, err = s.uc.ListPostsForIndex(ctx, req.Page, pageSize, publishedOnly)
+		hasMore = int64(len(res)) == pageSize && int64(req.Page)*pageSize < total
+		if len(res) > 0 {
+			nextCursorID = res[len(res)-1].ID
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
 
 	posts := make([]*pb.PostIndexInfo, 0, len(res))
 	for _, p := range res {
-		content := p.Content
-		if len(content) > 500 {
-			content = content[:500]
-		}
+		content := truncateRunes(strings.ToValidUTF8(p.Content, ""), 500)
 		posts = append(posts, &pb.PostIndexInfo{
 			Id:           p.ID,
-			Title:        p.Title,
-			Summary:      p.Summary,
+			Title:        strings.ToValidUTF8(p.Title, ""),
+			Summary:      strings.ToValidUTF8(p.Summary, ""),
 			Content:      content,
-			Slug:         p.Slug,
-			CategoryName: p.CategoryName,
-			Tags:         p.Tags,
+			Slug:         strings.ToValidUTF8(p.Slug, ""),
+			CategoryName: strings.ToValidUTF8(p.CategoryName, ""),
+			Tags:         sanitizeStrings(p.Tags),
 			CreatedAt:    timestamppb.New(p.CreatedAt),
 			Status:       pb.PostStatus(p.Status),
 		})
 	}
 
-	return &pb.ListPostsForIndexReply{Posts: posts, Total: total}, nil
+	return &pb.ListPostsForIndexReply{
+		Posts:        posts,
+		Total:        total,
+		NextCursorId: nextCursorID,
+		HasMore:      hasMore,
+	}, nil
 }
 
 func (s *PostService) IncrCommentCount(ctx context.Context, req *pb.IncrCommentCountRequest) (*pb.IncrCommentCountReply, error) {
@@ -302,9 +324,9 @@ func (s *PostService) ListUserLikedPosts(ctx context.Context, req *pb.ListUserLi
 func (s *PostService) toPBInfo(p *biz.Post) *pb.PostInfo {
 	return &pb.PostInfo{
 		Id:           p.ID,
-		Title:        p.Title,
-		Summary:      p.Summary,
-		Slug:         p.Slug,
+		Title:        strings.ToValidUTF8(p.Title, ""),
+		Summary:      strings.ToValidUTF8(p.Summary, ""),
+		Slug:         strings.ToValidUTF8(p.Slug, ""),
 		Status:       pb.PostStatus(p.Status),
 		ViewCount:    p.ViewCount,
 		LikeCount:    p.LikeCount,
@@ -315,9 +337,9 @@ func (s *PostService) toPBInfo(p *biz.Post) *pb.PostInfo {
 		},
 		Category: &pb.CategoryInfo{
 			Id:   p.CategoryID,
-			Name: p.CategoryName,
+			Name: strings.ToValidUTF8(p.CategoryName, ""),
 		},
-		Tags:      p.Tags,
+		Tags:      sanitizeStrings(p.Tags),
 		CreatedAt: timestamppb.New(p.CreatedAt),
 		UpdatedAt: timestamppb.New(p.UpdatedAt),
 	}
@@ -326,24 +348,43 @@ func (s *PostService) toPBInfo(p *biz.Post) *pb.PostInfo {
 func (s *PostService) toPBDetail(p *biz.Post) *pb.PostDetail {
 	return &pb.PostDetail{
 		Info:            s.toPBInfo(p),
-		Content:         p.Content,
-		OriginalContent: p.OriginalContent,
+		Content:         strings.ToValidUTF8(p.Content, ""),
+		OriginalContent: strings.ToValidUTF8(p.OriginalContent, ""),
 	}
 }
 
 func (s *PostService) toSearchSyncReq(p *biz.Post) *searchpb.SyncPostRequest {
-	content := p.Content
-	if len(content) > 500 {
-		content = content[:500]
-	}
+	content := truncateRunes(strings.ToValidUTF8(p.Content, ""), 500)
 	return &searchpb.SyncPostRequest{
 		Id:           p.ID,
-		Title:        p.Title,
-		Summary:      p.Summary,
+		Title:        strings.ToValidUTF8(p.Title, ""),
+		Summary:      strings.ToValidUTF8(p.Summary, ""),
 		Content:      content,
-		Slug:         p.Slug,
-		CategoryName: p.CategoryName,
-		Tags:         p.Tags,
+		Slug:         strings.ToValidUTF8(p.Slug, ""),
+		CategoryName: strings.ToValidUTF8(p.CategoryName, ""),
+		Tags:         sanitizeStrings(p.Tags),
 		CreatedAt:    timestamppb.New(p.CreatedAt),
 	}
+}
+
+func truncateRunes(s string, max int) string {
+	if max <= 0 {
+		return ""
+	}
+	rs := []rune(s)
+	if len(rs) <= max {
+		return s
+	}
+	return string(rs[:max])
+}
+
+func sanitizeStrings(items []string) []string {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		out = append(out, strings.ToValidUTF8(item, ""))
+	}
+	return out
 }

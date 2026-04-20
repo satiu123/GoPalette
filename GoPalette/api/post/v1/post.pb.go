@@ -1547,6 +1547,7 @@ type ListPostsForIndexRequest struct {
 	Page                int64                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
 	PageSize            int64                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	IncludeNonPublished bool                   `protobuf:"varint,3,opt,name=include_non_published,json=includeNonPublished,proto3" json:"include_non_published,omitempty"` // 是否包含草稿/归档，默认 false（仅返回已发布）
+	CursorId            int64                  `protobuf:"varint,4,opt,name=cursor_id,json=cursorId,proto3" json:"cursor_id,omitempty"`                                    // 游标分页：按 id 倒序查询时，返回 id < cursor_id 的下一批；0 表示从最新开始
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -1600,6 +1601,13 @@ func (x *ListPostsForIndexRequest) GetIncludeNonPublished() bool {
 		return x.IncludeNonPublished
 	}
 	return false
+}
+
+func (x *ListPostsForIndexRequest) GetCursorId() int64 {
+	if x != nil {
+		return x.CursorId
+	}
+	return 0
 }
 
 type PostIndexInfo struct {
@@ -1714,6 +1722,8 @@ type ListPostsForIndexReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Posts         []*PostIndexInfo       `protobuf:"bytes,1,rep,name=posts,proto3" json:"posts,omitempty"`
 	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	NextCursorId  int64                  `protobuf:"varint,3,opt,name=next_cursor_id,json=nextCursorId,proto3" json:"next_cursor_id,omitempty"`
+	HasMore       bool                   `protobuf:"varint,4,opt,name=has_more,json=hasMore,proto3" json:"has_more,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1760,6 +1770,20 @@ func (x *ListPostsForIndexReply) GetTotal() int64 {
 		return x.Total
 	}
 	return 0
+}
+
+func (x *ListPostsForIndexReply) GetNextCursorId() int64 {
+	if x != nil {
+		return x.NextCursorId
+	}
+	return 0
+}
+
+func (x *ListPostsForIndexReply) GetHasMore() bool {
+	if x != nil {
+		return x.HasMore
+	}
+	return false
 }
 
 type IncrCommentCountRequest struct {
@@ -3175,11 +3199,12 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\x05limit\x18\x02 \x01(\x03R\x05limit\x122\n" +
 	"\x15include_non_published\x18\x03 \x01(\bR\x13includeNonPublished\"F\n" +
 	"\x17ListTopAuthorPostsReply\x12+\n" +
-	"\x05posts\x18\x01 \x03(\v2\x15.api.post.v1.PostInfoR\x05posts\"\x7f\n" +
+	"\x05posts\x18\x01 \x03(\v2\x15.api.post.v1.PostInfoR\x05posts\"\x9c\x01\n" +
 	"\x18ListPostsForIndexRequest\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x03R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x02 \x01(\x03R\bpageSize\x122\n" +
-	"\x15include_non_published\x18\x03 \x01(\bR\x13includeNonPublished\"\xa2\x02\n" +
+	"\x15include_non_published\x18\x03 \x01(\bR\x13includeNonPublished\x12\x1b\n" +
+	"\tcursor_id\x18\x04 \x01(\x03R\bcursorId\"\xa2\x02\n" +
 	"\rPostIndexInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
@@ -3190,10 +3215,12 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\x04tags\x18\a \x03(\tR\x04tags\x129\n" +
 	"\n" +
 	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12/\n" +
-	"\x06status\x18\t \x01(\x0e2\x17.api.post.v1.PostStatusR\x06status\"`\n" +
+	"\x06status\x18\t \x01(\x0e2\x17.api.post.v1.PostStatusR\x06status\"\xa1\x01\n" +
 	"\x16ListPostsForIndexReply\x120\n" +
 	"\x05posts\x18\x01 \x03(\v2\x1a.api.post.v1.PostIndexInfoR\x05posts\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total\"?\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\x12$\n" +
+	"\x0enext_cursor_id\x18\x03 \x01(\x03R\fnextCursorId\x12\x19\n" +
+	"\bhas_more\x18\x04 \x01(\bR\ahasMore\"?\n" +
 	"\x17IncrCommentCountRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x14\n" +
 	"\x05delta\x18\x02 \x01(\x03R\x05delta\"1\n" +

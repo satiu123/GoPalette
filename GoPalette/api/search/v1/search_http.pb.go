@@ -19,10 +19,13 @@ var _ = binding.EncodeURL
 
 const _ = http.SupportPackageIsVersion1
 
+const OperationSearchGetRebuildStatus = "/api.search.v1.Search/GetRebuildStatus"
 const OperationSearchRebuildIndex = "/api.search.v1.Search/RebuildIndex"
 const OperationSearchSearchPosts = "/api.search.v1.Search/SearchPosts"
 
 type SearchHTTPServer interface {
+	// GetRebuildStatus 查询异步重建任务状态，不传 task_id 返回最近一次任务状态
+	GetRebuildStatus(context.Context, *GetRebuildStatusRequest) (*GetRebuildStatusReply, error)
 	// RebuildIndex 管理员触发：从 Post Service 拉取全量并重建索引
 	RebuildIndex(context.Context, *RebuildIndexRequest) (*RebuildIndexReply, error)
 	// SearchPosts 对外搜索接口
@@ -33,6 +36,8 @@ func RegisterSearchHTTPServer(s *http.Server, srv SearchHTTPServer) {
 	r := s.Route("/")
 	r.GET("/v1/search/posts", _Search_SearchPosts0_HTTP_Handler(srv))
 	r.POST("/v1/search/rebuild", _Search_RebuildIndex0_HTTP_Handler(srv))
+	r.GET("/v1/search/rebuild/{task_id}", _Search_GetRebuildStatus0_HTTP_Handler(srv))
+	r.GET("/v1/search/rebuild/status", _Search_GetRebuildStatus1_HTTP_Handler(srv))
 }
 
 func _Search_SearchPosts0_HTTP_Handler(srv SearchHTTPServer) func(ctx http.Context) error {
@@ -76,7 +81,50 @@ func _Search_RebuildIndex0_HTTP_Handler(srv SearchHTTPServer) func(ctx http.Cont
 	}
 }
 
+func _Search_GetRebuildStatus0_HTTP_Handler(srv SearchHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetRebuildStatusRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationSearchGetRebuildStatus)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetRebuildStatus(ctx, req.(*GetRebuildStatusRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetRebuildStatusReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Search_GetRebuildStatus1_HTTP_Handler(srv SearchHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetRebuildStatusRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationSearchGetRebuildStatus)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetRebuildStatus(ctx, req.(*GetRebuildStatusRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetRebuildStatusReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type SearchHTTPClient interface {
+	// GetRebuildStatus 查询异步重建任务状态，不传 task_id 返回最近一次任务状态
+	GetRebuildStatus(ctx context.Context, req *GetRebuildStatusRequest, opts ...http.CallOption) (rsp *GetRebuildStatusReply, err error)
 	// RebuildIndex 管理员触发：从 Post Service 拉取全量并重建索引
 	RebuildIndex(ctx context.Context, req *RebuildIndexRequest, opts ...http.CallOption) (rsp *RebuildIndexReply, err error)
 	// SearchPosts 对外搜索接口
@@ -89,6 +137,20 @@ type SearchHTTPClientImpl struct {
 
 func NewSearchHTTPClient(client *http.Client) SearchHTTPClient {
 	return &SearchHTTPClientImpl{client}
+}
+
+// GetRebuildStatus 查询异步重建任务状态，不传 task_id 返回最近一次任务状态
+func (c *SearchHTTPClientImpl) GetRebuildStatus(ctx context.Context, in *GetRebuildStatusRequest, opts ...http.CallOption) (*GetRebuildStatusReply, error) {
+	var out GetRebuildStatusReply
+	pattern := "/v1/search/rebuild/status"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationSearchGetRebuildStatus))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 // RebuildIndex 管理员触发：从 Post Service 拉取全量并重建索引

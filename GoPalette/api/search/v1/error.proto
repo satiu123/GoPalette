@@ -14,4 +14,5 @@ enum ErrorReason {
   INVALID_ARGUMENT = 0 [(errors.code) = 400];
   INDEX_SYNC_FAILED = 1 [(errors.code) = 500];
   SEARCH_FAILED = 2 [(errors.code) = 500];
+  REBUILD_IN_PROGRESS = 3 [(errors.code) = 409];
 }

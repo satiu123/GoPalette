@@ -326,6 +326,7 @@ message ListPostsForIndexRequest {
   int64 page      = 1;
   int64 page_size = 2;
   bool include_non_published = 3; // 是否包含草稿/归档，默认 false（仅返回已发布）
+  int64 cursor_id = 4; // 游标分页：按 id 倒序查询时，返回 id < cursor_id 的下一批；0 表示从最新开始
 }
 
 message PostIndexInfo {
@@ -343,6 +344,8 @@ message PostIndexInfo {
 message ListPostsForIndexReply {
   repeated PostIndexInfo posts = 1;
   int64                 total = 2;
+  int64                 next_cursor_id = 3;
+  bool                  has_more = 4;
 }
 
 message IncrCommentCountRequest {

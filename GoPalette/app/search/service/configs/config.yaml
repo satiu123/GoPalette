@@ -1,10 +1,10 @@
 server:
   http:
     addr: 0.0.0.0:8003
-    timeout: 1s
+    timeout: 10s
   grpc:
     addr: 0.0.0.0:9003
-    timeout: 1s
+    timeout: 10s
 data:
   meilisearch:
     endpoint: http://meilisearch:7700
@@ -12,7 +12,7 @@ data:
     index_name: posts
   clients:
     post_endpoint: discovery:///post.service
-    timeout: 1s
+    timeout: 30s
 registry:
   etcd:
     endpoints:

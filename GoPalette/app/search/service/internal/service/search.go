@@ -69,9 +69,42 @@ func (s *SearchService) DeleteIndex(ctx context.Context, req *pb.DeleteIndexRequ
 }
 
 func (s *SearchService) RebuildIndex(ctx context.Context, req *pb.RebuildIndexRequest) (*pb.RebuildIndexReply, error) {
-	count, err := s.uc.RebuildIndex(ctx, req.ResetFirst, req.IncludeNonPublished)
+	task, err := s.uc.StartRebuildIndex(req.ResetFirst, req.IncludeNonPublished)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.RebuildIndexReply{Success: true, IndexedCount: count}, nil
+	return &pb.RebuildIndexReply{
+		Accepted: true,
+		Task:     toPBRebuildTask(task),
+	}, nil
+}
+
+func (s *SearchService) GetRebuildStatus(ctx context.Context, req *pb.GetRebuildStatusRequest) (*pb.GetRebuildStatusReply, error) {
+	task, err := s.uc.GetRebuildStatus(req.TaskId)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.GetRebuildStatusReply{Task: toPBRebuildTask(task)}, nil
+}
+
+func toPBRebuildTask(task *biz.RebuildTask) *pb.RebuildTaskInfo {
+	if task == nil {
+		return nil
+	}
+	out := &pb.RebuildTaskInfo{
+		TaskId:              task.TaskID,
+		Status:              task.Status,
+		ResetFirst:          task.ResetFirst,
+		IncludeNonPublished: task.IncludeNonPublished,
+		IndexedCount:        task.IndexedCount,
+		Total:               task.Total,
+		ErrorMessage:        task.ErrorMessage,
+	}
+	if !task.StartedAt.IsZero() {
+		out.StartedAt = timestamppb.New(task.StartedAt)
+	}
+	if !task.FinishedAt.IsZero() {
+		out.FinishedAt = timestamppb.New(task.FinishedAt)
+	}
+	return out
 }
