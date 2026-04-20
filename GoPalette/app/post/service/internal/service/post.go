@@ -183,19 +183,6 @@ func (s *PostService) ListAuthorPosts(ctx context.Context, req *pb.ListAuthorPos
 		posts[i] = s.toPBInfo(p)
 	}
 
-	if len(posts) > 0 {
-		usersResp, userErr := s.userc.BatchGetUsers(ctx, &userpb.BatchGetUsersRequest{Ids: []int64{req.AuthorId}})
-		if userErr != nil {
-			s.logger.WithContext(ctx).Warnf("批量获取作者信息失败: %v", userErr)
-		} else if len(usersResp.Users) > 0 {
-			author := usersResp.Users[0]
-			for _, item := range posts {
-				item.Author.Name = author.Username
-				item.Author.AvatarUrl = author.AvatarUrl
-			}
-		}
-	}
-
 	return &pb.ListAuthorPostsReply{Posts: posts, Total: total}, nil
 }
 
@@ -225,19 +212,6 @@ func (s *PostService) ListTopAuthorPosts(ctx context.Context, req *pb.ListTopAut
 	posts := make([]*pb.PostInfo, len(res))
 	for i, p := range res {
 		posts[i] = s.toPBInfo(p)
-	}
-
-	if len(posts) > 0 {
-		usersResp, userErr := s.userc.BatchGetUsers(ctx, &userpb.BatchGetUsersRequest{Ids: []int64{req.AuthorId}})
-		if userErr != nil {
-			s.logger.WithContext(ctx).Warnf("批量获取作者信息失败: %v", userErr)
-		} else if len(usersResp.Users) > 0 {
-			author := usersResp.Users[0]
-			for _, item := range posts {
-				item.Author.Name = author.Username
-				item.Author.AvatarUrl = author.AvatarUrl
-			}
-		}
 	}
 
 	return &pb.ListTopAuthorPostsReply{Posts: posts}, nil

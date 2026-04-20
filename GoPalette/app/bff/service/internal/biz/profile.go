@@ -116,6 +116,8 @@ func (uc *ProfileUsecase) GetFullUserProfile(ctx context.Context, req *bffv1.Get
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
+	hydrateAuthorPostsByUserInfo(topPosts, userInfo)
+	hydrateAuthorPostsByUserInfo(authorPosts, userInfo)
 
 	return &bffv1.GetFullUserProfileReply{
 		UserInfo:       userInfo,
@@ -124,4 +126,21 @@ func (uc *ProfileUsecase) GetFullUserProfile(ctx context.Context, req *bffv1.Get
 		TopPosts:       topPosts,
 		AuthorPosts:    authorPosts,
 	}, nil
+}
+
+func hydrateAuthorPostsByUserInfo(posts []*postv1.PostInfo, userInfo *userv1.UserInfo) {
+	if userInfo == nil {
+		return
+	}
+	for _, post := range posts {
+		if post == nil {
+			continue
+		}
+		if post.Author == nil {
+			post.Author = &postv1.AuthorInfo{}
+		}
+		post.Author.Id = userInfo.Id
+		post.Author.Name = userInfo.Username
+		post.Author.AvatarUrl = userInfo.AvatarURL
+	}
 }

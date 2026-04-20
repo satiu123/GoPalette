@@ -13,6 +13,7 @@ import (
 	"github.com/go-kratos/kratos/contrib/registry/etcd/v2"
 	"github.com/go-kratos/kratos/v2/log"
 	kratosmd "github.com/go-kratos/kratos/v2/middleware/metadata"
+	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 )
 
@@ -32,7 +33,7 @@ func NewUserClient(reg *etcd.Registry, c *conf.Data) userv1.UserClient {
 		grpc.WithEndpoint(c.Clients.UserEndpoint),
 		grpc.WithTimeout(c.Clients.Timeout.AsDuration()),
 		grpc.WithDiscovery(reg),
-		grpc.WithMiddleware(kratosmd.Client()),
+		grpc.WithMiddleware(kratosmd.Client(), tracing.Client()),
 	)
 	if err != nil {
 		panic(err)
@@ -46,7 +47,7 @@ func NewPostClient(reg *etcd.Registry, c *conf.Data) postv1.PostClient {
 		grpc.WithEndpoint(c.Clients.PostEndpoint),
 		grpc.WithTimeout(c.Clients.Timeout.AsDuration()),
 		grpc.WithDiscovery(reg),
-		grpc.WithMiddleware(kratosmd.Client()),
+		grpc.WithMiddleware(kratosmd.Client(), tracing.Client()),
 	)
 	if err != nil {
 		panic(err)
@@ -60,7 +61,7 @@ func NewCommentClient(reg *etcd.Registry, c *conf.Data) commentv1.CommentClient 
 		grpc.WithEndpoint(c.Clients.CommentEndpoint),
 		grpc.WithTimeout(c.Clients.Timeout.AsDuration()),
 		grpc.WithDiscovery(reg),
-		grpc.WithMiddleware(kratosmd.Client()),
+		grpc.WithMiddleware(kratosmd.Client(), tracing.Client()),
 	)
 	if err != nil {
 		panic(err)

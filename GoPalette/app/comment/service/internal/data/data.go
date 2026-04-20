@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-kratos/kratos/contrib/registry/etcd/v2"
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-redis/redis/extra/redisotel"
 	"github.com/go-redis/redis/v8"
@@ -37,6 +38,7 @@ func NewPostClient(reg *etcd.Registry, c *conf.Data) postv1.PostClient {
 		grpc.WithEndpoint(c.Clients.PostEndpoint),
 		grpc.WithTimeout(c.Clients.Timeout.AsDuration()),
 		grpc.WithDiscovery(reg),
+		grpc.WithMiddleware(tracing.Client()),
 	)
 	if err != nil {
 		panic(err)
@@ -50,6 +52,7 @@ func NewUserClient(reg *etcd.Registry, c *conf.Data) userv1.UserClient {
 		grpc.WithEndpoint(c.Clients.UserEndpoint),
 		grpc.WithTimeout(c.Clients.Timeout.AsDuration()),
 		grpc.WithDiscovery(reg),
+		grpc.WithMiddleware(tracing.Client()),
 	)
 	if err != nil {
 		panic(err)
