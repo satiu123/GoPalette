@@ -14,6 +14,7 @@ import (
 	"github.com/satiu123/GoPalette/app/search/service/internal/data"
 	"github.com/satiu123/GoPalette/app/search/service/internal/server"
 	"github.com/satiu123/GoPalette/app/search/service/internal/service"
+	"github.com/satiu123/GoPalette/pkg/opentelemetry"
 )
 
 import (
@@ -23,7 +24,7 @@ import (
 // Injectors from wire.go:
 
 // wireApp init kratos application.
-func wireApp(confServer *conf.Server, confData *conf.Data, registry *conf.Registry, logger log.Logger) (*kratos.App, func(), error) {
+func wireApp(confServer *conf.Server, confData *conf.Data, registry *conf.Registry, logger log.Logger, serviceName opentelemetry.ServiceName) (*kratos.App, func(), error) {
 	client, err := NewEtcdClient(registry)
 	if err != nil {
 		return nil, nil, err
@@ -38,8 +39,10 @@ func wireApp(confServer *conf.Server, confData *conf.Data, registry *conf.Regist
 	postSourceRepo := data.NewPostSourceRepo(dataData, logger)
 	searchUsecase := biz.NewSearchUsecase(searchRepo, postSourceRepo, logger)
 	searchService := service.NewSearchService(searchUsecase, logger)
-	grpcServer := server.NewGRPCServer(confServer, searchService, logger)
-	httpServer := server.NewHTTPServer(confServer, searchService, logger)
+	int64Counter := opentelemetry.NewRequestCounter(serviceName)
+	float64Histogram := opentelemetry.NewSecondsHistogram(serviceName)
+	grpcServer := server.NewGRPCServer(confServer, searchService, logger, int64Counter, float64Histogram)
+	httpServer := server.NewHTTPServer(confServer, searchService, logger, int64Counter, float64Histogram)
 	app := newApp(logger, grpcServer, httpServer, etcdRegistry)
 	return app, func() {
 		cleanup()

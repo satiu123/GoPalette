@@ -7,6 +7,8 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/exporters/prometheus"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
@@ -42,6 +44,15 @@ func SetupOTelSDK(ctx context.Context, serviceName string) (func(context.Context
 	shutdownFuncs = append(shutdownFuncs, tp.Shutdown)
 	otel.SetTracerProvider(tp)
 
+	// 设置 MeterProvider
+	mp, err := newMeterProvider(serviceName)
+	if err != nil {
+		handleErr(err)
+		return shutdown, err
+	}
+	shutdownFuncs = append(shutdownFuncs, mp.Shutdown)
+	otel.SetMeterProvider(mp)
+
 	return shutdown, err
 
 }
@@ -71,16 +82,16 @@ func newTracerProvider(ctx context.Context, serviceName string) (*trace.TracerPr
 	return tp, nil
 }
 
-// func newMeterProvider() (*metric.MeterProvider, error) {
-// 	metricExporter, err := stdoutmetric.New()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	mp := metric.NewMeterProvider(
-// 		metric.WithReader(metric.NewPeriodicReader(metricExporter,
-// 			metric.WithInterval(time.Minute),
-// 		),
-// 		),
-// 	)
-// 	return mp, nil
-// }
+func newMeterProvider(serviceName string) (*sdkmetric.MeterProvider, error) {
+	metricExporter, err := prometheus.New()
+	if err != nil {
+		return nil, err
+	}
+	mp := sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(metricExporter),
+		sdkmetric.WithResource(resource.NewSchemaless(
+			semconv.ServiceName(serviceName),
+		)),
+	)
+	return mp, nil
+}

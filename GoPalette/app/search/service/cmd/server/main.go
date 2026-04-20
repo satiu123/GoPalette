@@ -111,7 +111,7 @@ func main() {
 		panic(err)
 	}
 
-	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Registry, logger)
+	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Registry, logger, opentelemetry.ServiceName(Name))
 	if err != nil {
 		panic(err)
 	}

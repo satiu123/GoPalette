@@ -4,21 +4,33 @@ import (
 	v1 "github.com/satiu123/GoPalette/api/bff/v1"
 	"github.com/satiu123/GoPalette/app/bff/service/internal/conf"
 	"github.com/satiu123/GoPalette/app/bff/service/internal/service"
+	"go.opentelemetry.io/otel/metric"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
+	"github.com/go-kratos/kratos/v2/middleware/metrics"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 )
 
 // NewGRPCServer new a gRPC server.
-func NewGRPCServer(c *conf.Server, bff *service.BffService, logger log.Logger) *grpc.Server {
+func NewGRPCServer(
+	c *conf.Server,
+	bff *service.BffService,
+	logger log.Logger,
+	counter metric.Int64Counter,
+	histogram metric.Float64Histogram,
+) *grpc.Server {
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
+			recovery.Recovery(),
 			tracing.Server(),
 			logging.Server(logger),
-			recovery.Recovery(),
+			metrics.Server(
+				metrics.WithSeconds(histogram),
+				metrics.WithRequests(counter),
+			),
 		),
 	}
 	if c.Grpc.Network != "" {
@@ -34,4 +46,3 @@ func NewGRPCServer(c *conf.Server, bff *service.BffService, logger log.Logger) *
 	v1.RegisterBlogBffServer(srv, bff)
 	return srv
 }
-
