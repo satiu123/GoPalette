@@ -179,6 +179,12 @@ func (uc *AuthUsecase) RefreshToken(ctx context.Context, refreshToken string) (s
 	if err != nil {
 		return "", "", err
 	}
+
+	if err := uc.sessionRepo.SaveRefreshSession(ctx, user.ID, newSID, sha256Hex(newRefreshToken), uc.authConf.JwtRefreshExpire.AsDuration()); err != nil {
+		uc.logger.WithContext(ctx).Errorf("保存刷新后的 refresh 会话失败: user_id=%d err=%v", user.ID, err)
+		return "", "", pb.ErrorInternalServerError("%s", "服务器开小差了，请稍后再试")
+	}
+
 	uc.logger.WithContext(ctx).Infof("刷新令牌成功: user_id=%d role=%d", user.ID, user.Role)
 
 	return accessToken, newRefreshToken, nil

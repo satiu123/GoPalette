@@ -163,6 +163,10 @@ export async function refreshServerSession(event: H3Event) {
     return tokens.accessToken
   } catch (error: unknown) {
     clearAuthCookies(event)
+    const status = extractErrorStatus(error)
+    if (status === 401) {
+      throw createError({ statusCode: 401, statusMessage: 'Session expired' })
+    }
     throw error
   }
 }
