@@ -159,8 +159,9 @@ const file_bff_v1_bff_proto_rawDesc = "" +
 	"post_stats\x18\x02 \x01(\v2$.api.post.v1.GetAuthorPostStatsReplyR\tpostStats\x12D\n" +
 	"\x0frecent_comments\x18\x03 \x03(\v2\x1b.api.comment.v1.CommentInfoR\x0erecentComments\x122\n" +
 	"\ttop_posts\x18\x04 \x03(\v2\x15.api.post.v1.PostInfoR\btopPosts\x128\n" +
-	"\fauthor_posts\x18\x05 \x03(\v2\x15.api.post.v1.PostInfoR\vauthorPosts2\x8c\x01\n" +
-	"\aBlogBff\x12\x80\x01\n" +
+	"\fauthor_posts\x18\x05 \x03(\v2\x15.api.post.v1.PostInfoR\vauthorPosts2\xed\x01\n" +
+	"\aBlogBff\x12_\n" +
+	"\tListPosts\x12\x1d.api.post.v1.ListPostsRequest\x1a\x1b.api.post.v1.ListPostsReply\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/v1/blog/posts\x12\x80\x01\n" +
 	"\x12GetFullUserProfile\x12%.api.bff.v1.GetFullUserProfileRequest\x1a#.api.bff.v1.GetFullUserProfileReply\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/profiles/{user_id}B;\n" +
 	"\n" +
 	"api.bff.v1P\x01Z+github.com/satiu123/GoPalette/api/bff/v1;v1b\x06proto3"
@@ -185,6 +186,8 @@ var file_bff_v1_bff_proto_goTypes = []any{
 	(*v11.GetAuthorPostStatsReply)(nil), // 3: api.post.v1.GetAuthorPostStatsReply
 	(*v12.CommentInfo)(nil),             // 4: api.comment.v1.CommentInfo
 	(*v11.PostInfo)(nil),                // 5: api.post.v1.PostInfo
+	(*v11.ListPostsRequest)(nil),        // 6: api.post.v1.ListPostsRequest
+	(*v11.ListPostsReply)(nil),          // 7: api.post.v1.ListPostsReply
 }
 var file_bff_v1_bff_proto_depIdxs = []int32{
 	2, // 0: api.bff.v1.GetFullUserProfileReply.user_info:type_name -> api.user.v1.UserInfo
@@ -192,10 +195,12 @@ var file_bff_v1_bff_proto_depIdxs = []int32{
 	4, // 2: api.bff.v1.GetFullUserProfileReply.recent_comments:type_name -> api.comment.v1.CommentInfo
 	5, // 3: api.bff.v1.GetFullUserProfileReply.top_posts:type_name -> api.post.v1.PostInfo
 	5, // 4: api.bff.v1.GetFullUserProfileReply.author_posts:type_name -> api.post.v1.PostInfo
-	0, // 5: api.bff.v1.BlogBff.GetFullUserProfile:input_type -> api.bff.v1.GetFullUserProfileRequest
-	1, // 6: api.bff.v1.BlogBff.GetFullUserProfile:output_type -> api.bff.v1.GetFullUserProfileReply
-	6, // [6:7] is the sub-list for method output_type
-	5, // [5:6] is the sub-list for method input_type
+	6, // 5: api.bff.v1.BlogBff.ListPosts:input_type -> api.post.v1.ListPostsRequest
+	0, // 6: api.bff.v1.BlogBff.GetFullUserProfile:input_type -> api.bff.v1.GetFullUserProfileRequest
+	7, // 7: api.bff.v1.BlogBff.ListPosts:output_type -> api.post.v1.ListPostsReply
+	1, // 8: api.bff.v1.BlogBff.GetFullUserProfile:output_type -> api.bff.v1.GetFullUserProfileReply
+	7, // [7:9] is the sub-list for method output_type
+	5, // [5:7] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name
 	5, // [5:5] is the sub-list for extension extendee
 	0, // [0:5] is the sub-list for field type_name

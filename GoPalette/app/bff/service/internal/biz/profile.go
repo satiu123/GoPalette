@@ -128,6 +128,24 @@ func (uc *ProfileUsecase) GetFullUserProfile(ctx context.Context, req *bffv1.Get
 	}, nil
 }
 
+func (uc *ProfileUsecase) ListPosts(ctx context.Context, req *postv1.ListPostsRequest) (*postv1.ListPostsReply, error) {
+	if req == nil {
+		req = &postv1.ListPostsRequest{}
+	}
+
+	downstreamCtx := auth.ForwardMetadataToClientContext(ctx)
+	res, err := uc.data.PostClient().ListPosts(downstreamCtx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := uc.hydratePostsAuthors(downstreamCtx, res.Posts); err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
 func hydrateAuthorPostsByUserInfo(posts []*postv1.PostInfo, userInfo *userv1.UserInfo) {
 	if userInfo == nil {
 		return
@@ -143,4 +161,51 @@ func hydrateAuthorPostsByUserInfo(posts []*postv1.PostInfo, userInfo *userv1.Use
 		post.Author.Name = userInfo.Username
 		post.Author.AvatarUrl = userInfo.AvatarURL
 	}
+}
+
+func (uc *ProfileUsecase) hydratePostsAuthors(ctx context.Context, posts []*postv1.PostInfo) error {
+	if len(posts) == 0 {
+		return nil
+	}
+
+	authorIDs := make([]int64, 0, len(posts))
+	authorSet := make(map[int64]struct{}, len(posts))
+	for _, post := range posts {
+		if post == nil || post.Author == nil || post.Author.Id <= 0 {
+			continue
+		}
+		if _, exists := authorSet[post.Author.Id]; exists {
+			continue
+		}
+		authorSet[post.Author.Id] = struct{}{}
+		authorIDs = append(authorIDs, post.Author.Id)
+	}
+	if len(authorIDs) == 0 {
+		return nil
+	}
+
+	usersResp, err := uc.data.UserClient().BatchGetUsers(ctx, &userv1.BatchGetUsersRequest{Ids: authorIDs})
+	if err != nil {
+		return err
+	}
+
+	authors := make(map[int64]*userv1.UserProfile, len(usersResp.Users))
+	for _, user := range usersResp.Users {
+		authors[user.Id] = user
+	}
+
+	for _, post := range posts {
+		if post == nil {
+			continue
+		}
+		if post.Author == nil {
+			post.Author = &postv1.AuthorInfo{}
+		}
+		if user, ok := authors[post.Author.Id]; ok {
+			post.Author.Name = user.Username
+			post.Author.AvatarUrl = user.AvatarUrl
+		}
+	}
+
+	return nil
 }

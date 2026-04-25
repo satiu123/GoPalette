@@ -137,33 +137,9 @@ func (s *PostService) ListPosts(ctx context.Context, req *pb.ListPostsRequest) (
 		return nil, err
 	}
 
-	authorSet := make(map[int64]struct{})
-	for _, p := range res {
-		authorSet[p.AuthorID] = struct{}{}
-	}
-	authorIDs := make([]int64, 0, len(authorSet))
-	for id := range authorSet {
-		authorIDs = append(authorIDs, id)
-	}
-	authors := make(map[int64]*userpb.UserProfile)
-	if len(authorIDs) > 0 {
-		usersResp, userErr := s.userc.BatchGetUsers(ctx, &userpb.BatchGetUsersRequest{Ids: authorIDs})
-		if userErr != nil {
-			s.logger.WithContext(ctx).Warnf("批量获取用户信息失败: %v", userErr)
-		} else {
-			for _, u := range usersResp.Users {
-				authors[u.Id] = u
-			}
-		}
-	}
-
 	posts := make([]*pb.PostInfo, len(res))
 	for i, p := range res {
 		posts[i] = s.toPBInfo(p)
-		if u, ok := authors[p.AuthorID]; ok {
-			posts[i].Author.Name = u.Username
-			posts[i].Author.AvatarUrl = u.AvatarUrl
-		}
 	}
 
 	return &pb.ListPostsReply{

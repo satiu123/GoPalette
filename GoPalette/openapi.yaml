@@ -6,6 +6,28 @@ info:
     title: ""
     version: 0.0.1
 paths:
+    /v1/blog/posts:
+        get:
+            tags:
+                - BlogBff
+            description: 获取带作者信息的帖子列表
+            operationId: BlogBff_ListPosts
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.ListPostsReply'
     /v1/categories:
         get:
             tags:

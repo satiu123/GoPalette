@@ -12,6 +12,12 @@ option java_multiple_files = true;
 option java_package = "api.bff.v1";
 
 service BlogBff {
+  // 获取带作者信息的帖子列表
+  rpc ListPosts (api.post.v1.ListPostsRequest) returns (api.post.v1.ListPostsReply) {
+    option (google.api.http) = {
+      get: "/v1/blog/posts"
+    };
+  }
   // 获取完整的用户个人主页数据
   rpc GetFullUserProfile (GetFullUserProfileRequest) returns (GetFullUserProfileReply) {
     option (google.api.http) = {

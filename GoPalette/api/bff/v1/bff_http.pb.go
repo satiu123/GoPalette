@@ -10,6 +10,7 @@ import (
 	context "context"
 	http "github.com/go-kratos/kratos/v2/transport/http"
 	binding "github.com/go-kratos/kratos/v2/transport/http/binding"
+	v1 "github.com/satiu123/GoPalette/api/post/v1"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -20,15 +21,38 @@ var _ = binding.EncodeURL
 const _ = http.SupportPackageIsVersion1
 
 const OperationBlogBffGetFullUserProfile = "/api.bff.v1.BlogBff/GetFullUserProfile"
+const OperationBlogBffListPosts = "/api.bff.v1.BlogBff/ListPosts"
 
 type BlogBffHTTPServer interface {
 	// GetFullUserProfile 获取完整的用户个人主页数据
 	GetFullUserProfile(context.Context, *GetFullUserProfileRequest) (*GetFullUserProfileReply, error)
+	// ListPosts 获取带作者信息的帖子列表
+	ListPosts(context.Context, *v1.ListPostsRequest) (*v1.ListPostsReply, error)
 }
 
 func RegisterBlogBffHTTPServer(s *http.Server, srv BlogBffHTTPServer) {
 	r := s.Route("/")
+	r.GET("/v1/blog/posts", _BlogBff_ListPosts1_HTTP_Handler(srv))
 	r.GET("/v1/profiles/{user_id}", _BlogBff_GetFullUserProfile0_HTTP_Handler(srv))
+}
+
+func _BlogBff_ListPosts1_HTTP_Handler(srv BlogBffHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.ListPostsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationBlogBffListPosts)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListPosts(ctx, req.(*v1.ListPostsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.ListPostsReply)
+		return ctx.Result(200, reply)
+	}
 }
 
 func _BlogBff_GetFullUserProfile0_HTTP_Handler(srv BlogBffHTTPServer) func(ctx http.Context) error {
@@ -56,6 +80,8 @@ func _BlogBff_GetFullUserProfile0_HTTP_Handler(srv BlogBffHTTPServer) func(ctx h
 type BlogBffHTTPClient interface {
 	// GetFullUserProfile 获取完整的用户个人主页数据
 	GetFullUserProfile(ctx context.Context, req *GetFullUserProfileRequest, opts ...http.CallOption) (rsp *GetFullUserProfileReply, err error)
+	// ListPosts 获取带作者信息的帖子列表
+	ListPosts(ctx context.Context, req *v1.ListPostsRequest, opts ...http.CallOption) (rsp *v1.ListPostsReply, err error)
 }
 
 type BlogBffHTTPClientImpl struct {
@@ -72,6 +98,20 @@ func (c *BlogBffHTTPClientImpl) GetFullUserProfile(ctx context.Context, in *GetF
 	pattern := "/v1/profiles/{user_id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationBlogBffGetFullUserProfile))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListPosts 获取带作者信息的帖子列表
+func (c *BlogBffHTTPClientImpl) ListPosts(ctx context.Context, in *v1.ListPostsRequest, opts ...http.CallOption) (*v1.ListPostsReply, error) {
+	var out v1.ListPostsReply
+	pattern := "/v1/blog/posts"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationBlogBffListPosts))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {

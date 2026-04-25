@@ -8,6 +8,7 @@ package v1
 
 import (
 	context "context"
+	v1 "github.com/satiu123/GoPalette/api/post/v1"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -19,6 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	BlogBff_ListPosts_FullMethodName          = "/api.bff.v1.BlogBff/ListPosts"
 	BlogBff_GetFullUserProfile_FullMethodName = "/api.bff.v1.BlogBff/GetFullUserProfile"
 )
 
@@ -26,6 +28,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BlogBffClient interface {
+	// 获取带作者信息的帖子列表
+	ListPosts(ctx context.Context, in *v1.ListPostsRequest, opts ...grpc.CallOption) (*v1.ListPostsReply, error)
 	// 获取完整的用户个人主页数据
 	GetFullUserProfile(ctx context.Context, in *GetFullUserProfileRequest, opts ...grpc.CallOption) (*GetFullUserProfileReply, error)
 }
@@ -36,6 +40,16 @@ type blogBffClient struct {
 
 func NewBlogBffClient(cc grpc.ClientConnInterface) BlogBffClient {
 	return &blogBffClient{cc}
+}
+
+func (c *blogBffClient) ListPosts(ctx context.Context, in *v1.ListPostsRequest, opts ...grpc.CallOption) (*v1.ListPostsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.ListPostsReply)
+	err := c.cc.Invoke(ctx, BlogBff_ListPosts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *blogBffClient) GetFullUserProfile(ctx context.Context, in *GetFullUserProfileRequest, opts ...grpc.CallOption) (*GetFullUserProfileReply, error) {
@@ -52,6 +66,8 @@ func (c *blogBffClient) GetFullUserProfile(ctx context.Context, in *GetFullUserP
 // All implementations must embed UnimplementedBlogBffServer
 // for forward compatibility.
 type BlogBffServer interface {
+	// 获取带作者信息的帖子列表
+	ListPosts(context.Context, *v1.ListPostsRequest) (*v1.ListPostsReply, error)
 	// 获取完整的用户个人主页数据
 	GetFullUserProfile(context.Context, *GetFullUserProfileRequest) (*GetFullUserProfileReply, error)
 	mustEmbedUnimplementedBlogBffServer()
@@ -64,6 +80,9 @@ type BlogBffServer interface {
 // pointer dereference when methods are called.
 type UnimplementedBlogBffServer struct{}
 
+func (UnimplementedBlogBffServer) ListPosts(context.Context, *v1.ListPostsRequest) (*v1.ListPostsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPosts not implemented")
+}
 func (UnimplementedBlogBffServer) GetFullUserProfile(context.Context, *GetFullUserProfileRequest) (*GetFullUserProfileReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetFullUserProfile not implemented")
 }
@@ -86,6 +105,24 @@ func RegisterBlogBffServer(s grpc.ServiceRegistrar, srv BlogBffServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&BlogBff_ServiceDesc, srv)
+}
+
+func _BlogBff_ListPosts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ListPostsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BlogBffServer).ListPosts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BlogBff_ListPosts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BlogBffServer).ListPosts(ctx, req.(*v1.ListPostsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _BlogBff_GetFullUserProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -113,6 +150,10 @@ var BlogBff_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "api.bff.v1.BlogBff",
 	HandlerType: (*BlogBffServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ListPosts",
+			Handler:    _BlogBff_ListPosts_Handler,
+		},
 		{
 			MethodName: "GetFullUserProfile",
 			Handler:    _BlogBff_GetFullUserProfile_Handler,
