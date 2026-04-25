@@ -4,6 +4,7 @@ import { fetchCategories, fetchPosts, isVisiblePostStatus, searchPosts } from '~
 
 const route = useRoute()
 const router = useRouter()
+const { buildUrl } = useSiteSeo()
 
 const selectedCategory = ref(typeof route.query.category === 'string' ? route.query.category : '')
 const selectedTag = ref(typeof route.query.tag === 'string' ? route.query.tag : '')
@@ -226,10 +227,33 @@ watch(() => route.query.page, (value) => {
 
 const seoTitle = computed(() => `文章归档 - 第 ${currentPage.value} 页`)
 const seoDescription = computed(() => `GoPalette 文章归档，当前第 ${currentPage.value} 页，共 ${totalPages.value} 页。`)
+const canonicalUrl = computed(() => {
+  if (keyword.value.trim()) {
+    return buildUrl('/posts')
+  }
+
+  const query = new URLSearchParams()
+  if (selectedCategory.value) query.set('category', selectedCategory.value)
+  if (selectedTag.value) query.set('tag', selectedTag.value)
+  if (currentPage.value > 1) query.set('page', String(currentPage.value))
+
+  const suffix = query.toString()
+  return buildUrl(suffix ? `/posts?${suffix}` : '/posts')
+})
 
 useSeoMeta({
   title: seoTitle,
-  description: seoDescription
+  description: seoDescription,
+  robots: computed(() => keyword.value.trim() ? 'noindex,follow' : 'index,follow')
+})
+
+useHead({
+  link: [
+    {
+      rel: 'canonical',
+      href: canonicalUrl
+    }
+  ]
 })
 </script>
 

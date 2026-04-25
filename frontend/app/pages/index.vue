@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { fetchPosts, fetchTags, isVisiblePostStatus } from '~/composables/useBlogApi'
 
+const { buildUrl } = useSiteSeo()
+
 const { data: postsData } = await useAsyncData('home-posts', () => fetchPosts(1, 60))
 const { data: tagsData } = await useAsyncData('home-tags', () => fetchTags(1, 200))
 
@@ -33,6 +35,15 @@ useSeoMeta({
   description: 'GoPalette 博客首页，展示最新文章、专题标签与写作入口。',
   ogTitle: 'GoPalette Blog',
   ogDescription: 'GoPalette 博客首页，展示最新文章、专题标签与写作入口。'
+})
+
+useHead({
+  link: [
+    {
+      rel: 'canonical',
+      href: buildUrl('/')
+    }
+  ]
 })
 </script>
 
@@ -177,11 +188,10 @@ useSeoMeta({
           </h2>
 
           <div class="space-y-3">
-            <NuxtLink
+            <article
               v-for="post in latestPosts"
               :key="post.id"
-              :to="`/posts/${post.slug}`"
-              class="motion-card motion-panel block rounded-xl border border-default bg-default p-4 hover:border-primary/40"
+              class="motion-card motion-panel rounded-xl border border-default bg-default p-4 hover:border-primary/40"
             >
               <div class="mb-2 flex items-center gap-2 text-xs text-toned">
                 <span>{{ post.publishedAt }}</span>
@@ -195,13 +205,16 @@ useSeoMeta({
                 </NuxtLink>
                 <span v-else>{{ post.author }}</span>
               </div>
-              <h3 class="text-base font-semibold text-highlighted">
+              <NuxtLink
+                :to="`/posts/${post.slug}`"
+                class="block text-base font-semibold text-highlighted hover:text-primary"
+              >
                 {{ post.title }}
-              </h3>
+              </NuxtLink>
               <p class="mt-1 line-clamp-2 text-sm text-toned">
                 {{ post.summary }}
               </p>
-            </NuxtLink>
+            </article>
           </div>
         </div>
 

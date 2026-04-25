@@ -32,6 +32,7 @@ type DataRecord = Record<string, unknown>
 
 const route = useRoute()
 const authorId = computed(() => String(route.params.id || ''))
+const { buildUrl } = useSiteSeo()
 
 function toRecord(value: unknown): DataRecord | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
@@ -212,6 +213,15 @@ useSeoMeta({
   description: computed(() => author.value?.bio || '查看作者主页与文章归档。'),
   ogTitle: computed(() => `${author.value?.username || '作者'} - GoPalette`),
   ogDescription: computed(() => author.value?.bio || '查看作者主页与文章归档。')
+})
+
+useHead({
+  link: [
+    {
+      rel: 'canonical',
+      href: computed(() => buildUrl(`/authors/${encodeURIComponent(authorId.value)}`))
+    }
+  ]
 })
 </script>
 

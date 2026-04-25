@@ -5,9 +5,9 @@ import { CodeBlockShiki } from 'tiptap-extension-code-block-shiki'
 import { POST_STATUS_PUBLISHED, createComment, deleteComment, fetchComments, fetchPostBySlug, fetchPosts } from '~/composables/useBlogApi'
 import type { CommentInfo } from '~/composables/useBlogApi'
 
-const { extension: Emoji } = useEditorEmojis()
 const toast = useToast()
 const { initAuth, isLoggedIn, session, user, fetchProfile } = useAuth()
+const { buildUrl, siteName } = useSiteSeo()
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug || ''))
@@ -172,7 +172,6 @@ const viewerExtensions = [
       dark: 'material-theme-palenight'
     }
   }),
-  Emoji,
   TableKit,
   TaskList,
   TaskItem
@@ -181,6 +180,30 @@ const viewerExtensions = [
 const seoTitle = computed(() => post.value?.title || '文章详情')
 const seoDescription = computed(() => post.value?.summary || '')
 const seoImage = computed(() => post.value?.cover || '')
+const canonicalUrl = computed(() => buildUrl(`/posts/${encodeURIComponent(slug.value)}`))
+const articleJsonLd = computed(() => {
+  if (!post.value) return ''
+
+  return JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.value.title,
+    description: post.value.summary,
+    image: post.value.cover,
+    datePublished: post.value.createdAt || undefined,
+    dateModified: post.value.createdAt || undefined,
+    author: {
+      '@type': 'Person',
+      name: post.value.author,
+      url: post.value.authorId ? buildUrl(`/authors/${post.value.authorId}`) : undefined
+    },
+    mainEntityOfPage: canonicalUrl.value,
+    publisher: {
+      '@type': 'Organization',
+      name: siteName.value
+    }
+  })
+})
 
 useSeoMeta({
   title: seoTitle,
@@ -189,6 +212,24 @@ useSeoMeta({
   ogDescription: seoDescription,
   ogImage: seoImage,
   twitterCard: 'summary_large_image'
+})
+
+useHead({
+  link: [
+    {
+      rel: 'canonical',
+      href: canonicalUrl
+    }
+  ],
+  script: articleJsonLd.value
+    ? [
+        {
+          key: 'article-jsonld',
+          type: 'application/ld+json',
+          innerHTML: articleJsonLd.value
+        }
+      ]
+    : []
 })
 </script>
 
@@ -235,7 +276,7 @@ useSeoMeta({
           </p>
 
           <UEditor v-else :model-value="post.content" content-type="markdown" :editable="false"
-            :extensions="viewerExtensions" class="min-h-0" :ui="{
+            :extensions="viewerExtensions" :starter-kit="{ codeBlock: false }" class="min-h-0" :ui="{
               base: 'p-4 sm:p-14',
               content: 'max-w-4xl mx-auto'
             }" />

@@ -1,5 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 const gatewayBase = import.meta.env.NUXT_GATEWAY_BASE || 'http://127.0.0.1:8080'
+const publicSiteUrl = import.meta.env.NUXT_PUBLIC_SITE_URL || 'http://127.0.0.1:3000'
+const publicSiteName = import.meta.env.NUXT_PUBLIC_SITE_NAME || 'GoPalette Blog'
 
 export default defineNuxtConfig({
   modules: [
@@ -25,14 +27,16 @@ export default defineNuxtConfig({
   runtimeConfig: {
     gatewayBase,
     public: {
-      partykitHost: ''
+      partykitHost: '',
+      siteUrl: publicSiteUrl,
+      siteName: publicSiteName
     }
   },
 
   nitro: {
     prerender: {
       crawlLinks: true,
-      routes: ['/', '/posts']
+      routes: ['/', '/posts', '/rss.xml', '/sitemap.xml']
     }
   },
 
@@ -51,8 +55,12 @@ export default defineNuxtConfig({
 
         for (const item of list as Array<any>) {
           const slug = item?.slug || item?.info?.slug
+          const authorId = item?.author?.id || item?.info?.author?.id
           if (typeof slug === 'string' && slug.trim()) {
             slugs.add(slug.trim())
+          }
+          if (authorId !== undefined && authorId !== null && String(authorId).trim()) {
+            ctx.routes.add(`/authors/${encodeURIComponent(String(authorId).trim())}`)
           }
         }
 
