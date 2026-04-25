@@ -54,7 +54,7 @@ type DataRecord = Record<string, unknown>
 const toast = useToast()
 const router = useRouter()
 
-const { session, user, isLoggedIn, initAuth, authFetch, fetchProfile, updateProfile, clearSession } = useAuth()
+const { session, user, isLoggedIn, initAuth, authFetch, fetchProfile, updateProfile, logout } = useAuth()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -428,7 +428,7 @@ async function removePostItem(item: UserDashboardPost) {
 }
 
 async function onLogout() {
-  clearSession()
+  await logout()
   await router.push('/login')
 }
 

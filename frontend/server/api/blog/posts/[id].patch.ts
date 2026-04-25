@@ -1,18 +1,16 @@
-import { joinURL } from 'ufo'
+import { gatewayFetch } from '../../../utils/auth'
 
-export default defineEventHandler(async (event) => {
-    const config = useRuntimeConfig(event)
+export default defineEventHandler(async (event): Promise<unknown> => {
     const { id } = getRouterParams(event)
     const body = await readBody(event)
-    const authorization = getHeader(event, 'authorization')
 
     if (!id) {
         throw createError({ statusCode: 400, statusMessage: 'id is required' })
     }
 
-    return await $fetch(joinURL(config.gatewayBase, `/v1/posts/${id}`), {
+    return await gatewayFetch(event, `/v1/posts/${id}`, {
         method: 'PATCH',
-        headers: authorization ? { authorization } : undefined,
+        auth: 'required',
         body
     })
 })

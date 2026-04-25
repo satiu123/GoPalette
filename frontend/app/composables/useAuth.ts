@@ -12,16 +12,8 @@ export interface AuthUser {
 }
 
 interface AuthSession {
-  accessToken: string
-  refreshToken: string
+  loggedIn: boolean
   userId: string
-}
-
-interface AuthTokenResponse {
-  accessToken?: string
-  refreshToken?: string
-  access_token?: string
-  refresh_token?: string
 }
 
 interface AuthRequestOptions {
@@ -31,34 +23,14 @@ interface AuthRequestOptions {
   headers?: Record<string, string>
 }
 
-const STORAGE_KEY = 'gopalette.auth.session'
-
-function decodeJwtPayload(token: string) {
-  try {
-    const part = token.split('.')[1]
-    if (!part) return null
-
-    const normalized = part.replace(/-/g, '+').replace(/_/g, '/')
-    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
-    if (typeof globalThis.atob !== 'function') return null
-    const json = globalThis.atob(padded)
-
-    return JSON.parse(json) as Record<string, unknown>
-  } catch {
-    return null
-  }
+interface SessionReply {
+  loggedIn?: boolean
+  userId?: string
+  user_id?: string
 }
 
-function extractUserIdFromToken(token: string) {
-  const payload = decodeJwtPayload(token)
-  if (!payload) return ''
-
-  const candidate = payload.userId || payload.user_id || payload.sub || payload.id
-  if (typeof candidate === 'string') return candidate
-  if (typeof candidate === 'number' && Number.isFinite(candidate)) return String(Math.trunc(candidate))
-
-  return ''
-}
+const LOGGED_IN_COOKIE = 'gopalette_logged_in'
+const USER_ID_COOKIE = 'gopalette_user_id'
 
 function isUnauthorizedError(error: unknown) {
   if (!error || typeof error !== 'object') return false
@@ -67,29 +39,6 @@ function isUnauthorizedError(error: unknown) {
   const status = Number(typed.status ?? typed.statusCode ?? typed.response?.status ?? 0)
 
   return status === 401
-}
-
-function extractTokenExpiresAt(token: string) {
-  const payload = decodeJwtPayload(token)
-  if (!payload) return 0
-
-  const exp = payload.exp
-  if (typeof exp === 'number' && Number.isFinite(exp)) return exp
-  if (typeof exp === 'string') {
-    const value = Number(exp)
-    return Number.isFinite(value) ? value : 0
-  }
-
-  return 0
-}
-
-function shouldRefreshSoon(token: string, advanceSeconds = 45) {
-  if (!token) return false
-  const exp = extractTokenExpiresAt(token)
-  if (!exp) return false
-
-  const now = Math.floor(Date.now() / 1000)
-  return exp <= now + advanceSeconds
 }
 
 function normalizeAuthUser(input?: Record<string, unknown> | null): AuthUser | null {
@@ -113,67 +62,24 @@ function normalizeAuthUser(input?: Record<string, unknown> | null): AuthUser | n
   }
 }
 
+function normalizeSessionReply(input?: SessionReply | null): AuthSession {
+  return {
+    loggedIn: Boolean(input?.loggedIn),
+    userId: String(input?.userId || input?.user_id || '')
+  }
+}
+
 export function useAuth() {
   const { csrf, headerName } = useCsrf()
+  const loggedInCookie = useCookie<string | null>(LOGGED_IN_COOKIE)
+  const userIdCookie = useCookie<string | null>(USER_ID_COOKIE)
 
   const session = useState<AuthSession>('auth.session', () => ({
-    accessToken: '',
-    refreshToken: '',
-    userId: ''
+    loggedIn: loggedInCookie.value === '1' && Boolean(userIdCookie.value),
+    userId: String(userIdCookie.value || '')
   }))
-
   const user = useState<AuthUser | null>('auth.user', () => null)
   const initialized = useState<boolean>('auth.initialized', () => false)
-  const refreshingPromise = useState<Promise<boolean> | null>('auth.refreshing.promise', () => null)
-
-  function saveSession(next: AuthSession) {
-    const derivedUserId = extractUserIdFromToken(next.accessToken)
-    session.value = {
-      accessToken: next.accessToken || '',
-      refreshToken: next.refreshToken || '',
-      userId: derivedUserId || next.userId || ''
-    }
-
-    if (import.meta.client) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(session.value))
-    }
-  }
-
-  function clearSession() {
-    session.value = {
-      accessToken: '',
-      refreshToken: '',
-      userId: ''
-    }
-    user.value = null
-
-    if (import.meta.client) {
-      localStorage.removeItem(STORAGE_KEY)
-    }
-  }
-
-  function initAuth() {
-    if (initialized.value || !import.meta.client) return
-
-    initialized.value = true
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return
-
-    try {
-      const parsed = JSON.parse(raw) as Partial<AuthSession>
-      const accessToken = parsed.accessToken || ''
-      const refreshToken = parsed.refreshToken || ''
-      const userId = extractUserIdFromToken(accessToken) || parsed.userId || ''
-
-      saveSession({
-        accessToken,
-        refreshToken,
-        userId
-      })
-    } catch {
-      clearSession()
-    }
-  }
 
   function withCsrfHeaders(headers?: Record<string, string>) {
     const csrfToken = unref(csrf)
@@ -189,140 +95,118 @@ export function useAuth() {
     }
   }
 
-  function withAuthHeaders(headers?: Record<string, string>) {
-    if (!session.value.accessToken) {
-      return headers
+  function syncSessionFromCookies() {
+    const next: AuthSession = {
+      loggedIn: loggedInCookie.value === '1' && Boolean(userIdCookie.value),
+      userId: String(userIdCookie.value || '')
     }
 
-    return {
-      ...(headers || {}),
-      authorization: `Bearer ${session.value.accessToken}`
+    session.value = next
+    if (!next.userId) {
+      user.value = null
+    }
+    return next
+  }
+
+  function saveSession(next: AuthSession) {
+    session.value = {
+      loggedIn: Boolean(next.loggedIn && next.userId),
+      userId: String(next.userId || '')
+    }
+
+    loggedInCookie.value = session.value.loggedIn ? '1' : ''
+    userIdCookie.value = session.value.userId || ''
+
+    if (!session.value.userId) {
+      user.value = null
     }
   }
 
-  function normalizeTokenResponse(response: AuthTokenResponse) {
-    return {
-      accessToken: response.accessToken || response.access_token || '',
-      refreshToken: response.refreshToken || response.refresh_token || ''
-    }
+  function clearSession() {
+    saveSession({
+      loggedIn: false,
+      userId: ''
+    })
   }
 
-  async function refreshTokens() {
-    if (!session.value.refreshToken) {
+  function initAuth() {
+    if (initialized.value) return
+
+    initialized.value = true
+    syncSessionFromCookies()
+  }
+
+  async function refreshSession() {
+    try {
+      const response = await $fetch<SessionReply>('/api/user/refresh', {
+        method: 'POST',
+        headers: withCsrfHeaders()
+      })
+
+      const next = normalizeSessionReply(response)
+      if (!next.loggedIn || !next.userId) {
+        clearSession()
+        return false
+      }
+
+      saveSession(next)
+      return true
+    } catch {
+      clearSession()
       return false
     }
-
-    if (refreshingPromise.value) {
-      return await refreshingPromise.value
-    }
-
-    refreshingPromise.value = (async () => {
-      try {
-        const response = await $fetch<AuthTokenResponse>('/api/user/refresh', {
-          method: 'POST',
-          headers: withCsrfHeaders(),
-          body: {
-            refreshToken: session.value.refreshToken
-          }
-        })
-
-        const next = normalizeTokenResponse(response)
-        if (!next.accessToken || !next.refreshToken) {
-          return false
-        }
-
-        const userId = extractUserIdFromToken(next.accessToken) || session.value.userId
-        saveSession({
-          accessToken: next.accessToken,
-          refreshToken: next.refreshToken,
-          userId
-        })
-
-        return true
-      } catch (error: unknown) {
-        if (isUnauthorizedError(error)) {
-          clearSession()
-        }
-        return false
-      } finally {
-        refreshingPromise.value = null
-      }
-    })()
-
-    return await refreshingPromise.value
-  }
-
-  async function ensureAccessTokenFresh() {
-    if (!session.value.accessToken || !session.value.refreshToken) return
-    if (!shouldRefreshSoon(session.value.accessToken)) return
-    await refreshTokens()
-  }
-
-  function getCurrentUserId() {
-    const tokenUserId = extractUserIdFromToken(session.value.accessToken)
-    if (tokenUserId && session.value.userId !== tokenUserId) {
-      saveSession({
-        ...session.value,
-        userId: tokenUserId
-      })
-    }
-    return tokenUserId || session.value.userId
   }
 
   async function authFetch<T>(url: string, options: AuthRequestOptions = {}, retry = true): Promise<T> {
-    async function execute() {
-      return await $fetch(url, {
-        ...options,
-        headers: withAuthHeaders(options.headers)
-      }) as T
-    }
-
     try {
-      await ensureAccessTokenFresh()
-      return await execute()
+      return await $fetch<T>(url, options)
     } catch (error: unknown) {
       if (!retry || !isUnauthorizedError(error)) {
         throw error
       }
 
-      const refreshed = await refreshTokens()
+      const refreshed = await refreshSession()
       if (!refreshed) {
         throw error
       }
 
-      return await execute()
+      return await $fetch<T>(url, options)
     }
   }
 
-  async function login(payload: { email: string; password: string }) {
-    const response = await $fetch<AuthTokenResponse>('/api/user/login', {
+  async function login(payload: { email: string, password: string }) {
+    const response = await $fetch<SessionReply>('/api/user/login', {
       method: 'POST',
       headers: withCsrfHeaders(),
       body: payload
     })
 
-    const { accessToken, refreshToken } = normalizeTokenResponse(response)
-
-    if (!accessToken || !refreshToken) {
-      throw new Error('登录失败：服务端未返回令牌')
-    }
-
-    const userId = extractUserIdFromToken(accessToken)
-
-    saveSession({
-      accessToken,
-      refreshToken,
-      userId
+    const next = normalizeSessionReply({
+      loggedIn: true,
+      userId: response.userId || response.user_id
     })
-
-    if (userId) {
-      await fetchProfile(userId)
+    if (!next.userId) {
+      throw new Error('登录失败：服务端未返回用户信息')
     }
+
+    saveSession(next)
+    await fetchProfile(next.userId)
 
     return response
   }
 
-  async function register(payload: { username: string; email: string; password: string }) {
+  async function logout() {
+    try {
+      await $fetch('/api/user/logout', {
+        method: 'POST',
+        headers: withCsrfHeaders()
+      })
+    } finally {
+      clearSession()
+    }
+  }
+
+  async function register(payload: { username: string, email: string, password: string }) {
     return await $fetch<{ user?: AuthUser }>('/api/user/register', {
       method: 'POST',
       headers: withCsrfHeaders(),
@@ -331,8 +215,7 @@ export function useAuth() {
   }
 
   async function fetchProfile(id?: string) {
-    const currentUserId = getCurrentUserId()
-    const userId = id && id === currentUserId ? id : currentUserId
+    const userId = String(id || session.value.userId || '')
     if (!userId) {
       return null
     }
@@ -342,11 +225,17 @@ export function useAuth() {
     })
 
     user.value = normalizeAuthUser(response.user)
+    if (user.value?.id) {
+      saveSession({
+        loggedIn: true,
+        userId: user.value.id
+      })
+    }
     return user.value
   }
 
-  async function updateProfile(payload: { username: string; email: string; avatarURL?: string }) {
-    const userId = getCurrentUserId()
+  async function updateProfile(payload: { username: string, email: string, avatarURL?: string }) {
+    const userId = String(session.value.userId || user.value?.id || '')
     if (!userId) {
       throw new Error('当前未登录，无法更新个人信息')
     }
@@ -381,12 +270,13 @@ export function useAuth() {
     session,
     user,
     initialized,
-    isLoggedIn: computed(() => Boolean(session.value.accessToken)),
+    isLoggedIn: computed(() => Boolean(session.value.loggedIn && session.value.userId)),
     isAdmin,
     initAuth,
     login,
+    logout,
     register,
-    refreshTokens,
+    refreshTokens: refreshSession,
     authFetch,
     fetchProfile,
     updateProfile,

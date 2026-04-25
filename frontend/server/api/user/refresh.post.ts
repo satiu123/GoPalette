@@ -1,21 +1,9 @@
-import { joinURL } from 'ufo'
+import { ensureAccessToken, readSessionHint } from '../../utils/auth'
 
-export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig(event)
-  const body = await readBody<Record<string, unknown>>(event)
-  const refreshToken = String(body?.refreshToken || body?.refresh_token || '').trim()
-
-  if (!refreshToken) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'refreshToken is required'
-    })
+export default defineEventHandler(async (event): Promise<{ success: true, loggedIn: boolean, userId: string }> => {
+  await ensureAccessToken(event, { required: true, forceRefresh: true })
+  return {
+    success: true,
+    ...readSessionHint(event)
   }
-
-  return await $fetch(joinURL(config.gatewayBase, '/v1/users/refresh'), {
-    method: 'POST',
-    body: {
-      refreshToken
-    }
-  })
 })

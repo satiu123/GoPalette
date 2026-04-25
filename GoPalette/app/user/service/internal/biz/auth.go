@@ -96,6 +96,7 @@ func (uc *AuthUsecase) generateToken(user *User, sid string) (string, string, er
 	accessClaims := &auth.AuthClaims{
 		UserID: user.ID,
 		Role:   user.Role,
+		SID:    sid,
 		RegisteredClaims: jwtv5.RegisteredClaims{
 			ExpiresAt: jwtv5.NewNumericDate(t.Add(uc.authConf.JwtAccessExpire.AsDuration())),
 			IssuedAt:  jwtv5.NewNumericDate(t),
