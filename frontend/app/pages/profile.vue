@@ -55,6 +55,7 @@ const toast = useToast()
 const router = useRouter()
 
 const { session, user, isLoggedIn, initAuth, authFetch, fetchProfile, updateProfile, logout } = useAuth()
+const { preload: preloadWrite, isPreloading: writePreloading, isReady: writePreloaded, errorMessage: writePreloadError } = useWritePreload()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -432,6 +433,17 @@ async function onLogout() {
   await router.push('/login')
 }
 
+async function onPreloadWrite() {
+  const ok = await preloadWrite()
+  toast.add({
+    color: ok ? 'success' : 'error',
+    title: ok ? '写作工作台已预加载' : '预加载失败',
+    description: ok
+      ? '接下来进入写作页会更快。'
+      : (writePreloadError.value || '请稍后重试')
+  })
+}
+
 useSeoMeta({
   title: '个人主页 - GoPalette',
   description: '管理你的个人资料，查看写作与互动数据。'
@@ -482,7 +494,18 @@ useSeoMeta({
             </div>
           </div>
 
-          <UButton to="/write" icon="i-lucide-square-pen" label="写新文章" />
+          <div class="flex flex-wrap items-center gap-2">
+            <UButton to="/write" icon="i-lucide-square-pen" label="写新文章" />
+            <UButton
+              color="neutral"
+              variant="soft"
+              icon="i-lucide-download"
+              :loading="writePreloading"
+              :disabled="writePreloaded || writePreloading"
+              :label="writePreloaded ? '已预加载' : '预加载写作页'"
+              @click="onPreloadWrite"
+            />
+          </div>
         </div>
       </section>
 
