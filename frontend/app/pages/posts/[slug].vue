@@ -200,7 +200,7 @@ useSeoMeta({
     </AppHeader>
 
     <main v-if="post" class="mx-auto w-full max-w-5xl px-4 pb-20 pt-10 sm:px-14">
-      <article class="rounded-2xl border border-default bg-default p-6 sm:p-10">
+      <article class="motion-fade-up rounded-2xl border border-default bg-default p-6 sm:p-10">
         <div class="space-y-5 border-b border-default pb-8">
           <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
             <UBadge :label="post.category" color="primary" variant="subtle" />
@@ -239,7 +239,7 @@ useSeoMeta({
         </div>
       </article>
 
-      <section class="mt-10">
+      <section class="motion-fade-up motion-delay-1 mt-10">
         <div class="mb-4 flex items-center justify-between">
           <h2 class="text-xl font-semibold text-highlighted">
             相关文章
@@ -250,7 +250,7 @@ useSeoMeta({
 
         <div class="grid gap-4 md:grid-cols-3">
           <NuxtLink v-for="item in relatedPosts" :key="item.id" :to="`/posts/${item.slug}`"
-            class="rounded-xl border border-default bg-default p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40">
+            class="motion-card motion-panel rounded-xl border border-default bg-default p-4 hover:border-primary/40">
             <p class="text-xs text-toned">
               {{ item.publishedAt }}
             </p>
@@ -261,7 +261,7 @@ useSeoMeta({
         </div>
       </section>
 
-      <section class="mt-10 rounded-2xl border border-default bg-default p-6 sm:p-8">
+      <section class="motion-fade-up motion-delay-2 mt-10 rounded-2xl border border-default bg-default p-6 sm:p-8">
         <div class="flex items-center justify-between gap-3">
           <h2 class="text-xl font-semibold text-highlighted">
             评论（{{ commentsTotal || comments.length }}）

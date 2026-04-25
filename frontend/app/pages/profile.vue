@@ -448,8 +448,8 @@ useSeoMeta({
     <main class="mx-auto w-full max-w-6xl px-4 pb-20 pt-10 sm:px-14">
       <section class="rounded-2xl border border-default bg-muted/30 p-6 sm:p-8">
         <div v-if="loading" class="space-y-3">
-          <div class="h-8 w-44 rounded bg-muted" />
-          <div class="h-4 w-72 rounded bg-muted" />
+          <div class="loading-shimmer h-8 w-44 rounded" />
+          <div class="loading-shimmer h-4 w-72 rounded" />
         </div>
 
         <div v-else class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
@@ -557,7 +557,7 @@ useSeoMeta({
                 v-for="post in dashboard.topPosts"
                 :key="post.id"
                 :to="post.slug ? `/posts/${post.slug}` : '/posts'"
-                class="block rounded-xl border border-default bg-default p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40"
+                class="motion-card motion-panel block rounded-xl border border-default bg-default p-4 hover:border-primary/40"
               >
                 <div class="flex items-start justify-between gap-2">
                   <p class="line-clamp-1 text-sm font-semibold text-highlighted">

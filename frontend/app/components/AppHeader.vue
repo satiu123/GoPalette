@@ -6,7 +6,7 @@ const slots = useSlots()
   <UHeader
     :toggle="{ class: 'md:hidden' }"
     :ui="{
-      root: 'border-b border-default bg-default/95 backdrop-blur',
+      root: 'border-b border-default bg-default/96 transition-colors duration-200',
       container: 'gap-3 px-4 py-3 sm:px-14!',
       left: 'min-w-0 items-center gap-3',
       center: 'hidden min-w-0 flex-1 justify-center px-2 md:flex',
@@ -16,7 +16,7 @@ const slots = useSlots()
     <template #left>
       <NuxtLink
         to="/"
-        class="flex shrink-0 items-center gap-2"
+        class="motion-link flex shrink-0 items-center gap-2"
       >
         <span class="text-lg font-semibold tracking-tight text-highlighted sm:text-xl">GoPalette</span>
       </NuxtLink>

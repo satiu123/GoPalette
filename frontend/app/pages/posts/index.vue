@@ -230,7 +230,7 @@ useSeoMeta({
 
     <main class="mx-auto w-full max-w-6xl px-4 pb-20 pt-10 sm:px-14">
       <section
-        class="mb-6 flex flex-col gap-4 rounded-2xl border border-default bg-muted/30 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        class="motion-fade-up mb-6 flex flex-col gap-4 rounded-2xl border border-default bg-muted/30 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div>
           <h1 class="text-2xl font-semibold text-highlighted sm:text-3xl">
             文章归档
@@ -242,7 +242,7 @@ useSeoMeta({
         </div>
       </section>
 
-      <section class="mb-6 flex flex-wrap gap-2">
+      <section class="motion-fade-up motion-delay-1 mb-6 flex flex-wrap gap-2">
         <UButton size="xs" label="全部" :variant="selectedCategory ? 'ghost' : 'solid'"
           :color="selectedCategory ? 'neutral' : 'primary'" @click="clearCategory" />
 
@@ -251,8 +251,8 @@ useSeoMeta({
           @click="selectCategory(category)" />
       </section>
 
-      <section class="grid gap-4 md:grid-cols-2">
-        <UCard v-for="post in paginatedPosts" :key="post.id" :ui="{ body: 'p-0' }" class="overflow-hidden">
+      <section class="motion-fade-up motion-delay-2 grid gap-4 md:grid-cols-2">
+        <UCard v-for="post in paginatedPosts" :key="post.id" :ui="{ body: 'p-0' }" class="motion-card motion-panel overflow-hidden">
           <img :src="post.cover" :alt="post.title" class="h-40 w-full object-cover">
 
           <div class="space-y-3 p-5">
@@ -264,7 +264,7 @@ useSeoMeta({
             </div>
 
             <NuxtLink :to="`/posts/${post.slug}`"
-              class="block text-lg font-semibold text-highlighted transition-colors hover:text-primary">
+              class="motion-link block text-lg font-semibold text-highlighted hover:text-primary">
               <span v-html="renderHighlightedText(post.title)" />
             </NuxtLink>
 
@@ -281,7 +281,7 @@ useSeoMeta({
         正在检索相关文章...
       </p>
 
-      <section class="mt-8 flex items-center justify-between rounded-xl border border-default bg-muted/20 p-4">
+      <section class="motion-fade-up motion-delay-3 mt-8 flex items-center justify-between rounded-xl border border-default bg-muted/20 p-4">
         <UButton icon="i-lucide-chevron-left" label="上一页" color="neutral" variant="ghost" :disabled="currentPage <= 1"
           @click="goPrevPage" />
 

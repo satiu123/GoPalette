@@ -50,7 +50,7 @@ useSeoMeta({
     </AppHeader>
 
     <main class="mx-auto w-full max-w-6xl px-4 pb-20 pt-10 sm:px-14">
-      <section class="rounded-2xl border border-default bg-muted/30 p-6 sm:p-10">
+      <section class="motion-fade-up rounded-2xl border border-default bg-muted/30 p-6 sm:p-10">
         <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
           <div class="space-y-5">
             <UBadge
@@ -83,7 +83,7 @@ useSeoMeta({
             </div>
           </div>
 
-          <UCard :ui="{ body: 'p-5 sm:p-6' }">
+          <UCard class="motion-card motion-panel" :ui="{ body: 'p-5 sm:p-6' }">
             <template #header>
               <p class="text-sm font-medium text-toned">
                 站点概览
@@ -104,7 +104,7 @@ useSeoMeta({
         </div>
       </section>
 
-      <section class="mt-12">
+      <section class="motion-fade-up motion-delay-1 mt-12">
         <div class="mb-5 flex items-center justify-between">
           <h2 class="text-xl font-semibold text-highlighted">
             精选文章
@@ -124,7 +124,7 @@ useSeoMeta({
             v-for="post in featuredPosts"
             :key="post.id"
             :ui="{ body: 'p-0' }"
-            class="overflow-hidden"
+            class="motion-card motion-panel overflow-hidden"
           >
             <img
               :src="post.cover"
@@ -147,7 +147,7 @@ useSeoMeta({
               <div class="space-y-2">
                 <NuxtLink
                   :to="`/posts/${post.slug}`"
-                  class="block text-lg font-semibold text-highlighted transition-colors hover:text-primary"
+                  class="motion-link block text-lg font-semibold text-highlighted hover:text-primary"
                 >
                   {{ post.title }}
                 </NuxtLink>
@@ -170,7 +170,7 @@ useSeoMeta({
         </div>
       </section>
 
-      <section class="mt-12 grid gap-8 lg:grid-cols-[minmax(0,1fr)_260px]">
+      <section class="motion-fade-up motion-delay-2 mt-12 grid gap-8 lg:grid-cols-[minmax(0,1fr)_260px]">
         <div>
           <h2 class="mb-5 text-xl font-semibold text-highlighted">
             最新发布
@@ -181,7 +181,7 @@ useSeoMeta({
               v-for="post in latestPosts"
               :key="post.id"
               :to="`/posts/${post.slug}`"
-              class="block rounded-xl border border-default bg-default p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40"
+              class="motion-card motion-panel block rounded-xl border border-default bg-default p-4 hover:border-primary/40"
             >
               <div class="mb-2 flex items-center gap-2 text-xs text-toned">
                 <span>{{ post.publishedAt }}</span>

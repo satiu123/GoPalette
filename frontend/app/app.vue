@@ -26,6 +26,11 @@ useSeoMeta({
 
 <template>
   <UApp>
-    <NuxtPage />
+    <NuxtPage
+      :transition="{
+        name: 'page',
+        mode: 'out-in'
+      }"
+    />
   </UApp>
 </template>

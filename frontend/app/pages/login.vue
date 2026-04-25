@@ -56,7 +56,7 @@ useSeoMeta({
     <AppHeader />
 
     <main class="mx-auto flex w-full max-w-md px-4 pb-20 pt-12 sm:px-0">
-      <UCard class="w-full">
+      <UCard class="motion-fade-up motion-panel w-full">
         <template #header>
           <div class="space-y-1">
             <h1 class="text-xl font-semibold text-highlighted">
