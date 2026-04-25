@@ -441,7 +441,8 @@ useSeoMeta({
 <template>
   <div class="min-h-screen bg-default">
     <AppHeader>
-      <UButton color="neutral" variant="subtle" icon="i-lucide-log-out" label="退出登录" @click="onLogout" />
+      <UButton color="neutral" variant="subtle" icon="i-lucide-log-out" class="sm:hidden" @click="onLogout" />
+      <UButton color="neutral" variant="subtle" icon="i-lucide-log-out" label="退出登录" class="hidden sm:inline-flex" @click="onLogout" />
     </AppHeader>
 
     <main class="mx-auto w-full max-w-6xl px-4 pb-20 pt-10 sm:px-14">

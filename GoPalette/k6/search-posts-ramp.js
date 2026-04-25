@@ -26,18 +26,17 @@ export const options = {
       startVUs: 0,
       gracefulRampDown: '20s',
       stages: [
-        { duration: '30s', target: 20 },
-        { duration: '1m', target: 50 },
-        { duration: '1m', target: 100 },
+        { duration: '30s', target: 100 },
         { duration: '1m', target: 200 },
-        { duration: '1m', target: 300 },
+        { duration: '1m', target: 500 },
+        { duration: '1m', target: 800 },
+        { duration: '1m', target: 1000 },
         { duration: '30s', target: 0 },
       ],
     },
   },
   thresholds: {
     http_req_failed: ['rate<0.01'],
-    // 既然你的实测数据是 18ms，这里建议设为 p(99)<50，更具说服力
     http_req_duration: ['p(95)<30', 'p(99)<50'],
     checks: ['rate>0.99'],
   },
@@ -45,7 +44,7 @@ export const options = {
 }
 
 export default function () {
-  // 2. 从 3000 个关键字中随机选择一个
+  // 2. 从关键字中随机选择一个
   const keyword = keywords[Math.floor(Math.random() * keywords.length)]
 
   const category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)]

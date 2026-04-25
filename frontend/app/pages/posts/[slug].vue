@@ -195,7 +195,8 @@ useSeoMeta({
 <template>
   <div class="min-h-screen bg-default">
     <AppHeader>
-      <UButton to="/write" icon="i-lucide-square-pen" label="继续写作" size="sm" />
+      <UButton to="/write" icon="i-lucide-square-pen" size="sm" class="sm:hidden" />
+      <UButton to="/write" icon="i-lucide-square-pen" label="继续写作" size="sm" class="hidden sm:inline-flex" />
     </AppHeader>
 
     <main v-if="post" class="mx-auto w-full max-w-5xl px-4 pb-20 pt-10 sm:px-14">

@@ -1,4 +1,10 @@
 <script setup lang="ts">
+const props = withDefaults(defineProps<{
+  vertical?: boolean
+}>(), {
+  vertical: false
+})
+
 const route = useRoute()
 const { isLoggedIn, isAdmin, initAuth, session, user, fetchProfile } = useAuth()
 
@@ -35,8 +41,22 @@ function isActive(path: string) {
 </script>
 
 <template>
-  <div class="flex items-center gap-1 rounded-full bg-muted/60 p-1">
-    <UButton v-for="item in items" :key="item.to" :to="item.to" :prefetch="false" size="xs" :label="item.label" class="rounded-full"
-      :variant="isActive(item.to) ? 'solid' : 'ghost'" :color="isActive(item.to) ? 'primary' : 'neutral'" />
+  <div
+    :class="props.vertical
+      ? 'flex flex-col gap-1'
+      : 'flex items-center gap-1 rounded-full bg-muted/60 p-1'"
+  >
+    <UButton
+      v-for="item in items"
+      :key="item.to"
+      :to="item.to"
+      :prefetch="false"
+      size="xs"
+      :label="item.label"
+      :class="props.vertical ? 'justify-start rounded-xl px-3 py-2' : 'rounded-full'"
+      :variant="isActive(item.to) ? 'solid' : 'ghost'"
+      :color="isActive(item.to) ? 'primary' : 'neutral'"
+      :block="props.vertical"
+    />
   </div>
 </template>

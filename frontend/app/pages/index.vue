@@ -39,11 +39,13 @@ useSeoMeta({
 <template>
   <div class="min-h-screen bg-default">
     <AppHeader>
+      <UButton to="/write" icon="i-lucide-pen-line" size="sm" class="sm:hidden" />
       <UButton
         to="/write"
         icon="i-lucide-pen-line"
         label="开始写作"
         size="sm"
+        class="hidden sm:inline-flex"
       />
     </AppHeader>
 

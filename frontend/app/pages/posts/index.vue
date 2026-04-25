@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core'
-import { fetchPosts, fetchTags, isVisiblePostStatus, searchPosts } from '~/composables/useBlogApi'
+import { fetchCategories, fetchPosts, isVisiblePostStatus, searchPosts } from '~/composables/useBlogApi'
 
 const route = useRoute()
 const router = useRouter()
 
-const selectedTag = ref(typeof route.query.tag === 'string' ? route.query.tag : '')
+const selectedCategory = ref(typeof route.query.category === 'string' ? route.query.category : '')
 const keyword = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const currentPage = ref(Math.max(1, Number(route.query.page || 1)))
 const pageSize = 8
@@ -18,9 +18,9 @@ const searchState = ref<{ items: Array<{ id: string; title: string; summary: str
 })
 
 const { data: postsData } = await useAsyncData('all-posts-for-list', () => fetchPosts(1, 200))
-const { data: tagsData } = await useAsyncData('all-tags-for-list', () => fetchTags(1, 200))
+const { data: categoriesData } = await useAsyncData('all-categories-for-list', () => fetchCategories(1, 200))
 
-const tags = computed(() => (tagsData.value?.tags || []).map(tag => tag.name))
+const categories = computed(() => (categoriesData.value?.categories || []).map(category => category.name))
 
 function toDisplayDate(input?: string) {
   if (!input) return '未知时间'
@@ -104,7 +104,7 @@ watch([keyword, currentPage], () => {
 const filteredPosts = computed(() => {
   if (keyword.value.trim()) {
     const items = searchState.value.items
-    return selectedTag.value ? items.filter(item => item.tags.includes(selectedTag.value)) : items
+    return selectedCategory.value ? items.filter(item => item.category === selectedCategory.value) : items
   }
 
   const allPosts = postsData.value?.posts || []
@@ -112,12 +112,12 @@ const filteredPosts = computed(() => {
   const posts = visiblePosts.length > 0 ? visiblePosts : allPosts
 
   return posts.filter((post) => {
-    const byTag = selectedTag.value ? post.tags.includes(selectedTag.value) : true
+    const byCategory = selectedCategory.value ? post.category === selectedCategory.value : true
     const byKeyword = keyword.value
       ? [post.title, post.summary, post.category, post.author, ...post.tags].join(' ').toLowerCase().includes(keyword.value.toLowerCase())
       : true
 
-    return byTag && byKeyword
+    return byCategory && byKeyword
   })
 })
 
@@ -142,7 +142,7 @@ const paginatedPosts = computed(() => {
 function syncQuery() {
   const query = {
     ...route.query,
-    tag: selectedTag.value || undefined,
+    category: selectedCategory.value || undefined,
     q: keyword.value || undefined,
     page: currentPage.value > 1 ? String(currentPage.value) : undefined
   }
@@ -150,14 +150,14 @@ function syncQuery() {
   router.replace({ query })
 }
 
-function selectTag(tag: string) {
-  selectedTag.value = tag
+function selectCategory(category: string) {
+  selectedCategory.value = category
   currentPage.value = 1
   syncQuery()
 }
 
-function clearTag() {
-  selectedTag.value = ''
+function clearCategory() {
+  selectedCategory.value = ''
   currentPage.value = 1
   syncQuery()
 }
@@ -188,8 +188,8 @@ watch(totalPages, (value) => {
   }
 })
 
-watch(() => route.query.tag, (value) => {
-  selectedTag.value = typeof value === 'string' ? value : ''
+watch(() => route.query.category, (value) => {
+  selectedCategory.value = typeof value === 'string' ? value : ''
 })
 
 watch(() => route.query.q, (value) => {
@@ -213,7 +213,19 @@ useSeoMeta({
 <template>
   <div class="min-h-screen bg-default">
     <AppHeader>
-      <UButton to="/write" icon="i-lucide-pen-line" label="写文章" size="sm" />
+      <template #search>
+        <UInput
+          v-model="keyword"
+          icon="i-lucide-search"
+          placeholder="搜索标题、标签、分类"
+          size="sm"
+          class="w-full"
+          @update:model-value="onKeywordChange"
+        />
+      </template>
+
+      <UButton to="/write" icon="i-lucide-pen-line" size="sm" class="sm:hidden" />
+      <UButton to="/write" icon="i-lucide-pen-line" label="写文章" size="sm" class="hidden sm:inline-flex" />
     </AppHeader>
 
     <main class="mx-auto w-full max-w-6xl px-4 pb-20 pt-10 sm:px-14">
@@ -227,22 +239,16 @@ useSeoMeta({
             共 {{ keyword.trim() ? searchState.total : filteredPosts.length }} 篇文章 · 第 {{ currentPage }} / {{ totalPages
             }} 页
           </p>
-          <p v-if="keyword.trim()" class="mt-1 text-xs text-toned">
-            Meilisearch 即时检索中
-          </p>
         </div>
-
-        <UInput v-model="keyword" icon="i-lucide-search" placeholder="搜索标题、标签、分类" class="w-full sm:w-80"
-          @update:model-value="onKeywordChange" />
       </section>
 
       <section class="mb-6 flex flex-wrap gap-2">
-        <UButton size="xs" label="全部" :variant="selectedTag ? 'ghost' : 'solid'"
-          :color="selectedTag ? 'neutral' : 'primary'" @click="clearTag" />
+        <UButton size="xs" label="全部" :variant="selectedCategory ? 'ghost' : 'solid'"
+          :color="selectedCategory ? 'neutral' : 'primary'" @click="clearCategory" />
 
-        <UButton v-for="tag in tags" :key="tag" size="xs" :label="`#${tag}`"
-          :variant="selectedTag === tag ? 'solid' : 'ghost'" :color="selectedTag === tag ? 'primary' : 'neutral'"
-          @click="selectTag(tag)" />
+        <UButton v-for="category in categories" :key="category" size="xs" :label="category"
+          :variant="selectedCategory === category ? 'solid' : 'ghost'" :color="selectedCategory === category ? 'primary' : 'neutral'"
+          @click="selectCategory(category)" />
       </section>
 
       <section class="grid gap-4 md:grid-cols-2">
@@ -262,10 +268,7 @@ useSeoMeta({
               <span v-html="renderHighlightedText(post.title)" />
             </NuxtLink>
 
-            <p
-              class="line-clamp-2 text-sm text-toned"
-              v-html="renderHighlightedText(post.summary)"
-            />
+            <p class="line-clamp-2 text-sm text-toned" v-html="renderHighlightedText(post.summary)" />
 
             <div class="flex flex-wrap gap-2">
               <UBadge v-for="tag in post.tags" :key="tag" :label="`#${tag}`" color="neutral" variant="outline" />
