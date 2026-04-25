@@ -208,7 +208,14 @@ useSeoMeta({
             <span>·</span>
             <span>{{ post.readingMinutes }} 分钟</span>
             <span>·</span>
-            <span>{{ post.author }}</span>
+            <NuxtLink
+              v-if="post.authorId"
+              :to="`/authors/${post.authorId}`"
+              class="hover:text-primary"
+            >
+              {{ post.author }}
+            </NuxtLink>
+            <span v-else>{{ post.author }}</span>
           </div>
 
           <h1 class="text-3xl font-semibold tracking-tight text-highlighted sm:text-4xl">

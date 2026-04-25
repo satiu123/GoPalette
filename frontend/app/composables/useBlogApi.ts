@@ -80,10 +80,12 @@ export interface BlogPostItem {
     category: string
     categoryId: string
     author: string
+    authorId: string
     publishedAt: string
     readingMinutes: number
     cover: string
     content?: string
+    createdAt?: string
 }
 
 export interface SearchPostItem {
@@ -192,6 +194,7 @@ export function normalizePostInfo(post: PostInfoLike): BlogPostItem {
         category: raw.category?.name || '未分类',
         categoryId: raw.category?.id || '',
         author: raw.author?.name || '匿名作者',
+        authorId: raw.author?.id || '',
         publishedAt: formatDate(raw.createdAt),
         readingMinutes: estimateReadingMinutes('', raw.summary || ''),
         cover: buildCover(raw.slug || raw.id || 'gopalette')
@@ -212,10 +215,12 @@ export function normalizePostDetail(detail: PostDetail): BlogPostItem {
         category: info.category?.name || '未分类',
         categoryId: info.category?.id || '',
         author: info.author?.name || '匿名作者',
+        authorId: info.author?.id || '',
         publishedAt: formatDate(info.createdAt),
         readingMinutes: estimateReadingMinutes(content, info.summary || ''),
         cover: buildCover(info.slug || info.id || 'gopalette'),
-        content
+        content,
+        createdAt: info.createdAt
     }
 }
 

@@ -125,20 +125,21 @@ async function loadPosts() {
     if (query) {
       const response = await searchPosts(query, postPage.value, pageSize)
       postTotal.value = response.total
-      postRows.value = response.results.map(item => ({
-        id: item.id,
-        title: item.title,
-        summary: item.summary,
-        slug: item.slug,
-        status: POST_STATUS_PUBLISHED,
-        tags: item.tags,
-        category: item.categoryName,
-        categoryId: '',
-        author: '未知作者',
-        publishedAt: item.createdAt || '未知时间',
-        readingMinutes: Math.max(1, Math.ceil(item.summary.length / 300)),
-        cover: toCover(item.slug || item.id)
-      }))
+        postRows.value = response.results.map(item => ({
+          id: item.id,
+          title: item.title,
+          summary: item.summary,
+          slug: item.slug,
+          status: POST_STATUS_PUBLISHED,
+          tags: item.tags,
+          category: item.categoryName,
+          categoryId: '',
+          author: '未知作者',
+          authorId: '',
+          publishedAt: item.createdAt || '未知时间',
+          readingMinutes: Math.max(1, Math.ceil(item.summary.length / 300)),
+          cover: toCover(item.slug || item.id)
+        }))
       return
     }
 

@@ -186,7 +186,14 @@ useSeoMeta({
               <div class="mb-2 flex items-center gap-2 text-xs text-toned">
                 <span>{{ post.publishedAt }}</span>
                 <span>·</span>
-                <span>{{ post.author }}</span>
+                <NuxtLink
+                  v-if="post.authorId"
+                  :to="`/authors/${post.authorId}`"
+                  class="hover:text-primary"
+                >
+                  {{ post.author }}
+                </NuxtLink>
+                <span v-else>{{ post.author }}</span>
               </div>
               <h3 class="text-base font-semibold text-highlighted">
                 {{ post.title }}

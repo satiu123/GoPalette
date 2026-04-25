@@ -6,6 +6,7 @@ const route = useRoute()
 const router = useRouter()
 
 const selectedCategory = ref(typeof route.query.category === 'string' ? route.query.category : '')
+const selectedTag = ref(typeof route.query.tag === 'string' ? route.query.tag : '')
 const keyword = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const currentPage = ref(Math.max(1, Number(route.query.page || 1)))
 const pageSize = 8
@@ -104,7 +105,11 @@ watch([keyword, currentPage], () => {
 const filteredPosts = computed(() => {
   if (keyword.value.trim()) {
     const items = searchState.value.items
-    return selectedCategory.value ? items.filter(item => item.category === selectedCategory.value) : items
+    return items.filter((item) => {
+      const byCategory = selectedCategory.value ? item.category === selectedCategory.value : true
+      const byTag = selectedTag.value ? item.tags.includes(selectedTag.value) : true
+      return byCategory && byTag
+    })
   }
 
   const allPosts = postsData.value?.posts || []
@@ -113,11 +118,12 @@ const filteredPosts = computed(() => {
 
   return posts.filter((post) => {
     const byCategory = selectedCategory.value ? post.category === selectedCategory.value : true
+    const byTag = selectedTag.value ? post.tags.includes(selectedTag.value) : true
     const byKeyword = keyword.value
       ? [post.title, post.summary, post.category, post.author, ...post.tags].join(' ').toLowerCase().includes(keyword.value.toLowerCase())
       : true
 
-    return byCategory && byKeyword
+    return byCategory && byTag && byKeyword
   })
 })
 
@@ -143,6 +149,7 @@ function syncQuery() {
   const query = {
     ...route.query,
     category: selectedCategory.value || undefined,
+    tag: selectedTag.value || undefined,
     q: keyword.value || undefined,
     page: currentPage.value > 1 ? String(currentPage.value) : undefined
   }
@@ -158,6 +165,18 @@ function selectCategory(category: string) {
 
 function clearCategory() {
   selectedCategory.value = ''
+  currentPage.value = 1
+  syncQuery()
+}
+
+function selectTag(tag: string) {
+  selectedTag.value = tag
+  currentPage.value = 1
+  syncQuery()
+}
+
+function clearTag() {
+  selectedTag.value = ''
   currentPage.value = 1
   syncQuery()
 }
@@ -194,6 +213,10 @@ watch(() => route.query.category, (value) => {
 
 watch(() => route.query.q, (value) => {
   keyword.value = typeof value === 'string' ? value : ''
+})
+
+watch(() => route.query.tag, (value) => {
+  selectedTag.value = typeof value === 'string' ? value : ''
 })
 
 watch(() => route.query.page, (value) => {
@@ -239,6 +262,9 @@ useSeoMeta({
             共 {{ keyword.trim() ? searchState.total : filteredPosts.length }} 篇文章 · 第 {{ currentPage }} / {{ totalPages
             }} 页
           </p>
+          <p v-if="selectedTag" class="mt-2 text-sm text-toned">
+            当前标签：#{{ selectedTag }}
+          </p>
         </div>
       </section>
 
@@ -249,6 +275,23 @@ useSeoMeta({
         <UButton v-for="category in categories" :key="category" size="xs" :label="category"
           :variant="selectedCategory === category ? 'solid' : 'ghost'" :color="selectedCategory === category ? 'primary' : 'neutral'"
           @click="selectCategory(category)" />
+      </section>
+
+      <section v-if="selectedTag" class="motion-fade-up mb-6 flex flex-wrap gap-2">
+        <UButton
+          size="xs"
+          color="primary"
+          variant="soft"
+          :label="`#${selectedTag}`"
+          @click="clearTag"
+        />
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          label="清除标签"
+          @click="clearTag"
+        />
       </section>
 
       <section class="motion-fade-up motion-delay-2 grid gap-4 md:grid-cols-2">
@@ -271,7 +314,15 @@ useSeoMeta({
             <p class="line-clamp-2 text-sm text-toned" v-html="renderHighlightedText(post.summary)" />
 
             <div class="flex flex-wrap gap-2">
-              <UBadge v-for="tag in post.tags" :key="tag" :label="`#${tag}`" color="neutral" variant="outline" />
+              <UButton
+                v-for="tag in post.tags"
+                :key="tag"
+                size="xs"
+                color="neutral"
+                variant="ghost"
+                :label="`#${tag}`"
+                @click.prevent="selectTag(tag)"
+              />
             </div>
           </div>
         </UCard>

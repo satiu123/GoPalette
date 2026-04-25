@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const toast = useToast()
+const route = useRoute()
 const router = useRouter()
 
 const { login, initAuth, isLoggedIn } = useAuth()
@@ -33,7 +34,11 @@ async function onSubmit() {
       title: '登录成功'
     })
 
-    await router.push('/profile')
+    const redirect = typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/')
+      ? route.query.redirect
+      : '/profile'
+
+    await router.push(redirect)
   } catch (error: any) {
     toast.add({
       color: 'error',
