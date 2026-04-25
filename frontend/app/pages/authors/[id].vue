@@ -33,6 +33,7 @@ type DataRecord = Record<string, unknown>
 const route = useRoute()
 const authorId = computed(() => String(route.params.id || ''))
 const { buildUrl } = useSiteSeo()
+const { categoryPath } = useBlogRoutes()
 
 function toRecord(value: unknown): DataRecord | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
@@ -348,7 +349,9 @@ useHead({
                     {{ post.summary }}
                   </p>
                   <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
-                    <UBadge :label="post.category" color="primary" variant="subtle" />
+                    <NuxtLink :to="categoryPath(post.category)" class="inline-flex">
+                      <UBadge :label="post.category" color="primary" variant="subtle" class="hover:opacity-90" />
+                    </NuxtLink>
                     <span>{{ post.publishedAt }}</span>
                     <span>·</span>
                     <span>{{ post.readingMinutes }} 分钟</span>

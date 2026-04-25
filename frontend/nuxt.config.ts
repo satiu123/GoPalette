@@ -43,6 +43,32 @@ export default defineNuxtConfig({
   hooks: {
     async 'prerender:routes'(ctx) {
       try {
+        const categoryResponse = await fetch(`${gatewayBase}/v1/categories?page=1&pageSize=200`)
+        if (categoryResponse.ok) {
+          const categoryPayload = await categoryResponse.json() as any
+          const categoryList = categoryPayload?.categories || categoryPayload?.items || categoryPayload?.data?.categories || []
+
+          for (const item of categoryList as Array<any>) {
+            const name = item?.name
+            if (typeof name === 'string' && name.trim()) {
+              ctx.routes.add(`/categories/${encodeURIComponent(name.trim())}`)
+            }
+          }
+        }
+
+        const tagResponse = await fetch(`${gatewayBase}/v1/tags?page=1&pageSize=200`)
+        if (tagResponse.ok) {
+          const tagPayload = await tagResponse.json() as any
+          const tagList = tagPayload?.tags || tagPayload?.items || tagPayload?.data?.tags || []
+
+          for (const item of tagList as Array<any>) {
+            const name = item?.name
+            if (typeof name === 'string' && name.trim()) {
+              ctx.routes.add(`/tags/${encodeURIComponent(name.trim())}`)
+            }
+          }
+        }
+
         const response = await fetch(`${gatewayBase}/v1/posts?page=1&pageSize=1000`)
         if (!response.ok) {
           console.warn(`[ssg] skip dynamic post prerender: ${response.status} ${response.statusText}`)
@@ -68,7 +94,7 @@ export default defineNuxtConfig({
           ctx.routes.add(`/posts/${encodeURIComponent(slug)}`)
         }
       } catch (error) {
-        console.warn('[ssg] skip dynamic post prerender, failed to fetch slugs from gateway:', error)
+        console.warn('[ssg] skip dynamic prerender discovery, failed to fetch data from gateway:', error)
       }
     }
   },

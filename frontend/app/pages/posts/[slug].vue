@@ -8,6 +8,7 @@ import type { CommentInfo } from '~/composables/useBlogApi'
 const toast = useToast()
 const { initAuth, isLoggedIn, session, user, fetchProfile } = useAuth()
 const { buildUrl, siteName } = useSiteSeo()
+const { categoryPath, tagPath } = useBlogRoutes()
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug || ''))
@@ -244,7 +245,9 @@ useHead({
       <article class="motion-fade-up rounded-2xl border border-default bg-default p-6 sm:p-10">
         <div class="space-y-5 border-b border-default pb-8">
           <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
-            <UBadge :label="post.category" color="primary" variant="subtle" />
+            <NuxtLink :to="categoryPath(post.category)" class="inline-flex">
+              <UBadge :label="post.category" color="primary" variant="subtle" class="hover:opacity-90" />
+            </NuxtLink>
             <span>{{ post.publishedAt }}</span>
             <span>·</span>
             <span>{{ post.readingMinutes }} 分钟</span>
@@ -283,7 +286,14 @@ useHead({
         </div>
 
         <div class="mt-10 flex flex-wrap gap-2 border-t border-default pt-6">
-          <UBadge v-for="tag in post.tags" :key="tag" :label="`#${tag}`" color="neutral" variant="outline" />
+          <NuxtLink
+            v-for="tag in post.tags"
+            :key="tag"
+            :to="tagPath(tag)"
+            class="inline-flex"
+          >
+            <UBadge :label="`#${tag}`" color="neutral" variant="outline" class="hover:border-primary hover:text-primary" />
+          </NuxtLink>
         </div>
       </article>
 

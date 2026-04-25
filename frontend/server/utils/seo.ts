@@ -12,6 +12,16 @@ interface SitemapPostRecord {
   authorName: string
 }
 
+interface SitemapCategoryRecord {
+  id: string
+  name: string
+}
+
+interface SitemapTagRecord {
+  id: string
+  name: string
+}
+
 function toRecord(value: unknown) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
   return value as Record<string, unknown>
@@ -66,6 +76,50 @@ export async function fetchSeoPosts(event: H3Event) {
       authorName: toText(author.name) || '匿名作者'
     } satisfies SitemapPostRecord
   }).filter(item => item.slug)
+}
+
+export async function fetchSeoCategories(event: H3Event) {
+  const config = useRuntimeConfig(event)
+  const response = await $fetch<Record<string, unknown>>(joinURL(config.gatewayBase, '/v1/categories'), {
+    method: 'GET',
+    query: {
+      page: '1',
+      pageSize: '200'
+    }
+  })
+
+  const items = Array.isArray(response?.categories) ? response.categories : []
+
+  return items.map((item) => {
+    const record = toRecord(item) || {}
+
+    return {
+      id: toText(record.id),
+      name: toText(record.name)
+    } satisfies SitemapCategoryRecord
+  }).filter(item => item.name)
+}
+
+export async function fetchSeoTags(event: H3Event) {
+  const config = useRuntimeConfig(event)
+  const response = await $fetch<Record<string, unknown>>(joinURL(config.gatewayBase, '/v1/tags'), {
+    method: 'GET',
+    query: {
+      page: '1',
+      pageSize: '200'
+    }
+  })
+
+  const items = Array.isArray(response?.tags) ? response.tags : []
+
+  return items.map((item) => {
+    const record = toRecord(item) || {}
+
+    return {
+      id: toText(record.id),
+      name: toText(record.name)
+    } satisfies SitemapTagRecord
+  }).filter(item => item.name)
 }
 
 export { escapeXml }

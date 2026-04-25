@@ -2,6 +2,7 @@
 import { fetchPosts, fetchTags, isVisiblePostStatus } from '~/composables/useBlogApi'
 
 const { buildUrl } = useSiteSeo()
+const { categoryPath, tagPath } = useBlogRoutes()
 
 const { data: postsData } = await useAsyncData('home-posts', () => fetchPosts(1, 60))
 const { data: tagsData } = await useAsyncData('home-tags', () => fetchTags(1, 200))
@@ -145,11 +146,14 @@ useHead({
 
             <div class="space-y-4 p-5">
               <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
-                <UBadge
-                  :label="post.category"
-                  color="primary"
-                  variant="subtle"
-                />
+                <NuxtLink :to="categoryPath(post.category)" class="inline-flex">
+                  <UBadge
+                    :label="post.category"
+                    color="primary"
+                    variant="subtle"
+                    class="hover:opacity-90"
+                  />
+                </NuxtLink>
                 <span>{{ post.publishedAt }}</span>
                 <span>·</span>
                 <span>{{ post.readingMinutes }} 分钟</span>
@@ -168,13 +172,19 @@ useHead({
               </div>
 
               <div class="flex flex-wrap gap-2">
-                <UBadge
+                <NuxtLink
                   v-for="tag in post.tags"
                   :key="tag"
-                  :label="`#${tag}`"
-                  color="neutral"
-                  variant="outline"
-                />
+                  :to="tagPath(tag)"
+                  class="inline-flex"
+                >
+                  <UBadge
+                    :label="`#${tag}`"
+                    color="neutral"
+                    variant="outline"
+                    class="hover:border-primary hover:text-primary"
+                  />
+                </NuxtLink>
               </div>
             </div>
           </UCard>
@@ -195,6 +205,15 @@ useHead({
             >
               <div class="mb-2 flex items-center gap-2 text-xs text-toned">
                 <span>{{ post.publishedAt }}</span>
+                <span>·</span>
+                <NuxtLink :to="categoryPath(post.category)" class="inline-flex">
+                  <UBadge
+                    :label="post.category"
+                    color="primary"
+                    variant="subtle"
+                    class="hover:opacity-90"
+                  />
+                </NuxtLink>
                 <span>·</span>
                 <NuxtLink
                   v-if="post.authorId"
@@ -227,7 +246,7 @@ useHead({
             <NuxtLink
               v-for="tag in tags"
               :key="tag"
-              :to="`/posts?tag=${encodeURIComponent(tag)}`"
+              :to="tagPath(tag)"
               class="inline-flex"
             >
               <UBadge

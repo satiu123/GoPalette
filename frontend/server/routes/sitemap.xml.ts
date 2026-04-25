@@ -1,9 +1,11 @@
 import { joinURL } from 'ufo'
-import { escapeXml, fetchSeoPosts, getSeoSiteConfig } from '../utils/seo'
+import { escapeXml, fetchSeoCategories, fetchSeoPosts, fetchSeoTags, getSeoSiteConfig } from '../utils/seo'
 
 export default defineEventHandler(async (event) => {
   const { siteUrl } = getSeoSiteConfig(event)
   const posts = await fetchSeoPosts(event)
+  const categories = await fetchSeoCategories(event)
+  const tags = await fetchSeoTags(event)
   const authorIds = Array.from(new Set(posts.map(post => post.authorId).filter(Boolean)))
 
   setHeader(event, 'content-type', 'application/xml; charset=utf-8')
@@ -24,7 +26,17 @@ export default defineEventHandler(async (event) => {
     lastmod: ''
   }))
 
-  const nodes = [...staticUrls, ...postUrls, ...authorUrls].map((item) => {
+  const categoryUrls = categories.map(category => ({
+    loc: joinURL(siteUrl, `/categories/${encodeURIComponent(category.name)}`),
+    lastmod: ''
+  }))
+
+  const tagUrls = tags.map(tag => ({
+    loc: joinURL(siteUrl, `/tags/${encodeURIComponent(tag.name)}`),
+    lastmod: ''
+  }))
+
+  const nodes = [...staticUrls, ...postUrls, ...authorUrls, ...categoryUrls, ...tagUrls].map((item) => {
     const parts = [`<loc>${escapeXml(item.loc)}</loc>`]
     if (item.lastmod) {
       const iso = new Date(item.lastmod).toISOString()
