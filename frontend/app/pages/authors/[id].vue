@@ -121,7 +121,7 @@ function normalizePost(input: DataRecord): BlogPostItem {
     authorId: toText(pick(author, ['id'])),
     publishedAt: formatDate(createdAt),
     readingMinutes: Math.max(1, Math.ceil(toText(pick(input, ['summary'])).length / 300)),
-    cover: `https://picsum.photos/seed/${encodeURIComponent(toText(pick(input, ['slug', 'id']), 'gopalette'))}/1200/640`,
+    cover: `/covers/${encodeURIComponent(toText(pick(input, ['slug', 'id']), 'gopalette'))}.svg`,
     createdAt
   }
 }

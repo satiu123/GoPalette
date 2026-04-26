@@ -38,7 +38,7 @@ function toDisplayDate(input?: string) {
 }
 
 function toCover(seed: string) {
-  return `https://picsum.photos/seed/${encodeURIComponent(seed || 'gopalette')}/1200/640`
+  return `/covers/${encodeURIComponent(seed || 'gopalette')}.svg`
 }
 
 function renderHighlightedText(input: string) {

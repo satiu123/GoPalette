@@ -154,7 +154,7 @@ function estimateReadingMinutes(content: string, summary: string) {
 
 function buildCover(seed: string) {
     const safeSeed = encodeURIComponent(seed || 'gopalette')
-    return `https://picsum.photos/seed/${safeSeed}/1200/640`
+    return `/covers/${safeSeed}.svg`
 }
 
 type PostInfoLike = PostInfo | { info?: PostInfo } | Record<string, any>

@@ -9,6 +9,9 @@ const toast = useToast()
 const { initAuth, isLoggedIn, session, user, fetchProfile } = useAuth()
 const { buildUrl, siteName } = useSiteSeo()
 const { categoryPath, tagPath } = useBlogRoutes()
+const articleContentRef = ref<HTMLElement | null>(null)
+const activeHeadingId = ref('')
+let cleanupArticleProgress: (() => void) | undefined
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug || ''))
@@ -36,6 +39,203 @@ const commentsLoading = ref(false)
 const submittingComment = ref(false)
 const deletingCommentId = ref('')
 const commentText = ref('')
+
+type HeadingItem = {
+  id: string
+  text: string
+  depth: number
+}
+
+function normalizeHeadingText(value: string) {
+  return value
+    .replace(/[#>*`_~[\]()!-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function toAnchorId(value: string, index: number) {
+  const normalized = normalizeHeadingText(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9\u4e00-\u9fa5\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+
+  return normalized ? `heading-${normalized}` : `heading-${index + 1}`
+}
+
+const headingItems = computed(() => {
+  const source = post.value?.content || ''
+  const seen = new Map<string, number>()
+  const headings: HeadingItem[] = []
+  let inCodeFence = false
+
+  for (const line of source.split('\n')) {
+    const trimmed = line.trim()
+    if (/^```/.test(trimmed) || /^~~~/.test(trimmed)) {
+      inCodeFence = !inCodeFence
+      continue
+    }
+
+    if (inCodeFence) continue
+
+    const match = /^(#{2,3})\s+(.+?)\s*#*$/.exec(trimmed)
+    if (!match) continue
+
+    const text = normalizeHeadingText(match[2] || '')
+    if (!text) continue
+
+    const baseId = toAnchorId(text, seen.size)
+    const count = seen.get(baseId) || 0
+    seen.set(baseId, count + 1)
+
+    headings.push({
+      id: count > 0 ? `${baseId}-${count + 1}` : baseId,
+      text,
+      depth: match[1]?.length || 2
+    })
+  }
+
+  return headings
+})
+
+async function copyText(text: string, successTitle: string) {
+  if (!import.meta.client) return
+
+  try {
+    await navigator.clipboard.writeText(text)
+    toast.add({
+      color: 'success',
+      title: successTitle
+    })
+  } catch {
+    toast.add({
+      color: 'error',
+      title: '复制失败',
+      description: '浏览器暂时不允许写入剪贴板'
+    })
+  }
+}
+
+async function copyArticleLink() {
+  await copyText(canonicalUrl.value, '链接已复制')
+}
+
+async function shareArticle() {
+  if (!import.meta.client || !post.value) return
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: post.value.title,
+        text: post.value.summary,
+        url: canonicalUrl.value
+      })
+      return
+    } catch (error: unknown) {
+      const typed = error as { name?: string }
+      if (typed.name === 'AbortError') return
+    }
+  }
+
+  await copyArticleLink()
+}
+
+function enhanceArticleContent() {
+  if (!import.meta.client) return
+
+  const root = articleContentRef.value
+  if (!root) return
+
+  const headings = Array.from(root.querySelectorAll<HTMLElement>('h2, h3'))
+  headings.forEach((heading, headingIndex) => {
+    const item = headingItems.value[headingIndex]
+    if (!item) return
+
+    heading.id = item.id
+    heading.classList.add('scroll-mt-24')
+  })
+
+  const blocks = Array.from(root.querySelectorAll<HTMLElement>('pre'))
+  for (const block of blocks) {
+    if (block.dataset.copyEnhanced === 'true') continue
+    block.dataset.copyEnhanced = 'true'
+    block.classList.add('article-code-block')
+
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.textContent = '复制'
+    button.className = 'article-code-copy'
+    button.addEventListener('click', async () => {
+      const code = block.querySelector('code')?.textContent || ''
+      await copyText(code.trim(), '代码已复制')
+    })
+
+    block.appendChild(button)
+  }
+}
+
+function setupArticleProgress() {
+  if (!import.meta.client) return
+
+  cleanupArticleProgress?.()
+
+  const root = articleContentRef.value
+  if (!root || headingItems.value.length === 0) {
+    activeHeadingId.value = ''
+    cleanupArticleProgress = undefined
+    return
+  }
+
+  const headingNodes = headingItems.value
+    .map(item => document.getElementById(item.id))
+    .filter((item): item is HTMLElement => Boolean(item))
+
+  if (headingNodes.length === 0) {
+    cleanupArticleProgress = undefined
+    return
+  }
+
+  let frame = 0
+  const updateActiveHeading = () => {
+    cancelAnimationFrame(frame)
+    frame = requestAnimationFrame(() => {
+      const anchorOffset = 128
+      const current = headingNodes
+        .filter(heading => heading.getBoundingClientRect().top <= anchorOffset)
+        .at(-1)
+
+      activeHeadingId.value = current?.id || headingNodes[0]?.id || ''
+    })
+  }
+
+  const observer = new IntersectionObserver(updateActiveHeading, {
+    rootMargin: '-96px 0px -65% 0px',
+    threshold: [0, 1]
+  })
+
+  headingNodes.forEach(heading => observer.observe(heading))
+  window.addEventListener('scroll', updateActiveHeading, { passive: true })
+  window.addEventListener('resize', updateActiveHeading)
+  updateActiveHeading()
+
+  cleanupArticleProgress = () => {
+    cancelAnimationFrame(frame)
+    observer.disconnect()
+    window.removeEventListener('scroll', updateActiveHeading)
+    window.removeEventListener('resize', updateActiveHeading)
+  }
+}
+
+async function refreshArticleEnhancements() {
+  await nextTick()
+  if (!import.meta.client) return
+
+  requestAnimationFrame(() => {
+    enhanceArticleContent()
+    setupArticleProgress()
+  })
+}
 
 function formatCommentTime(input?: string) {
   if (!input) return '刚刚'
@@ -139,11 +339,17 @@ onMounted(async () => {
   }
 
   await loadComments()
+  await refreshArticleEnhancements()
 })
 
 watch(post, async (value) => {
   if (!value?.id) return
   await loadComments()
+  await refreshArticleEnhancements()
+})
+
+onBeforeUnmount(() => {
+  cleanupArticleProgress?.()
 })
 
 const { data: relatedData } = await useAsyncData(
@@ -165,8 +371,33 @@ const relatedPosts = computed(() => {
     .slice(0, 3)
 })
 
+const ViewerCodeBlockShiki = CodeBlockShiki.extend({
+  markdownTokenName: 'code',
+  parseMarkdown: (token: any, helpers: any) => {
+    if (
+      token.raw?.startsWith('```') === false
+      && token.raw?.startsWith('~~~') === false
+      && token.codeBlockStyle !== 'indented'
+    ) {
+      return []
+    }
+
+    return helpers.createNode(
+      'codeBlock',
+      { language: token.lang || null },
+      token.text ? [helpers.createTextNode(token.text)] : []
+    )
+  },
+  renderMarkdown: (node: any, helpers: any) => {
+    const language = node.attrs?.language || ''
+    if (!node.content) return `\`\`\`${language}\n\n\`\`\``
+
+    return [`\`\`\`${language}`, helpers.renderChildren(node.content), '```'].join('\n')
+  }
+})
+
 const viewerExtensions = [
-  CodeBlockShiki.configure({
+  ViewerCodeBlockShiki.configure({
     defaultTheme: 'material-theme',
     themes: {
       light: 'material-theme-lighter',
@@ -241,8 +472,9 @@ useHead({
       <UButton to="/write" icon="i-lucide-square-pen" label="继续写作" size="sm" class="hidden sm:inline-flex" />
     </AppHeader>
 
-    <main v-if="post" class="mx-auto w-full max-w-5xl px-4 pb-20 pt-10 sm:px-14">
-      <article class="motion-fade-up rounded-2xl border border-default bg-default p-6 sm:p-10">
+    <main v-if="post" class="mx-auto w-full max-w-7xl px-4 pb-20 pt-10 sm:px-8 xl:px-12">
+      <div class="grid gap-8 lg:grid-cols-[minmax(0,900px)_minmax(220px,1fr)]">
+        <article class="motion-fade-up min-w-0 rounded-2xl border border-default bg-default p-6 sm:p-10">
         <div class="space-y-5 border-b border-default pb-8">
           <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
             <NuxtLink :to="categoryPath(post.category)" class="inline-flex">
@@ -270,6 +502,25 @@ useHead({
             {{ post.summary }}
           </p>
 
+          <div class="flex flex-wrap gap-2">
+            <UButton
+              icon="i-lucide-link"
+              size="sm"
+              color="neutral"
+              variant="soft"
+              label="复制链接"
+              @click="copyArticleLink"
+            />
+            <UButton
+              icon="i-lucide-share-2"
+              size="sm"
+              color="neutral"
+              variant="ghost"
+              label="分享"
+              @click="shareArticle"
+            />
+          </div>
+
           <img :src="post.cover" :alt="post.title" class="h-60 w-full rounded-xl object-cover">
         </div>
 
@@ -278,11 +529,23 @@ useHead({
             暂无正文内容。
           </p>
 
-          <UEditor v-else :model-value="post.content" content-type="markdown" :editable="false"
-            :extensions="viewerExtensions" :starter-kit="{ codeBlock: false }" class="min-h-0" :ui="{
-              base: 'p-4 sm:p-14',
-              content: 'max-w-4xl mx-auto'
-            }" />
+          <div v-else ref="articleContentRef" class="article-viewer min-w-0">
+            <ClientOnly>
+              <UEditor :key="post.slug" :model-value="post.content" content-type="markdown" :editable="false"
+                :extensions="viewerExtensions" :starter-kit="{ codeBlock: false }" class="min-h-0" :ui="{
+                  base: 'p-0',
+                  content: 'max-w-none'
+                }" @create="refreshArticleEnhancements" />
+
+              <template #fallback>
+                <div class="space-y-3">
+                  <div class="loading-shimmer h-4 w-11/12 rounded" />
+                  <div class="loading-shimmer h-4 w-9/12 rounded" />
+                  <div class="loading-shimmer h-24 w-full rounded-xl" />
+                </div>
+              </template>
+            </ClientOnly>
+          </div>
         </div>
 
         <div class="mt-10 flex flex-wrap gap-2 border-t border-default pt-6">
@@ -295,7 +558,30 @@ useHead({
             <UBadge :label="`#${tag}`" color="neutral" variant="outline" class="hover:border-primary hover:text-primary" />
           </NuxtLink>
         </div>
-      </article>
+        </article>
+
+        <aside v-if="headingItems.length" class="hidden lg:block">
+          <div class="sticky top-24 rounded-2xl border border-default bg-default/70 p-5">
+            <p class="text-xs font-medium uppercase tracking-wide text-toned">
+              目录
+            </p>
+            <nav class="mt-4 space-y-1">
+              <a
+                v-for="item in headingItems"
+                :key="item.id"
+                :href="`#${item.id}`"
+                class="block rounded-lg px-3 py-2 text-sm transition-colors hover:bg-elevated hover:text-highlighted"
+                :class="[
+                  item.depth === 3 ? 'ml-3 text-xs' : '',
+                  activeHeadingId === item.id ? 'bg-primary/10 text-primary' : 'text-toned'
+                ]"
+              >
+                {{ item.text }}
+              </a>
+            </nav>
+          </div>
+        </aside>
+      </div>
 
       <section class="motion-fade-up motion-delay-1 mt-10">
         <div class="mb-4 flex items-center justify-between">
