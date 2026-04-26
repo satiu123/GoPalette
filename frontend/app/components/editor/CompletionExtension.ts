@@ -104,16 +104,24 @@ export const Completion = Extension.create<CompletionOptions, CompletionStorage>
   },
 
   addKeyboardShortcuts() {
+    const triggerCompletion = (editor: Editor) => {
+      if (this.storage.visible) {
+        this.storage.clearSuggestion()
+        this.options.onDismiss?.()
+      }
+      this.storage.debouncedTrigger?.(editor)
+      return true
+    }
+
     return {
       'Mod-j': ({ editor }) => {
-        // Clear any existing suggestion first to avoid flickering
-        if (this.storage.visible) {
-          this.storage.clearSuggestion()
-          this.options.onDismiss?.()
-        }
-        // Manually trigger completion
-        this.storage.debouncedTrigger?.(editor as Editor)
-        return true
+        return triggerCompletion(editor as Editor)
+      },
+      'Alt-j': ({ editor }) => {
+        return triggerCompletion(editor as Editor)
+      },
+      'Alt-J': ({ editor }) => {
+        return triggerCompletion(editor as Editor)
       },
       'Tab': ({ editor }) => {
         if (!this.storage.visible || !this.storage.suggestion || this.storage.position === undefined) {

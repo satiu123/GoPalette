@@ -2,6 +2,7 @@
 const gatewayBase = import.meta.env.NUXT_GATEWAY_BASE || 'http://127.0.0.1:8080'
 const publicSiteUrl = import.meta.env.NUXT_PUBLIC_SITE_URL || 'http://127.0.0.1:3000'
 const publicSiteName = import.meta.env.NUXT_PUBLIC_SITE_NAME || 'GoPalette Blog'
+const deepseekApiKey = import.meta.env.DEEPSEEK_API_KEY || ''
 
 export default defineNuxtConfig({
   modules: [
@@ -26,6 +27,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     gatewayBase,
+    deepseekApiKey,
     public: {
       partykitHost: '',
       siteUrl: publicSiteUrl,
@@ -110,7 +112,22 @@ export default defineNuxtConfig({
       include: [
         '@nuxt/ui > prosemirror-state',
         'yjs',
-        'y-partykit/provider'
+        'y-partykit/provider',
+        '@vue/devtools-core',
+        '@vue/devtools-kit',
+        '@tiptap/extension-list',
+        '@tiptap/extension-table',
+        '@tiptap/pm/tables',
+        'tiptap-extension-code-block-shiki',
+        '@tiptap/extension-emoji',
+        '@ai-sdk/vue',
+        '@tiptap/extension-collaboration',
+        '@tiptap/extension-collaboration-caret',
+        '@vueuse/core',
+        '@tiptap/core',
+        '@tiptap/vue-3',
+        '@tiptap/pm/view',
+        '@tiptap/pm/state'
       ]
     }
   },

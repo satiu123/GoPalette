@@ -20,11 +20,31 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
   }>()
   const mode = ref<CompletionMode>('continue')
   const language = ref<string>()
+  const insertedChars = ref(0)
 
   // Helper to get completion storage
   function getCompletionStorage() {
     const storage = editorRef.value?.editor?.storage as Record<string, CompletionStorage> | undefined
     return storage?.completion
+  }
+
+  function insertContinueText(editor: Editor, pos: number, text: string, source: string) {
+    if (!text || insertedChars.value > 0) return
+
+    const textBefore = editor.state.doc.textBetween(Math.max(0, pos - 1), pos)
+    const textToInsert = textBefore && !/\s/.test(textBefore) && !text.startsWith(' ')
+      ? ` ${text}`
+      : text
+
+    editor.chain()
+      .focus()
+      .insertContentAt(pos, textToInsert, { contentType: 'markdown' })
+      .run()
+    insertedChars.value = textToInsert.length
+    console.info('[ai:editor] continue inserted', {
+      source,
+      chars: insertedChars.value
+    })
   }
 
   const { completion, complete, isLoading, stop, setCompletion } = useCompletion({
@@ -39,7 +59,17 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
       // For inline suggestion mode, don't clear - let user accept with Tab
       const storage = getCompletionStorage()
       if (mode.value === 'continue' && storage?.visible) {
+        console.info('[ai:editor] inline suggestion ready', {
+          chars: completionText.length
+        })
         return
+      }
+
+      if (mode.value === 'continue' && insertState.value && completionText && insertedChars.value === 0) {
+        const editor = editorRef.value?.editor
+        if (editor) {
+          insertContinueText(editor, insertState.value.pos, completionText, 'finish')
+        }
       }
 
       // For transform modes, insert the full completion with markdown parsing
@@ -67,6 +97,7 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
     onError: (error) => {
       console.error('AI completion error:', error)
       insertState.value = undefined
+      insertedChars.value = 0
       getCompletionStorage()?.clearSuggestion()
     }
   })
@@ -128,6 +159,11 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
           return true
         }).run()
         insertState.value.pos += delta.length
+        insertedChars.value += delta.length
+        console.info('[ai:editor] continue chunk inserted', {
+          chars: delta.length,
+          totalChars: insertedChars.value
+        })
       }
     }
   })
@@ -135,6 +171,8 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
   function triggerTransform(editor: Editor, transformMode: Exclude<CompletionMode, 'continue'>, lang?: string) {
     if (isLoading.value) return
 
+    setCompletion('')
+    insertedChars.value = 0
     getCompletionStorage()?.clearSuggestion()
 
     const { state } = editor
@@ -149,6 +187,10 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
     // Replace the selected text with the transformed version
     insertState.value = { pos: selection.from, deleteRange: { from: selection.from, to: selection.to } }
 
+    console.info('[ai:editor] transform start', {
+      mode: transformMode,
+      selectedChars: selectedText.length
+    })
     complete(selectedText)
   }
 
@@ -166,6 +208,8 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
   function triggerContinue(editor: Editor) {
     if (isLoading.value) return
 
+    setCompletion('')
+    insertedChars.value = 0
     mode.value = 'continue'
     getCompletionStorage()?.clearSuggestion()
     const { state } = editor
@@ -174,13 +218,27 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
     if (selection.empty) {
       // No selection: continue from cursor position
       const textBefore = getMarkdownBefore(editor, selection.from)
-      insertState.value = { pos: selection.from }
-      complete(textBefore)
+      const insertPos = selection.from
+      insertState.value = { pos: insertPos }
+      console.info('[ai:editor] continue start', {
+        promptChars: textBefore.length,
+        position: insertPos
+      })
+      void complete(textBefore).then((result) => {
+        if (result) insertContinueText(editor, insertPos, result, 'promise')
+      })
     } else {
       // Text selected: append completion after the selection
       const textBefore = getMarkdownBefore(editor, selection.to)
-      insertState.value = { pos: selection.to }
-      complete(textBefore)
+      const insertPos = selection.to
+      insertState.value = { pos: insertPos }
+      console.info('[ai:editor] continue start', {
+        promptChars: textBefore.length,
+        position: insertPos
+      })
+      void complete(textBefore).then((result) => {
+        if (result) insertContinueText(editor, insertPos, result, 'promise')
+      })
     }
   }
 
@@ -188,9 +246,28 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
   const extension = Completion.configure({
     onTrigger: (editor) => {
       if (isLoading.value) return
+      setCompletion('')
+      insertedChars.value = 0
       mode.value = 'continue'
       const textBefore = getMarkdownBefore(editor, editor.state.selection.from)
-      complete(textBefore)
+      const insertPos = editor.state.selection.from
+      console.info('[ai:editor] inline continue start', {
+        promptChars: textBefore.length,
+        position: insertPos
+      })
+      void complete(textBefore).then((result) => {
+        const storage = getCompletionStorage()
+        if (!result || !storage?.visible || storage.suggestion) return
+        const textBeforePosition = editor.state.doc.textBetween(Math.max(0, insertPos - 1), insertPos)
+        const suggestion = textBeforePosition && !/\s/.test(textBeforePosition) && !result.startsWith(' ')
+          ? ` ${result}`
+          : result
+        storage.setSuggestion(suggestion)
+        editor.view.dispatch(editor.state.tr.setMeta('completionUpdate', true))
+        console.info('[ai:editor] inline suggestion set from promise', {
+          chars: suggestion.length
+        })
+      })
     },
     onAccept: () => {
       setCompletion('')

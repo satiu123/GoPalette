@@ -1,10 +1,35 @@
 import { streamText } from 'ai'
-import { gateway } from '@ai-sdk/gateway'
+import { createDeepSeek } from '@ai-sdk/deepseek'
+import type { DeepSeekLanguageModelOptions } from '@ai-sdk/deepseek'
+
+function toErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message
+  return String(error || 'Unknown error')
+}
 
 export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig(event)
   const { prompt, mode, language } = await readBody(event)
+  const startedAt = Date.now()
+  const requestId = Math.random().toString(36).slice(2, 10)
+  const model = 'deepseek-v4-flash'
+
   if (!prompt) {
+    console.warn('[ai:completion] rejected', {
+      requestId,
+      reason: 'missing_prompt'
+    })
     throw createError({ statusCode: 400, message: 'Prompt is required' })
+  }
+  if (!config.deepseekApiKey) {
+    console.error('[ai:completion] rejected', {
+      requestId,
+      reason: 'missing_deepseek_api_key'
+    })
+    throw createError({
+      statusCode: 500,
+      message: 'DeepSeek API key is not configured'
+    })
   }
 
   let system: string
@@ -50,10 +75,83 @@ CRITICAL RULES:
       break
   }
 
-  return streamText({
-    model: gateway('openai/gpt-4o-mini'),
-    system,
-    prompt,
+  const deepseek = createDeepSeek({
+    apiKey: config.deepseekApiKey
+  })
+
+  console.info('[ai:completion] start', {
+    requestId,
+    model,
+    mode: mode || 'continue',
+    language: language || '',
+    promptChars: String(prompt).length,
     maxOutputTokens
-  }).toTextStreamResponse()
+  })
+
+  let firstChunkLogged = false
+  let firstChunkTypeLogged = false
+  let textChunkCount = 0
+
+  try {
+    return streamText({
+      model: deepseek(model),
+      system,
+      prompt,
+      maxOutputTokens,
+      providerOptions: {
+        deepseek: {
+          thinking: { type: 'disabled' }
+        } satisfies DeepSeekLanguageModelOptions
+      },
+      onChunk: ({ chunk }) => {
+        if (!firstChunkTypeLogged) {
+          firstChunkTypeLogged = true
+          console.info('[ai:completion] first_chunk_type', {
+            requestId,
+            type: chunk.type,
+            elapsedMs: Date.now() - startedAt
+          })
+        }
+        if (chunk.type !== 'text-delta') return
+        textChunkCount += 1
+        if (firstChunkLogged) return
+        firstChunkLogged = true
+        console.info('[ai:completion] first_chunk', {
+          requestId,
+          elapsedMs: Date.now() - startedAt
+        })
+      },
+      onFinish: ({ finishReason, totalUsage }) => {
+        console.info('[ai:completion] finish', {
+          requestId,
+          finishReason,
+          elapsedMs: Date.now() - startedAt,
+          inputTokens: totalUsage.inputTokens,
+          outputTokens: totalUsage.outputTokens,
+          totalTokens: totalUsage.totalTokens
+        })
+        if (textChunkCount === 0) {
+          console.warn('[ai:completion] no_text_chunks', {
+            requestId,
+            model,
+            finishReason
+          })
+        }
+      },
+      onError: ({ error }) => {
+        console.error('[ai:completion] stream_error', {
+          requestId,
+          elapsedMs: Date.now() - startedAt,
+          error: toErrorMessage(error)
+        })
+      }
+    }).toTextStreamResponse()
+  } catch (error) {
+    console.error('[ai:completion] failed', {
+      requestId,
+      elapsedMs: Date.now() - startedAt,
+      error: toErrorMessage(error)
+    })
+    throw error
+  }
 })

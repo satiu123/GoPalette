@@ -21,6 +21,12 @@ export function useEditorToolbar<T extends EditorCustomHandlers>(_customHandlers
     label: 'Add',
     icon: 'i-lucide-image',
     tooltip: { text: 'Add image' }
+  }], [{
+    kind: 'aiContinue',
+    label: 'AI',
+    icon: 'i-lucide-sparkles',
+    tooltip: { text: 'AI continue' },
+    loading: aiLoading?.value
   }]]
 
   const bubbleToolbarItems = computed(() => [[{
