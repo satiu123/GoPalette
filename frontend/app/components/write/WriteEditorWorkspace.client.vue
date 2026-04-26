@@ -79,10 +79,53 @@ const selectedTags = computed(() => parseTags(postMeta.tagsText))
 
 const isSaving = ref(false)
 const deletingPost = ref(false)
+const lastSavedAt = ref('')
+const slugTouched = ref(false)
 
 const canSubmit = computed(() => {
   return Boolean(postMeta.title.trim() && content.value.trim())
 })
+
+const categoryOptions = computed(() =>
+  categories.value.map(category => ({
+    id: category.id,
+    label: category.name,
+    description: `ID: ${category.id}`
+  }))
+)
+
+const selectedCategoryName = computed(() => {
+  if (!postMeta.categoryId) return '未选择分类'
+  return categories.value.find(category => category.id === postMeta.categoryId)?.name || `分类 ${postMeta.categoryId}`
+})
+
+const selectedTagNames = computed<string[]>({
+  get: () => selectedTags.value,
+  set: value => {
+    postMeta.tagsText = Array.from(new Set(value.map(tag => tag.trim()).filter(Boolean))).join(', ')
+  }
+})
+
+const wordCount = computed(() => {
+  return content.value
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/[#>*`_~\[\]()!-]/g, ' ')
+    .replace(/\s+/g, '')
+    .length
+})
+
+const estimatedReadingMinutes = computed(() => Math.max(1, Math.ceil(wordCount.value / 450)))
+
+const publishChecks = computed(() => [
+  { label: '标题', ready: Boolean(postMeta.title.trim()) },
+  { label: '正文', ready: Boolean(content.value.trim()) },
+  { label: 'Slug', ready: Boolean((postMeta.slug || toSlug(postMeta.title)).trim()) },
+  { label: '分类', ready: Boolean(postMeta.categoryId.trim()) },
+  { label: '摘要', ready: Boolean((postMeta.summary || plainTextSummary(content.value)).trim()) }
+])
+
+const readyCheckCount = computed(() => publishChecks.value.filter(item => item.ready).length)
+const publishReadiness = computed(() => `${readyCheckCount.value}/${publishChecks.value.length}`)
 
 const content = ref(`# Nuxt Editor Template :sparkles:
 
@@ -225,17 +268,57 @@ function addTag(tag: string) {
   postMeta.tagsText = merged.join(', ')
 }
 
+function createTagFromInput(tag: string) {
+  const normalized = tag.trim().replace(/^#/, '')
+  if (!normalized) return
+
+  addTag(normalized)
+}
+
 function removeTag(tag: string) {
   const merged = selectedTags.value.filter(item => item !== tag)
   postMeta.tagsText = merged.join(', ')
 }
 
+function fillSummaryFromContent() {
+  postMeta.summary = plainTextSummary(content.value)
+}
+
+function formatLastSavedAt() {
+  if (!lastSavedAt.value) return ''
+
+  return new Intl.DateTimeFormat('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  }).format(new Date(lastSavedAt.value))
+}
+
 function normalizeSlug() {
-  postMeta.slug = toSlug(postMeta.slug || postMeta.title)
+  postMeta.slug = toSlug(postMeta.slug)
+}
+
+function generateSlugFromTitle() {
+  postMeta.slug = toSlug(postMeta.title)
+}
+
+function markSlugTouched() {
+  slugTouched.value = true
+}
+
+function fillSlugIfNeeded() {
+  if (postMeta.slug.trim() || slugTouched.value) return
+  generateSlugFromTitle()
+}
+
+function handleTitleBlur() {
+  fillSlugIfNeeded()
 }
 
 async function savePost(status: number) {
   if (!canSubmit.value || isSaving.value) return
+
+  fillSlugIfNeeded()
 
   isSaving.value = true
 
@@ -243,7 +326,7 @@ async function savePost(status: number) {
     const payload = {
       title: postMeta.title.trim(),
       summary: (postMeta.summary || plainTextSummary(content.value)).trim(),
-      slug: (postMeta.slug || toSlug(postMeta.title)).trim(),
+      slug: postMeta.slug.trim(),
       content: content.value,
       status,
       categoryId: postMeta.categoryId.trim() || undefined,
@@ -262,6 +345,8 @@ async function savePost(status: number) {
     postMeta.slug = saved.slug
     postMeta.summary = saved.summary
     postMeta.tagsText = saved.tags.join(', ')
+    postMeta.categoryId = saved.categoryId || postMeta.categoryId
+    lastSavedAt.value = new Date().toISOString()
 
     toast.add({
       title: status === POST_STATUS_PUBLISHED ? '发布成功' : '草稿已保存',
@@ -311,12 +396,6 @@ async function removeCurrentPost() {
   }
 }
 
-watch(() => postMeta.title, (value) => {
-  if (!postMeta.slug.trim()) {
-    postMeta.slug = toSlug(value)
-  }
-})
-
 const editingSlug = computed(() => typeof route.query.slug === 'string' ? route.query.slug : '')
 
 await ensureLoaded()
@@ -329,6 +408,7 @@ if (editingSlug.value) {
     postMeta.title = existingPost.title
     postMeta.summary = existingPost.summary
     postMeta.slug = existingPost.slug
+    slugTouched.value = true
     postMeta.tagsText = existingPost.tags.join(', ')
     postMeta.categoryId = existingPost.categoryId
     content.value = existingPost.content || content.value
@@ -412,77 +492,148 @@ const extensions = computed(() => [
       <UEditorToolbar :editor="editor" :items="toolbarItems" />
     </AppHeader>
 
-    <section class="mx-auto mb-4 w-full max-w-4xl">
+    <section class="mx-auto mb-6 w-full max-w-5xl">
       <UCard>
         <template #header>
-          <div class="flex items-center justify-between">
-            <p class="text-sm font-medium text-highlighted">
-              文章信息
-            </p>
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p class="text-sm font-medium text-highlighted">
+                文章信息
+              </p>
+              <p class="mt-1 text-xs text-toned">
+                发布前确认标题、slug、分类、标签与摘要，减少返工。
+              </p>
+            </div>
+
             <p class="text-xs text-toned">
-              发布前请确认标题、slug、分类、标签与摘要
+              {{ wordCount }} 字 · 约 {{ estimatedReadingMinutes }} 分钟
+              <span v-if="lastSavedAt"> · 已保存 {{ formatLastSavedAt() }}</span>
             </p>
           </div>
         </template>
 
-        <div class="grid gap-4 md:grid-cols-2">
-          <UFormField label="标题" name="title" required>
-            <UInput v-model="postMeta.title" placeholder="请输入文章标题" />
-          </UFormField>
+        <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+          <div class="grid gap-4 md:grid-cols-2">
+            <UFormField label="标题" name="title" required>
+              <UInput v-model="postMeta.title" placeholder="请输入文章标题" @blur="handleTitleBlur" />
+            </UFormField>
 
-          <UFormField label="Slug" name="slug" required>
-            <UInput v-model="postMeta.slug" placeholder="article-slug" @blur="normalizeSlug" />
-          </UFormField>
+            <UFormField label="Slug" name="slug" required>
+              <div class="flex gap-2">
+                <UInput
+                  v-model="postMeta.slug"
+                  placeholder="article-slug"
+                  class="flex-1"
+                  @input="markSlugTouched"
+                  @blur="normalizeSlug"
+                />
+                <UButton
+                  color="neutral"
+                  variant="soft"
+                  icon="i-lucide-refresh-cw"
+                  label="生成"
+                  @click="generateSlugFromTitle"
+                />
+              </div>
+            </UFormField>
 
-          <UFormField label="分类" name="categoryId">
-            <UInput v-model="postMeta.categoryId" placeholder="请输入分类 ID" />
-            <div class="mt-2 flex flex-wrap gap-2">
-              <UButton
-                v-for="category in categories"
-                :key="category.id"
-                size="xs"
-                :label="`${category.name} (${category.id})`"
-                :variant="postMeta.categoryId === category.id ? 'solid' : 'ghost'"
-                :color="postMeta.categoryId === category.id ? 'primary' : 'neutral'"
-                @click="postMeta.categoryId = category.id"
-              />
+            <UFormField label="分类" name="categoryId">
+              <USelectMenu
+                v-model="postMeta.categoryId"
+                :items="categoryOptions"
+                value-key="id"
+                label-key="label"
+                placeholder="搜索并选择分类"
+                icon="i-lucide-folder"
+                :search-input="{ placeholder: '搜索分类名称' }"
+                clear
+              >
+                <template #item-label="{ item }">
+                  <span>{{ item.label }}</span>
+                </template>
+
+                <template #item-description="{ item }">
+                  <span>{{ item.description }}</span>
+                </template>
+              </USelectMenu>
+              <p class="mt-2 text-xs text-toned">
+                当前：{{ selectedCategoryName }}
+              </p>
+            </UFormField>
+
+            <UFormField label="标签" name="tagsText">
+              <USelectMenu
+                v-model="selectedTagNames"
+                :items="tagSuggestions"
+                multiple
+                create-item
+                placeholder="搜索或创建标签"
+                icon="i-lucide-tags"
+                :search-input="{ placeholder: '输入标签名，回车创建' }"
+                @create="createTagFromInput"
+              >
+                <template #create-item-label="{ item }">
+                  创建标签 #{{ item }}
+                </template>
+              </USelectMenu>
+              <div class="mt-2 flex flex-wrap gap-2">
+                <UBadge
+                  v-for="tag in selectedTags"
+                  :key="`selected-${tag}`"
+                  color="primary"
+                  variant="subtle"
+                  class="cursor-pointer"
+                  :label="`#${tag} ×`"
+                  @click="removeTag(tag)"
+                />
+              </div>
+            </UFormField>
+
+            <UFormField label="摘要" name="summary" class="md:col-span-2">
+              <div class="space-y-2">
+                <UTextarea
+                  v-model="postMeta.summary"
+                  :rows="3"
+                  autoresize
+                  placeholder="不填写时将自动从正文提取前 140 字"
+                />
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-toned">
+                  <span>{{ (postMeta.summary || plainTextSummary(content)).length }}/140</span>
+                  <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-wand-sparkles" label="从正文生成摘要" @click="fillSummaryFromContent" />
+                </div>
+              </div>
+            </UFormField>
+          </div>
+
+          <aside class="rounded-2xl border border-default bg-elevated/40 p-4">
+            <div class="flex items-center justify-between gap-3">
+              <p class="text-sm font-medium text-highlighted">
+                发布检查
+              </p>
+              <UBadge :label="publishReadiness" color="neutral" variant="soft" />
             </div>
-          </UFormField>
 
-          <UFormField label="标签" name="tagsText">
-            <UInput v-model="postMeta.tagsText" placeholder="多个标签用逗号分隔" />
-            <div class="mt-2 flex flex-wrap gap-2">
-              <UBadge
-                v-for="tag in selectedTags"
-                :key="`selected-${tag}`"
-                color="primary"
-                variant="subtle"
-                class="cursor-pointer"
-                :label="`#${tag} ×`"
-                @click="removeTag(tag)"
-              />
+            <div class="mt-4 space-y-3">
+              <div
+                v-for="item in publishChecks"
+                :key="item.label"
+                class="flex items-center gap-2 text-sm"
+                :class="item.ready ? 'text-highlighted' : 'text-toned'"
+              >
+                <UIcon :name="item.ready ? 'i-lucide-check-circle-2' : 'i-lucide-circle'" :class="item.ready ? 'text-primary' : 'text-muted'" />
+                <span>{{ item.label }}</span>
+              </div>
             </div>
-            <div class="mt-2 flex flex-wrap gap-2">
-              <UButton
-                v-for="tag in tagSuggestions"
-                :key="`suggest-${tag}`"
-                size="xs"
-                color="neutral"
-                variant="ghost"
-                :label="`#${tag}`"
-                @click="addTag(tag)"
-              />
-            </div>
-          </UFormField>
 
-          <UFormField label="摘要" name="summary" class="md:col-span-2">
-            <UTextarea
-              v-model="postMeta.summary"
-              :rows="3"
-              autoresize
-              placeholder="不填写时将自动从正文提取前 140 字"
+            <UAlert
+              class="mt-4"
+              color="neutral"
+              variant="soft"
+              icon="i-lucide-lightbulb"
+              title="小提示"
+              description="发布前先保存草稿，确认详情页预览无误后再公开。"
             />
-          </UFormField>
+          </aside>
         </div>
       </UCard>
     </section>
