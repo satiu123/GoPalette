@@ -39,6 +39,9 @@ const commentsLoading = ref(false)
 const submittingComment = ref(false)
 const deletingCommentId = ref('')
 const commentText = ref('')
+const replyText = ref('')
+const replyTarget = ref<CommentInfo | null>(null)
+const submittingReplyId = ref('')
 
 type HeadingItem = {
   id: string
@@ -260,6 +263,16 @@ function canDeleteComment(item: CommentInfo) {
   return item.userId === currentUserId
 }
 
+function commentAuthorName(item?: CommentInfo | null) {
+  if (!item) return '用户'
+  return item.author?.name || `用户 ${item.userId}`
+}
+
+function commentInitial(item?: CommentInfo | null) {
+  const name = commentAuthorName(item)
+  return name.trim().slice(0, 1).toUpperCase() || 'U'
+}
+
 async function loadComments() {
   if (!post.value?.id) return
 
@@ -309,6 +322,65 @@ async function submitComment() {
     })
   } finally {
     submittingComment.value = false
+  }
+}
+
+function startReply(item: CommentInfo) {
+  if (!isLoggedIn.value) {
+    toast.add({ title: '请先登录后再回复', color: 'warning' })
+    navigateTo(`/login?redirect=/posts/${slug.value}`)
+    return
+  }
+
+  replyTarget.value = item
+  replyText.value = ''
+}
+
+function cancelReply() {
+  replyTarget.value = null
+  replyText.value = ''
+}
+
+async function submitReply() {
+  const target = replyTarget.value
+  const content = replyText.value.trim()
+
+  if (!target) return
+  if (!content) {
+    toast.add({ title: '回复内容不能为空', color: 'warning' })
+    return
+  }
+
+  if (!post.value?.id) {
+    toast.add({ title: '文章信息不存在，无法回复', color: 'error' })
+    return
+  }
+
+  if (!isLoggedIn.value) {
+    toast.add({ title: '请先登录后再回复', color: 'warning' })
+    await navigateTo(`/login?redirect=/posts/${slug.value}`)
+    return
+  }
+
+  submittingReplyId.value = target.id
+  try {
+    await createComment({
+      postId: post.value.id,
+      content,
+      parentId: target.id
+    })
+
+    cancelReply()
+    toast.add({ title: '回复发布成功', color: 'success' })
+    await loadComments()
+  } catch (error: any) {
+    toast.add({
+      title: '回复发布失败',
+      description: error?.data?.message || error?.message || '请稍后重试',
+      color: 'error'
+    })
+  } finally {
+    submittingReplyId.value = ''
   }
 }
 
@@ -370,6 +442,10 @@ const relatedPosts = computed(() => {
     .filter(item => item.categoryId === current.categoryId || item.category === current.category)
     .slice(0, 3)
 })
+
+const displayedCommentCount = computed(() =>
+  comments.value.reduce((total, item) => total + 1 + (item.replies?.length || 0), 0)
+)
 
 const ViewerCodeBlockShiki = CodeBlockShiki.extend({
   markdownTokenName: 'code',
@@ -605,61 +681,133 @@ useHead({
         </div>
       </section>
 
-      <section class="motion-fade-up motion-delay-2 mt-10 rounded-2xl border border-default bg-default p-6 sm:p-8">
+      <section class="motion-fade-up motion-delay-2 mt-10 max-w-[900px] rounded-2xl border border-default bg-default p-6 sm:p-8">
         <div class="flex items-center justify-between gap-3">
-          <h2 class="text-xl font-semibold text-highlighted">
-            评论（{{ commentsTotal || comments.length }}）
-          </h2>
+          <div>
+            <h2 class="text-xl font-semibold text-highlighted">
+              评论（{{ displayedCommentCount || commentsTotal || comments.length }}）
+            </h2>
+            <p class="mt-1 text-sm text-toned">
+              写下你的想法，也可以直接回复某一条评论。
+            </p>
+          </div>
           <UBadge v-if="commentsLoading" label="加载中" color="neutral" variant="soft" />
         </div>
 
-        <div class="mt-5 space-y-3">
-          <UTextarea v-model="commentText" :rows="4" :maxlength="500" placeholder="写下你的观点，支持 Markdown 文本。" />
+        <div class="mt-6 rounded-xl border border-default bg-elevated/30 p-4">
+          <UTextarea
+            v-model="commentText"
+            :rows="4"
+            :maxlength="500"
+            placeholder="写下你的观点，支持 Markdown 文本。"
+            class="w-full"
+          />
 
-          <div class="flex items-center justify-between text-xs text-toned">
+          <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-toned">
             <p>
               {{ isLoggedIn ? '已登录，可直接发表评论' : '登录后可发表评论' }}
             </p>
-            <p>{{ commentText.length }}/500</p>
-          </div>
 
-          <div class="flex justify-end">
-            <UButton :loading="submittingComment" label="发表评论" icon="i-lucide-send" @click="submitComment" />
+            <div class="flex items-center gap-3">
+              <span>{{ commentText.length }}/500</span>
+              <UButton :loading="submittingComment" label="发表评论" icon="i-lucide-send" @click="submitComment" />
+            </div>
           </div>
         </div>
 
-        <div class="mt-8 space-y-4">
-          <article v-for="item in comments" :key="item.id" class="rounded-xl border border-default p-4">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <p class="text-sm font-medium text-highlighted">
-                  {{ item.author?.name || `用户 ${item.userId}` }}
-                </p>
-                <p class="mt-1 text-xs text-toned">
-                  {{ formatCommentTime(item.createdAt) }}
-                </p>
+        <div class="mt-8 space-y-5">
+          <article v-for="item in comments" :key="item.id" class="rounded-xl border border-default bg-default p-4 sm:p-5">
+            <div class="flex gap-3">
+              <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                {{ commentInitial(item) }}
               </div>
 
-              <UButton v-if="canDeleteComment(item)" :loading="deletingCommentId === item.id" size="xs" color="error"
-                variant="ghost" icon="i-lucide-trash-2" @click="removeComment(item.id)" />
-            </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p class="text-sm font-semibold text-highlighted">
+                      {{ commentAuthorName(item) }}
+                    </p>
+                    <p class="mt-1 text-xs text-toned">
+                      {{ formatCommentTime(item.createdAt) }}
+                    </p>
+                  </div>
 
-            <p class="mt-3 whitespace-pre-wrap text-sm leading-6 text-toned">
-              {{ item.content }}
-            </p>
+                  <div class="flex items-center gap-1">
+                    <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-message-circle" label="回复" @click="startReply(item)" />
+                    <UButton v-if="canDeleteComment(item)" :loading="deletingCommentId === item.id" size="xs" color="error"
+                      variant="ghost" icon="i-lucide-trash-2" @click="removeComment(item.id)" />
+                  </div>
+                </div>
 
-            <div v-if="item.replies?.length" class="mt-4 space-y-3 border-l border-default pl-4">
-              <article v-for="reply in item.replies" :key="reply.id" class="rounded-lg bg-elevated/40 p-3">
-                <p class="text-xs font-medium text-highlighted">
-                  {{ reply.author?.name || `用户 ${reply.userId}` }}
+                <p class="mt-3 whitespace-pre-wrap text-sm leading-6 text-toned">
+                  {{ item.content }}
                 </p>
-                <p class="mt-1 text-xs text-toned">
-                  {{ formatCommentTime(reply.createdAt) }}
-                </p>
-                <p class="mt-2 whitespace-pre-wrap text-sm text-toned">
-                  {{ reply.content }}
-                </p>
-              </article>
+
+                <div v-if="replyTarget?.id === item.id" class="mt-4 rounded-xl border border-default bg-elevated/40 p-3">
+                  <p class="mb-2 text-xs text-toned">
+                    回复 {{ commentAuthorName(replyTarget) }}
+                  </p>
+                  <UTextarea v-model="replyText" :rows="3" :maxlength="500" placeholder="写下回复内容。" class="w-full" />
+                  <div class="mt-3 flex items-center justify-between gap-3 text-xs text-toned">
+                    <span>{{ replyText.length }}/500</span>
+                    <div class="flex gap-2">
+                      <UButton size="xs" color="neutral" variant="ghost" label="取消" @click="cancelReply" />
+                      <UButton size="xs" :loading="submittingReplyId === item.id" label="发布回复" icon="i-lucide-send" @click="submitReply" />
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="item.replies?.length" class="mt-5 space-y-3 border-l border-default pl-4">
+                  <article v-for="reply in item.replies" :key="reply.id" class="rounded-xl bg-elevated/40 p-4">
+                    <div class="flex gap-3">
+                      <div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-toned">
+                        {{ commentInitial(reply) }}
+                      </div>
+
+                      <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p class="text-sm font-semibold text-highlighted">
+                              {{ commentAuthorName(reply) }}
+                              <span v-if="reply.replyToAuthor?.name" class="font-normal text-toned">
+                                回复 @{{ reply.replyToAuthor.name }}
+                              </span>
+                            </p>
+                            <p class="mt-1 text-xs text-toned">
+                              {{ formatCommentTime(reply.createdAt) }}
+                            </p>
+                          </div>
+
+                          <div class="flex items-center gap-1">
+                            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-message-circle" label="回复" @click="startReply(reply)" />
+                            <UButton v-if="canDeleteComment(reply)" :loading="deletingCommentId === reply.id" size="xs" color="error"
+                              variant="ghost" icon="i-lucide-trash-2" @click="removeComment(reply.id)" />
+                          </div>
+                        </div>
+
+                        <p class="mt-3 whitespace-pre-wrap text-sm leading-6 text-toned">
+                          {{ reply.content }}
+                        </p>
+
+                        <div v-if="replyTarget?.id === reply.id" class="mt-4 rounded-xl border border-default bg-default p-3">
+                          <p class="mb-2 text-xs text-toned">
+                            回复 {{ commentAuthorName(replyTarget) }}
+                          </p>
+                          <UTextarea v-model="replyText" :rows="3" :maxlength="500" placeholder="写下回复内容。" class="w-full" />
+                          <div class="mt-3 flex items-center justify-between gap-3 text-xs text-toned">
+                            <span>{{ replyText.length }}/500</span>
+                            <div class="flex gap-2">
+                              <UButton size="xs" color="neutral" variant="ghost" label="取消" @click="cancelReply" />
+                              <UButton size="xs" :loading="submittingReplyId === reply.id" label="发布回复" icon="i-lucide-send" @click="submitReply" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              </div>
             </div>
           </article>
 

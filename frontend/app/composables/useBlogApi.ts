@@ -34,6 +34,11 @@ export interface CommentInfo {
         name?: string
         avatarUrl?: string
     }
+    replyToAuthor?: {
+        id?: string
+        name?: string
+        avatarUrl?: string
+    }
     createdAt?: string
     updatedAt?: string
     replies?: CommentInfo[]
@@ -56,6 +61,13 @@ function normalizeComment(input: Record<string, any>): CommentInfo {
                 id: String(input.author.id || ''),
                 name: String(input.author.name || ''),
                 avatarUrl: String(input.author.avatarUrl || input.author.avatar_url || '')
+            }
+            : undefined,
+        replyToAuthor: input?.replyToAuthor || input?.reply_to_author
+            ? {
+                id: String((input.replyToAuthor || input.reply_to_author).id || ''),
+                name: String((input.replyToAuthor || input.reply_to_author).name || ''),
+                avatarUrl: String((input.replyToAuthor || input.reply_to_author).avatarUrl || (input.replyToAuthor || input.reply_to_author).avatar_url || '')
             }
             : undefined,
         createdAt: String(input?.createdAt || input?.created_at || ''),
