@@ -66,6 +66,30 @@ func (r *commentRepo) GetByID(ctx context.Context, id int64) (*biz.Comment, erro
 	return toBizComment(&po), nil
 }
 
+func (r *commentRepo) ListAll(ctx context.Context, page, pageSize int64) ([]*biz.Comment, int64, error) {
+	p := pagination.NewPagingParam(page, pageSize)
+	var total int64
+	db := r.data.db.WithContext(ctx).Model(&Comment{}).
+		Where("status IN ?", []int32{biz.CommentStatusNormal, biz.CommentStatusPending})
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	if total == 0 {
+		return []*biz.Comment{}, 0, nil
+	}
+
+	var pos []Comment
+	if err := db.Order("created_at DESC").Scopes(pagination.Paginate(p)).Find(&pos).Error; err != nil {
+		return nil, 0, err
+	}
+
+	out := make([]*biz.Comment, 0, len(pos))
+	for i := range pos {
+		out = append(out, toBizComment(&pos[i]))
+	}
+	return out, total, nil
+}
+
 func (r *commentRepo) ListRootByPost(ctx context.Context, postID, page, pageSize int64) ([]*biz.Comment, int64, error) {
 	p := pagination.NewPagingParam(page, pageSize)
 	var total int64

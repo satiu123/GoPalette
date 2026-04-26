@@ -22,3 +22,15 @@ func CheckOwner(ctx context.Context, ownerID int64) error {
 	}
 	return nil
 }
+
+func CheckAdmin(ctx context.Context) error {
+	claims, ok := auth.FromContext(ctx)
+	if !ok {
+		return pb.ErrorUnauthenticated("%s", "未认证")
+	}
+
+	if claims.Role != int32(userPb.Role_ADMIN) {
+		return pb.ErrorAccessDenied("%s", "需要管理员权限")
+	}
+	return nil
+}

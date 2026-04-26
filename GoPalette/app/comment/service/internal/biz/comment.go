@@ -45,6 +45,7 @@ type CommentView struct {
 type CommentRepo interface {
 	Create(ctx context.Context, c *Comment) (*Comment, error)
 	GetByID(ctx context.Context, id int64) (*Comment, error)
+	ListAll(ctx context.Context, page, pageSize int64) ([]*Comment, int64, error)
 	ListRootByPost(ctx context.Context, postID, page, pageSize int64) ([]*Comment, int64, error)
 	ListRepliesByRootIDs(ctx context.Context, rootIDs []int64) ([]*Comment, error)
 	CountByUser(ctx context.Context, userID int64) (int64, error)
@@ -250,6 +251,51 @@ func (uc *CommentUsecase) ListByPost(ctx context.Context, postID, page, pageSize
 	}
 
 	return rootViews, total, nil
+}
+
+func (uc *CommentUsecase) ListAll(ctx context.Context, page, pageSize int64) ([]*CommentView, int64, error) {
+	if err := CheckAdmin(ctx); err != nil {
+		return nil, 0, err
+	}
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	comments, total, err := uc.repo.ListAll(ctx, page, pageSize)
+	if err != nil {
+		return nil, 0, err
+	}
+	if len(comments) == 0 {
+		return []*CommentView{}, total, nil
+	}
+
+	userIDSet := make(map[int64]struct{})
+	for _, c := range comments {
+		userIDSet[c.UserID] = struct{}{}
+	}
+
+	userIDs := make([]int64, 0, len(userIDSet))
+	for id := range userIDSet {
+		userIDs = append(userIDs, id)
+	}
+	profiles, err := uc.userRepo.BatchGetProfiles(ctx, userIDs)
+	if err != nil {
+		uc.logger.WithContext(ctx).Warnf("batch get users failed: %v", err)
+		profiles = map[int64]*UserProfile{}
+	}
+
+	views := make([]*CommentView, 0, len(comments))
+	for _, c := range comments {
+		views = append(views, &CommentView{Comment: c, Author: profiles[c.UserID], Replies: []*CommentView{}})
+	}
+
+	return views, total, nil
 }
 
 func (uc *CommentUsecase) GetUserCommentStats(ctx context.Context, userID int64) (int64, error) {

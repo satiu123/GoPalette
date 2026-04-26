@@ -10,6 +10,7 @@ import {
   deletePost,
   deleteTag,
   fetchCategories,
+  fetchCommentQueue,
   fetchComments,
   fetchPosts,
   fetchTags,
@@ -38,13 +39,17 @@ const pageSize = 10
 const postLoading = ref(false)
 const postTotal = ref(0)
 const postRows = ref<BlogPostItem[]>([])
+const selectedPostIds = ref<string[]>([])
 const deletingPostId = ref('')
 const updatingPostId = ref('')
 
 const commentPostId = ref('')
+const commentPage = ref(1)
+const commentPageSize = 50
 const commentLoading = ref(false)
 const commentRows = ref<CommentInfo[]>([])
 const commentTotal = ref(0)
+const selectedCommentIds = ref<string[]>([])
 const deletingCommentId = ref('')
 
 const categories = ref<CategoryItem[]>([])
@@ -57,6 +62,8 @@ const updatingCategoryId = ref('')
 const updatingTagId = ref('')
 const deletingCategoryId = ref('')
 const deletingTagId = ref('')
+const selectedCategoryIds = ref<string[]>([])
+const selectedTagIds = ref<string[]>([])
 
 const newCategory = reactive({
   name: '',
@@ -71,6 +78,7 @@ const newTag = reactive({
 
 const categoryRename = ref<Record<string, string>>({})
 const tagRename = ref<Record<string, string>>({})
+const taxonomyKeyword = ref('')
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (!error || typeof error !== 'object') return fallback
@@ -84,6 +92,67 @@ function askConfirm(message: string) {
   return window.confirm(message)
 }
 
+function keepExistingSelection(source: string[], rows: Array<{ id: string }>) {
+  const ids = new Set(rows.map(item => item.id))
+  return source.filter(id => ids.has(id))
+}
+
+function toggleSelected(target: Ref<string[]>, id: string, checked: boolean) {
+  if (!id) return
+
+  if (checked) {
+    if (!target.value.includes(id)) {
+      target.value = [...target.value, id]
+    }
+    return
+  }
+
+  target.value = target.value.filter(item => item !== id)
+}
+
+function toggleVisibleSelection(target: Ref<string[]>, rows: Array<{ id: string }>, checked: boolean) {
+  const ids = rows.map(item => item.id).filter(Boolean)
+  if (checked) {
+    target.value = Array.from(new Set([...target.value, ...ids]))
+    return
+  }
+
+  const visibleIds = new Set(ids)
+  target.value = target.value.filter(id => !visibleIds.has(id))
+}
+
+function togglePostSelected(id: string, checked: boolean) {
+  toggleSelected(selectedPostIds, id, checked)
+}
+
+function toggleVisiblePosts(checked: boolean) {
+  toggleVisibleSelection(selectedPostIds, postRows.value, checked)
+}
+
+function toggleCommentSelected(id: string, checked: boolean) {
+  toggleSelected(selectedCommentIds, id, checked)
+}
+
+function toggleVisibleComments(checked: boolean) {
+  toggleVisibleSelection(selectedCommentIds, commentRows.value, checked)
+}
+
+function toggleCategorySelected(id: string, checked: boolean) {
+  toggleSelected(selectedCategoryIds, id, checked)
+}
+
+function toggleVisibleCategories(checked: boolean) {
+  toggleVisibleSelection(selectedCategoryIds, filteredCategories.value, checked)
+}
+
+function toggleTagSelected(id: string, checked: boolean) {
+  toggleSelected(selectedTagIds, id, checked)
+}
+
+function toggleVisibleTags(checked: boolean) {
+  toggleVisibleSelection(selectedTagIds, filteredTags.value, checked)
+}
+
 function postStatusText(status: number) {
   if (status === POST_STATUS_PUBLISHED) return '已发布'
   if (status === POST_STATUS_ARCHIVED) return '已归档'
@@ -94,6 +163,34 @@ function postStatusColor(status: number) {
   if (status === POST_STATUS_PUBLISHED) return 'success'
   if (status === POST_STATUS_ARCHIVED) return 'warning'
   return 'neutral'
+}
+
+function toCommentStatus(status: CommentInfo['status']) {
+  if (typeof status === 'number') return status
+
+  const value = String(status || '').trim()
+  const numericValue = Number(value)
+  if (!Number.isNaN(numericValue)) return numericValue
+
+  const normalized = value.toUpperCase()
+  if (normalized.includes('PENDING')) return 2
+  if (normalized.includes('DELETED')) return 3
+  if (normalized.includes('NORMAL')) return 1
+  return 1
+}
+
+function commentStatusText(status: CommentInfo['status']) {
+  const value = toCommentStatus(status)
+  if (value === 2) return '待审'
+  if (value === 3) return '已删除'
+  return '正常'
+}
+
+function commentStatusColor(status: CommentInfo['status']) {
+  const value = toCommentStatus(status)
+  if (value === 2) return 'warning'
+  if (value === 3) return 'error'
+  return 'success'
 }
 
 function toCover(seed: string) {
@@ -125,27 +222,29 @@ async function loadPosts() {
     if (query) {
       const response = await searchPosts(query, postPage.value, pageSize)
       postTotal.value = response.total
-        postRows.value = response.results.map(item => ({
-          id: item.id,
-          title: item.title,
-          summary: item.summary,
-          slug: item.slug,
-          status: POST_STATUS_PUBLISHED,
-          tags: item.tags,
-          category: item.categoryName,
-          categoryId: '',
-          author: '未知作者',
-          authorId: '',
-          publishedAt: item.createdAt || '未知时间',
-          readingMinutes: Math.max(1, Math.ceil(item.summary.length / 300)),
-          cover: toCover(item.slug || item.id)
-        }))
+      postRows.value = response.results.map(item => ({
+        id: item.id,
+        title: item.title,
+        summary: item.summary,
+        slug: item.slug,
+        status: POST_STATUS_PUBLISHED,
+        tags: item.tags,
+        category: item.categoryName,
+        categoryId: '',
+        author: '未知作者',
+        authorId: '',
+        publishedAt: item.createdAt || '未知时间',
+        readingMinutes: Math.max(1, Math.ceil(item.summary.length / 300)),
+        cover: toCover(item.slug || item.id)
+      }))
+      selectedPostIds.value = keepExistingSelection(selectedPostIds.value, postRows.value)
       return
     }
 
     const response = await fetchPosts(postPage.value, pageSize)
     postTotal.value = response.total
     postRows.value = response.posts
+    selectedPostIds.value = keepExistingSelection(selectedPostIds.value, postRows.value)
   } catch (error: unknown) {
     toast.add({
       title: '加载文章失败',
@@ -159,26 +258,42 @@ async function loadPosts() {
 
 async function loadComments() {
   const postId = commentPostId.value.trim()
-  if (!postId) {
-    commentRows.value = []
-    commentTotal.value = 0
-    return
-  }
 
   commentLoading.value = true
   try {
-    const response = await fetchComments(postId, 1, 100)
+    const response = postId
+      ? await fetchComments(postId, commentPage.value, commentPageSize)
+      : await fetchCommentQueue(commentPage.value, commentPageSize)
     commentRows.value = response.comments
     commentTotal.value = response.total
+    selectedCommentIds.value = keepExistingSelection(selectedCommentIds.value, commentRows.value)
   } catch (error: unknown) {
     toast.add({
       title: '加载评论失败',
-      description: getErrorMessage(error, '请检查文章 ID 是否正确'),
+      description: getErrorMessage(error, postId ? '请检查文章 ID 是否正确' : '请确认当前账号有管理员权限'),
       color: 'error'
     })
   } finally {
     commentLoading.value = false
   }
+}
+
+function reloadCommentsFromFirstPage() {
+  if (commentPage.value === 1) {
+    void loadComments()
+    return
+  }
+  commentPage.value = 1
+}
+
+function openPostComments(postId: string) {
+  commentPostId.value = postId
+  reloadCommentsFromFirstPage()
+}
+
+function showGlobalCommentQueue() {
+  commentPostId.value = ''
+  reloadCommentsFromFirstPage()
 }
 
 async function removeComment(id: string) {
@@ -193,6 +308,28 @@ async function removeComment(id: string) {
   } catch (error: unknown) {
     toast.add({
       title: '删除评论失败',
+      description: getErrorMessage(error, '请稍后重试'),
+      color: 'error'
+    })
+  } finally {
+    deletingCommentId.value = ''
+  }
+}
+
+async function removeSelectedComments() {
+  const ids = [...selectedCommentIds.value]
+  if (ids.length === 0 || deletingCommentId.value) return
+  if (!askConfirm(`确认删除选中的 ${ids.length} 条评论吗？`)) return
+
+  deletingCommentId.value = '__batch__'
+  try {
+    await Promise.all(ids.map(id => deleteComment(id)))
+    selectedCommentIds.value = []
+    toast.add({ title: '选中评论已删除', color: 'success' })
+    await loadComments()
+  } catch (error: unknown) {
+    toast.add({
+      title: '批量删除评论失败',
       description: getErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
@@ -228,6 +365,37 @@ async function setPostStatus(item: BlogPostItem, status: number) {
   }
 }
 
+async function setSelectedPostStatus(status: number) {
+  const ids = new Set(selectedPostIds.value)
+  const items = postRows.value.filter(item => ids.has(item.id))
+  if (items.length === 0 || updatingPostId.value) return
+
+  updatingPostId.value = '__batch__'
+  try {
+    await Promise.all(items.map(item => updatePost(item.id, {
+      title: item.title,
+      summary: item.summary,
+      slug: item.slug,
+      content: item.content || '',
+      status,
+      categoryId: item.categoryId || undefined,
+      tags: item.tags,
+      updateMask: 'status'
+    })))
+    selectedPostIds.value = []
+    toast.add({ title: '选中文章状态已更新', color: 'success' })
+    await loadPosts()
+  } catch (error: unknown) {
+    toast.add({
+      title: '批量更新文章失败',
+      description: getErrorMessage(error, '请稍后重试'),
+      color: 'error'
+    })
+  } finally {
+    updatingPostId.value = ''
+  }
+}
+
 async function removePost(id: string) {
   if (!id || deletingPostId.value) return
   if (!askConfirm('确认删除这篇文章吗？此操作不可恢复。')) return
@@ -248,6 +416,28 @@ async function removePost(id: string) {
   }
 }
 
+async function removeSelectedPosts() {
+  const ids = [...selectedPostIds.value]
+  if (ids.length === 0 || deletingPostId.value) return
+  if (!askConfirm(`确认删除选中的 ${ids.length} 篇文章吗？此操作不可恢复。`)) return
+
+  deletingPostId.value = '__batch__'
+  try {
+    await Promise.all(ids.map(id => deletePost(id)))
+    selectedPostIds.value = []
+    toast.add({ title: '选中文章已删除', color: 'success' })
+    await loadPosts()
+  } catch (error: unknown) {
+    toast.add({
+      title: '批量删除文章失败',
+      description: getErrorMessage(error, '请稍后重试'),
+      color: 'error'
+    })
+  } finally {
+    deletingPostId.value = ''
+  }
+}
+
 async function loadTaxonomy() {
   categoryLoading.value = true
   tagLoading.value = true
@@ -260,6 +450,8 @@ async function loadTaxonomy() {
     tags.value = tagResponse.tags
     categoryRename.value = Object.fromEntries(categories.value.map(item => [item.id, item.name]))
     tagRename.value = Object.fromEntries(tags.value.map(item => [item.id, item.name]))
+    selectedCategoryIds.value = keepExistingSelection(selectedCategoryIds.value, categories.value)
+    selectedTagIds.value = keepExistingSelection(selectedTagIds.value, tags.value)
   } finally {
     categoryLoading.value = false
     tagLoading.value = false
@@ -333,6 +525,28 @@ async function removeCategory(id: string) {
   }
 }
 
+async function removeSelectedCategories() {
+  const ids = [...selectedCategoryIds.value]
+  if (ids.length === 0 || deletingCategoryId.value) return
+  if (!askConfirm(`确认删除选中的 ${ids.length} 个分类吗？`)) return
+
+  deletingCategoryId.value = '__batch__'
+  try {
+    await Promise.all(ids.map(id => deleteCategory(id)))
+    selectedCategoryIds.value = []
+    toast.add({ title: '选中分类已删除', color: 'success' })
+    await loadTaxonomy()
+  } catch (error: unknown) {
+    toast.add({
+      title: '批量删除分类失败',
+      description: getErrorMessage(error, '请先清空分类下文章后重试'),
+      color: 'error'
+    })
+  } finally {
+    deletingCategoryId.value = ''
+  }
+}
+
 async function createTagEntry() {
   const name = newTag.name.trim()
   if (!name || savingTag.value) return
@@ -398,10 +612,96 @@ async function removeTag(id: string) {
   }
 }
 
+async function removeSelectedTags() {
+  const ids = [...selectedTagIds.value]
+  if (ids.length === 0 || deletingTagId.value) return
+  if (!askConfirm(`确认删除选中的 ${ids.length} 个标签吗？`)) return
+
+  deletingTagId.value = '__batch__'
+  try {
+    await Promise.all(ids.map(id => deleteTag(id)))
+    selectedTagIds.value = []
+    toast.add({ title: '选中标签已删除', color: 'success' })
+    await loadTaxonomy()
+  } catch (error: unknown) {
+    toast.add({
+      title: '批量删除标签失败',
+      description: getErrorMessage(error, '请先取消文章与标签关联后重试'),
+      color: 'error'
+    })
+  } finally {
+    deletingTagId.value = ''
+  }
+}
+
 const totalPages = computed(() => Math.max(1, Math.ceil(postTotal.value / pageSize)))
+const commentTotalPages = computed(() => Math.max(1, Math.ceil(commentTotal.value / commentPageSize)))
+const visiblePostTotal = computed(() => postTotal.value || postRows.value.length)
+const publishedPostCount = computed(() => postRows.value.filter(item => item.status === POST_STATUS_PUBLISHED).length)
+const draftPostCount = computed(() => postRows.value.filter(item => item.status === POST_STATUS_DRAFT).length)
+const archivedPostCount = computed(() => postRows.value.filter(item => item.status === POST_STATUS_ARCHIVED).length)
+const taxonomyTotal = computed(() => categories.value.length + tags.value.length)
+const taxonomyQuery = computed(() => taxonomyKeyword.value.trim().toLowerCase())
+const filteredCategories = computed(() => {
+  const query = taxonomyQuery.value
+  if (!query) return categories.value
+
+  return categories.value.filter(item => item.name.toLowerCase().includes(query) || item.id.toLowerCase().includes(query))
+})
+const filteredTags = computed(() => {
+  const query = taxonomyQuery.value
+  if (!query) return tags.value
+
+  return tags.value.filter(item => item.name.toLowerCase().includes(query) || item.id.toLowerCase().includes(query))
+})
+const allVisiblePostsSelected = computed(() => postRows.value.length > 0 && postRows.value.every(item => selectedPostIds.value.includes(item.id)))
+const allVisibleCommentsSelected = computed(() => commentRows.value.length > 0 && commentRows.value.every(item => selectedCommentIds.value.includes(item.id)))
+const allVisibleCategoriesSelected = computed(() => filteredCategories.value.length > 0 && filteredCategories.value.every(item => selectedCategoryIds.value.includes(item.id)))
+const allVisibleTagsSelected = computed(() => filteredTags.value.length > 0 && filteredTags.value.every(item => selectedTagIds.value.includes(item.id)))
+const activeCommentPostTitle = computed(() => {
+  const postId = commentPostId.value.trim()
+  if (!postId) return ''
+
+  return postRows.value.find(item => item.id === postId)?.title || ''
+})
+
+const adminStats = computed(() => [
+  {
+    label: '文章总量',
+    value: visiblePostTotal.value,
+    meta: postKeyword.value.trim() ? '当前检索结果' : '当前分页范围',
+    icon: 'i-lucide-files',
+    color: 'text-primary'
+  },
+  {
+    label: '已发布',
+    value: publishedPostCount.value,
+    meta: `草稿 ${draftPostCount.value} / 归档 ${archivedPostCount.value}`,
+    icon: 'i-lucide-send',
+    color: 'text-success'
+  },
+  {
+    label: '评论队列',
+    value: commentTotal.value || commentRows.value.length,
+    meta: activeCommentPostTitle.value || (commentPostId.value.trim() ? '已选择文章' : '全站队列'),
+    icon: 'i-lucide-message-square-text',
+    color: 'text-warning'
+  },
+  {
+    label: '内容结构',
+    value: taxonomyTotal.value,
+    meta: `${categories.value.length} 个分类 / ${tags.value.length} 个标签`,
+    icon: 'i-lucide-tags',
+    color: 'text-info'
+  }
+])
 
 watch(postPage, () => {
   void loadPosts()
+})
+
+watch(commentPage, () => {
+  void loadComments()
 })
 
 onMounted(async () => {
@@ -430,6 +730,7 @@ onMounted(async () => {
 
   await Promise.all([
     loadPosts(),
+    loadComments(),
     loadTaxonomy()
   ])
 })
@@ -444,48 +745,261 @@ useSeoMeta({
   <div class="min-h-screen bg-default">
     <AppHeader />
 
-    <main class="mx-auto w-full max-w-7xl px-4 pb-20 pt-10 sm:px-14">
-      <div v-if="checkingAuth" class="rounded-2xl border border-default bg-default p-8 text-sm text-toned">
-        正在校验管理员身份...
+    <main class="mx-auto w-full max-w-7xl px-4 pb-20 pt-8 sm:px-14">
+      <div
+        v-if="checkingAuth"
+        class="rounded-lg border border-default bg-default p-6"
+      >
+        <div class="flex items-center gap-3">
+          <USkeleton class="size-10 rounded-md" />
+          <div class="flex-1 space-y-2">
+            <USkeleton class="h-4 w-40" />
+            <USkeleton class="h-3 w-64 max-w-full" />
+          </div>
+        </div>
       </div>
 
       <template v-else>
-        <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div class="mb-5 flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 class="text-2xl font-semibold text-highlighted sm:text-3xl">
               后台管理
             </h1>
             <p class="mt-1 text-sm text-toned">
-              文章发布流转、评论审核、分类标签管理
+              管理文章发布流转、评论审核和内容结构
             </p>
           </div>
-          <UButton to="/write" icon="i-lucide-pen-line" label="写新文章" />
+
+          <div class="flex flex-wrap items-center gap-2">
+            <UButton
+              color="neutral"
+              variant="soft"
+              icon="i-lucide-refresh-cw"
+              label="刷新数据"
+              :loading="postLoading || categoryLoading || tagLoading"
+              @click="loadPosts(); loadTaxonomy()"
+            />
+            <UButton
+              to="/write"
+              icon="i-lucide-pen-line"
+              label="写新文章"
+            />
+          </div>
         </div>
 
-        <section class="rounded-2xl border border-default bg-default p-5 sm:p-6">
-          <div class="flex flex-wrap items-end gap-3">
-            <UFormField label="文章关键词" class="min-w-56 flex-1">
-              <UInput v-model="postKeyword" placeholder="按标题检索" icon="i-lucide-search" />
-            </UFormField>
+        <section class="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <article
+            v-for="item in adminStats"
+            :key="item.label"
+            class="rounded-lg border border-default bg-default p-4"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-xs font-medium text-toned">
+                  {{ item.label }}
+                </p>
+                <p class="mt-2 text-2xl font-semibold text-highlighted">
+                  {{ item.value }}
+                </p>
+              </div>
+              <div class="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted">
+                <UIcon
+                  :name="item.icon"
+                  class="size-4"
+                  :class="item.color"
+                />
+              </div>
+            </div>
+            <p class="mt-3 truncate text-xs text-muted">
+              {{ item.meta }}
+            </p>
+          </article>
+        </section>
 
-            <UButton :loading="postLoading" label="查询文章" icon="i-lucide-filter" @click="loadPosts" />
+        <section class="rounded-lg border border-default bg-default">
+          <div class="flex flex-wrap items-end justify-between gap-3 border-b border-default p-4 sm:p-5">
+            <div>
+              <h2 class="text-base font-semibold text-highlighted">
+                文章管理
+              </h2>
+              <p class="mt-1 text-xs text-toned">
+                快速检索、切换状态和进入编辑
+              </p>
+            </div>
+
+            <div class="flex w-full flex-wrap items-end gap-2 lg:w-auto">
+              <UFormField
+                label="文章关键词"
+                class="min-w-56 flex-1 lg:w-72 lg:flex-none"
+              >
+                <UInput
+                  v-model="postKeyword"
+                  placeholder="按标题检索"
+                  icon="i-lucide-search"
+                  @keyup.enter="loadPosts"
+                />
+              </UFormField>
+
+              <UButton
+                :loading="postLoading"
+                label="查询"
+                icon="i-lucide-filter"
+                @click="loadPosts"
+              />
+            </div>
           </div>
 
-          <div class="mt-5 space-y-3">
-            <article v-for="item in postRows" :key="item.id" class="rounded-xl border border-default p-4">
-              <div class="flex flex-wrap items-start justify-between gap-3">
-                <div class="space-y-1">
-                  <div class="flex items-center gap-2">
-                    <p class="text-base font-semibold text-highlighted" v-html="renderHighlightedText(item.title)" />
-                    <UBadge size="xs" :label="postStatusText(item.status)" :color="postStatusColor(item.status)" variant="subtle" />
+          <div
+            v-if="postRows.length > 0"
+            class="flex flex-wrap items-center justify-between gap-3 border-b border-default bg-muted/30 px-4 py-3 sm:px-5"
+          >
+            <label class="inline-flex items-center gap-2 text-xs font-medium text-toned">
+              <input
+                type="checkbox"
+                class="size-4 rounded border-default accent-[var(--ui-primary)]"
+                :checked="allVisiblePostsSelected"
+                @change="toggleVisiblePosts(($event.target as HTMLInputElement).checked)"
+              >
+              当前页全选
+              <span v-if="selectedPostIds.length > 0" class="text-muted">
+                已选 {{ selectedPostIds.length }}
+              </span>
+            </label>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <UButton
+                size="xs"
+                color="success"
+                variant="soft"
+                icon="i-lucide-send"
+                label="批量发布"
+                :disabled="selectedPostIds.length === 0"
+                :loading="updatingPostId === '__batch__'"
+                @click="setSelectedPostStatus(POST_STATUS_PUBLISHED)"
+              />
+              <UButton
+                size="xs"
+                color="neutral"
+                variant="soft"
+                icon="i-lucide-file-pen-line"
+                label="转草稿"
+                :disabled="selectedPostIds.length === 0"
+                :loading="updatingPostId === '__batch__'"
+                @click="setSelectedPostStatus(POST_STATUS_DRAFT)"
+              />
+              <UButton
+                size="xs"
+                color="warning"
+                variant="soft"
+                icon="i-lucide-archive"
+                label="批量归档"
+                :disabled="selectedPostIds.length === 0"
+                :loading="updatingPostId === '__batch__'"
+                @click="setSelectedPostStatus(POST_STATUS_ARCHIVED)"
+              />
+              <UButton
+                size="xs"
+                color="error"
+                variant="ghost"
+                icon="i-lucide-trash-2"
+                label="批量删除"
+                :disabled="selectedPostIds.length === 0"
+                :loading="deletingPostId === '__batch__'"
+                @click="removeSelectedPosts"
+              />
+            </div>
+          </div>
+
+          <div class="divide-y divide-default">
+            <div
+              v-if="postLoading && postRows.length === 0"
+              class="space-y-3 p-4 sm:p-5"
+            >
+              <div
+                v-for="index in 4"
+                :key="index"
+                class="rounded-lg border border-default p-4"
+              >
+                <div class="flex items-start justify-between gap-4">
+                  <div class="min-w-0 flex-1 space-y-3">
+                    <USkeleton class="h-5 w-2/3" />
+                    <USkeleton class="h-3 w-full" />
+                    <USkeleton class="h-3 w-1/2" />
                   </div>
-                  <p class="text-xs text-toned">
-                    ID: {{ item.id }} · 分类: {{ item.category }} · 标签: {{ item.tags.join(', ') || '-' }}
+                  <USkeleton class="h-8 w-28" />
+                </div>
+              </div>
+            </div>
+
+            <article
+              v-for="item in postRows"
+              :key="item.id"
+              class="p-4 transition-colors hover:bg-muted/40 sm:p-5"
+            >
+              <div class="grid gap-3 xl:grid-cols-[auto_minmax(0,1fr)_auto] xl:items-center">
+                <input
+                  type="checkbox"
+                  class="mt-1 size-4 rounded border-default accent-[var(--ui-primary)] xl:mt-0"
+                  :checked="selectedPostIds.includes(item.id)"
+                  @change="togglePostSelected(item.id, ($event.target as HTMLInputElement).checked)"
+                >
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <p
+                      class="min-w-0 text-base font-semibold text-highlighted"
+                      v-html="renderHighlightedText(item.title)"
+                    />
+                    <UBadge
+                      size="xs"
+                      :label="postStatusText(item.status)"
+                      :color="postStatusColor(item.status)"
+                      variant="subtle"
+                    />
+                  </div>
+                  <p class="mt-2 line-clamp-2 text-sm text-toned">
+                    {{ item.summary }}
                   </p>
+                  <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
+                    <span class="inline-flex items-center gap-1">
+                      <UIcon
+                        name="i-lucide-hash"
+                        class="size-3.5"
+                      />
+                      {{ item.id }}
+                    </span>
+                    <span class="inline-flex items-center gap-1">
+                      <UIcon
+                        name="i-lucide-folder"
+                        class="size-3.5"
+                      />
+                      {{ item.category || '未分类' }}
+                    </span>
+                    <span class="inline-flex items-center gap-1">
+                      <UIcon
+                        name="i-lucide-clock-3"
+                        class="size-3.5"
+                      />
+                      {{ item.publishedAt }}
+                    </span>
+                    <span class="inline-flex items-center gap-1">
+                      <UIcon
+                        name="i-lucide-tags"
+                        class="size-3.5"
+                      />
+                      {{ item.tags.join(', ') || '-' }}
+                    </span>
+                  </div>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2">
-                  <UButton :to="`/write?slug=${item.slug}`" size="xs" color="primary" variant="soft" icon="i-lucide-square-pen" label="编辑" />
+                <div class="flex flex-wrap items-center gap-2 xl:justify-end">
+                  <UButton
+                    :to="`/write?slug=${item.slug}`"
+                    size="xs"
+                    color="primary"
+                    variant="soft"
+                    icon="i-lucide-square-pen"
+                    label="编辑"
+                  />
                   <UButton
                     v-if="item.status !== POST_STATUS_PUBLISHED"
                     size="xs"
@@ -522,7 +1036,7 @@ useSeoMeta({
                     variant="ghost"
                     icon="i-lucide-message-square"
                     label="看评论"
-                    @click="commentPostId = item.id; loadComments()"
+                    @click="openPostComments(item.id)"
                   />
                   <UButton
                     size="xs"
@@ -539,6 +1053,7 @@ useSeoMeta({
 
             <UAlert
               v-if="!postLoading && postRows.length === 0"
+              class="m-4 sm:m-5"
               title="暂无文章"
               description="请更换关键词或稍后重试。"
               icon="i-lucide-file-text"
@@ -547,128 +1062,484 @@ useSeoMeta({
             />
           </div>
 
-          <div v-if="postRows.length > 0" class="mt-5 flex items-center justify-end gap-2">
-            <UButton size="xs" color="neutral" variant="soft" icon="i-lucide-chevron-left" :disabled="postPage <= 1" @click="postPage = Math.max(1, postPage - 1)" />
-            <span class="text-xs text-toned">第 {{ postPage }} / {{ totalPages }} 页</span>
-            <UButton size="xs" color="neutral" variant="soft" icon="i-lucide-chevron-right" :disabled="postPage >= totalPages" @click="postPage = Math.min(totalPages, postPage + 1)" />
+          <div
+            v-if="postRows.length > 0"
+            class="flex items-center justify-between gap-3 border-t border-default p-4 sm:p-5"
+          >
+            <span class="text-xs text-toned">共 {{ visiblePostTotal }} 条</span>
+            <div class="flex items-center gap-2">
+              <UButton
+                size="xs"
+                color="neutral"
+                variant="soft"
+                icon="i-lucide-chevron-left"
+                :disabled="postPage <= 1"
+                @click="postPage = Math.max(1, postPage - 1)"
+              />
+              <span class="text-xs text-toned">第 {{ postPage }} / {{ totalPages }} 页</span>
+              <UButton
+                size="xs"
+                color="neutral"
+                variant="soft"
+                icon="i-lucide-chevron-right"
+                :disabled="postPage >= totalPages"
+                @click="postPage = Math.min(totalPages, postPage + 1)"
+              />
+            </div>
           </div>
         </section>
 
-        <section class="mt-8 rounded-2xl border border-default bg-default p-5 sm:p-6">
-          <div class="flex flex-wrap items-end gap-3">
-            <UFormField label="评论审核（按文章 ID）" class="min-w-56 flex-1">
-              <UInput v-model="commentPostId" placeholder="输入文章 ID 拉取评论" icon="i-lucide-message-circle" />
-            </UFormField>
+        <section class="mt-6 rounded-lg border border-default bg-default">
+          <div class="flex flex-wrap items-end justify-between gap-3 border-b border-default p-4 sm:p-5">
+            <div>
+              <h2 class="text-base font-semibold text-highlighted">
+                全站评论队列
+              </h2>
+              <p class="mt-1 text-xs text-toned">
+                {{ activeCommentPostTitle || (commentPostId.trim() ? '按文章过滤评论' : '默认显示全站最新评论') }}
+              </p>
+            </div>
 
-            <UButton :loading="commentLoading" label="查询评论" icon="i-lucide-list-filter" color="neutral" @click="loadComments" />
+            <div class="flex w-full flex-wrap items-end gap-2 lg:w-auto">
+              <UFormField
+                label="文章 ID（可选）"
+                class="min-w-56 flex-1 lg:w-80 lg:flex-none"
+              >
+                <UInput
+                  v-model="commentPostId"
+                  placeholder="留空查看全站队列"
+                  icon="i-lucide-message-circle"
+                  @keyup.enter="reloadCommentsFromFirstPage"
+                />
+              </UFormField>
+
+              <UButton
+                :loading="commentLoading"
+                label="查询"
+                icon="i-lucide-list-filter"
+                color="neutral"
+                @click="reloadCommentsFromFirstPage"
+              />
+              <UButton
+                v-if="commentPostId.trim()"
+                label="全站队列"
+                icon="i-lucide-list"
+                color="neutral"
+                variant="soft"
+                @click="showGlobalCommentQueue"
+              />
+            </div>
           </div>
 
-          <p class="mt-4 text-xs text-toned">
-            共 {{ commentTotal || commentRows.length }} 条评论
-          </p>
+          <div class="space-y-3 p-4 sm:p-5">
+            <div class="flex flex-wrap items-center justify-between gap-3 text-xs text-toned">
+              <label class="inline-flex items-center gap-2 font-medium">
+                <input
+                  type="checkbox"
+                  class="size-4 rounded border-default accent-[var(--ui-primary)]"
+                  :checked="allVisibleCommentsSelected"
+                  :disabled="commentRows.length === 0"
+                  @change="toggleVisibleComments(($event.target as HTMLInputElement).checked)"
+                >
+                {{ commentPostId.trim() ? '当前文章' : '全站队列' }} · 共 {{ commentTotal || commentRows.length }} 条评论
+                <span v-if="selectedCommentIds.length > 0" class="text-muted">
+                  已选 {{ selectedCommentIds.length }}
+                </span>
+              </label>
 
-          <div class="mt-4 space-y-3">
-            <article v-for="item in commentRows" :key="item.id" class="rounded-xl border border-default p-4">
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <p class="text-sm font-medium text-highlighted">
-                    {{ item.author?.name || `用户 ${item.userId}` }}
-                  </p>
-                  <p class="mt-1 text-xs text-toned">
-                    评论ID: {{ item.id }}
-                  </p>
-                </div>
-
+              <div class="flex flex-wrap items-center gap-2">
+                <span v-if="commentPostId.trim()">文章 ID: {{ commentPostId.trim() }}</span>
                 <UButton
-                  :loading="deletingCommentId === item.id"
                   size="xs"
                   color="error"
                   variant="ghost"
                   icon="i-lucide-trash-2"
-                  label="删除"
-                  @click="removeComment(item.id)"
+                  label="批量删除"
+                  :disabled="selectedCommentIds.length === 0"
+                  :loading="deletingCommentId === '__batch__'"
+                  @click="removeSelectedComments"
                 />
               </div>
+            </div>
 
-              <p class="mt-3 whitespace-pre-wrap text-sm text-toned">
-                {{ item.content }}
-              </p>
+            <div
+              v-if="commentLoading && commentRows.length === 0"
+              class="space-y-3"
+            >
+              <div
+                v-for="index in 2"
+                :key="index"
+                class="rounded-lg border border-default p-4"
+              >
+                <USkeleton class="h-4 w-40" />
+                <USkeleton class="mt-3 h-3 w-full" />
+                <USkeleton class="mt-2 h-3 w-3/4" />
+              </div>
+            </div>
+
+            <article
+              v-for="item in commentRows"
+              :key="item.id"
+              class="rounded-lg border border-default p-4"
+            >
+              <div class="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  class="mt-0.5 size-4 rounded border-default accent-[var(--ui-primary)]"
+                  :checked="selectedCommentIds.includes(item.id)"
+                  @change="toggleCommentSelected(item.id, ($event.target as HTMLInputElement).checked)"
+                >
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <div class="flex flex-wrap items-center gap-2">
+                        <p class="text-sm font-medium text-highlighted">
+                          {{ item.author?.name || `用户 ${item.userId}` }}
+                        </p>
+                        <UBadge
+                          size="xs"
+                          variant="soft"
+                          :color="commentStatusColor(item.status)"
+                        >
+                          {{ commentStatusText(item.status) }}
+                        </UBadge>
+                      </div>
+                      <p class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-toned">
+                        <span>文章ID: {{ item.postId }}</span>
+                        <span>评论ID: {{ item.id }}</span>
+                        <span v-if="item.parentId">父评论: {{ item.parentId }}</span>
+                        <span v-if="item.createdAt">{{ item.createdAt }}</span>
+                      </p>
+                    </div>
+
+                    <UButton
+                      :loading="deletingCommentId === item.id"
+                      size="xs"
+                      color="error"
+                      variant="ghost"
+                      icon="i-lucide-trash-2"
+                      label="删除"
+                      @click="removeComment(item.id)"
+                    />
+                  </div>
+
+                  <p class="mt-3 whitespace-pre-wrap text-sm text-toned">
+                    {{ item.content }}
+                  </p>
+                </div>
+              </div>
             </article>
 
             <UAlert
               v-if="!commentLoading && commentRows.length === 0"
-              title="暂无评论数据"
-              description="输入文章 ID 后点击查询评论。"
+              :title="commentPostId.trim() ? '该文章暂无评论' : '暂无全站评论'"
+              :description="commentPostId.trim() ? '可以清空文章 ID 查看全站队列。' : '新的评论会出现在这里。'"
               icon="i-lucide-message-square-off"
               color="neutral"
               variant="soft"
             />
+
+            <div
+              v-if="commentRows.length > 0"
+              class="flex items-center justify-between gap-3 border-t border-default pt-3"
+            >
+              <span class="text-xs text-toned">每页 {{ commentPageSize }} 条</span>
+              <div class="flex items-center gap-2">
+                <UButton
+                  size="xs"
+                  color="neutral"
+                  variant="soft"
+                  icon="i-lucide-chevron-left"
+                  :disabled="commentPage <= 1"
+                  @click="commentPage = Math.max(1, commentPage - 1)"
+                />
+                <span class="text-xs text-toned">第 {{ commentPage }} / {{ commentTotalPages }} 页</span>
+                <UButton
+                  size="xs"
+                  color="neutral"
+                  variant="soft"
+                  icon="i-lucide-chevron-right"
+                  :disabled="commentPage >= commentTotalPages"
+                  @click="commentPage = Math.min(commentTotalPages, commentPage + 1)"
+                />
+              </div>
+            </div>
           </div>
         </section>
 
-        <section class="mt-8 grid gap-6 lg:grid-cols-2">
-          <UCard>
-            <template #header>
-              <h2 class="text-lg font-semibold text-highlighted">
-                分类管理
+        <section class="mt-6">
+          <div class="mb-3 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 class="text-base font-semibold text-highlighted">
+                内容结构
               </h2>
-            </template>
-
-            <div class="space-y-3">
-              <div class="grid gap-3 sm:grid-cols-2">
-                <UInput v-model="newCategory.name" placeholder="分类名（必填）" />
-                <UInput v-model="newCategory.slug" placeholder="slug（可选）" />
-              </div>
-              <UTextarea v-model="newCategory.description" :rows="2" placeholder="描述（可选）" />
-              <div class="flex justify-end">
-                <UButton :loading="savingCategory" label="新增分类" icon="i-lucide-plus" @click="createCategoryEntry" />
-              </div>
+              <p class="mt-1 text-xs text-toned">
+                {{ taxonomyTotal }} 个条目，支持快速过滤和就地维护
+              </p>
             </div>
 
-            <div class="mt-4 space-y-2">
-              <div v-if="categoryLoading" class="text-sm text-toned">
-                分类加载中...
-              </div>
-              <article v-for="item in categories" :key="item.id" class="rounded-lg border border-default p-3">
-                <div class="flex items-center gap-2">
-                  <UInput v-model="categoryRename[item.id]" class="flex-1" />
-                  <UButton size="xs" color="neutral" variant="soft" :loading="updatingCategoryId === item.id" label="保存" @click="renameCategory(item.id)" />
-                  <UButton size="xs" color="error" variant="ghost" :loading="deletingCategoryId === item.id" icon="i-lucide-trash-2" @click="removeCategory(item.id)" />
+            <UInput
+              v-model="taxonomyKeyword"
+              class="w-full sm:w-72"
+              icon="i-lucide-search"
+              placeholder="搜索分类或标签"
+            />
+          </div>
+
+          <div class="grid gap-4 lg:grid-cols-2">
+            <UCard :ui="{ root: 'rounded-lg', body: 'p-4 sm:p-5', header: 'p-4 sm:p-5' }">
+              <template #header>
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 class="text-base font-semibold text-highlighted">
+                      分类管理
+                    </h2>
+                    <p class="mt-1 text-xs text-toned">
+                      显示 {{ filteredCategories.length }} / {{ categories.length }} 个分类
+                    </p>
+                  </div>
+                  <UIcon
+                    name="i-lucide-folder-tree"
+                    class="size-5 text-primary"
+                  />
                 </div>
-              </article>
-            </div>
-          </UCard>
+              </template>
 
-          <UCard>
-            <template #header>
-              <h2 class="text-lg font-semibold text-highlighted">
-                标签管理
-              </h2>
-            </template>
-
-            <div class="space-y-3">
-              <div class="grid gap-3 sm:grid-cols-2">
-                <UInput v-model="newTag.name" placeholder="标签名（必填）" />
-                <UInput v-model="newTag.slug" placeholder="slug（可选）" />
-              </div>
-              <div class="flex justify-end">
-                <UButton :loading="savingTag" label="新增标签" icon="i-lucide-plus" @click="createTagEntry" />
-              </div>
-            </div>
-
-            <div class="mt-4 space-y-2">
-              <div v-if="tagLoading" class="text-sm text-toned">
-                标签加载中...
-              </div>
-              <article v-for="item in tags" :key="item.id" class="rounded-lg border border-default p-3">
-                <div class="flex items-center gap-2">
-                  <UInput v-model="tagRename[item.id]" class="flex-1" />
-                  <UButton size="xs" color="neutral" variant="soft" :loading="updatingTagId === item.id" label="保存" @click="renameTag(item.id)" />
-                  <UButton size="xs" color="error" variant="ghost" :loading="deletingTagId === item.id" icon="i-lucide-trash-2" @click="removeTag(item.id)" />
+              <div class="space-y-3">
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <UInput
+                    v-model="newCategory.name"
+                    placeholder="分类名（必填）"
+                  />
+                  <UInput
+                    v-model="newCategory.slug"
+                    placeholder="slug（可选）"
+                  />
                 </div>
-              </article>
-            </div>
-          </UCard>
+                <UTextarea
+                  v-model="newCategory.description"
+                  :rows="2"
+                  placeholder="描述（可选）"
+                />
+                <div class="flex justify-end">
+                  <UButton
+                    :loading="savingCategory"
+                    label="新增分类"
+                    icon="i-lucide-plus"
+                    @click="createCategoryEntry"
+                  />
+                </div>
+              </div>
+
+              <div class="mt-4 max-h-[28rem] space-y-2 overflow-y-auto pr-1">
+                <div
+                  v-if="filteredCategories.length > 0"
+                  class="sticky top-0 z-10 flex items-center justify-between gap-3 border border-default bg-default/95 px-3 py-2 text-xs text-toned"
+                >
+                  <label class="inline-flex items-center gap-2 font-medium">
+                    <input
+                      type="checkbox"
+                      class="size-4 rounded border-default accent-[var(--ui-primary)]"
+                      :checked="allVisibleCategoriesSelected"
+                      @change="toggleVisibleCategories(($event.target as HTMLInputElement).checked)"
+                    >
+                    全选当前结果
+                    <span v-if="selectedCategoryIds.length > 0" class="text-muted">
+                      已选 {{ selectedCategoryIds.length }}
+                    </span>
+                  </label>
+                  <UButton
+                    size="xs"
+                    color="error"
+                    variant="ghost"
+                    icon="i-lucide-trash-2"
+                    label="批量删除"
+                    :disabled="selectedCategoryIds.length === 0"
+                    :loading="deletingCategoryId === '__batch__'"
+                    @click="removeSelectedCategories"
+                  />
+                </div>
+
+                <div
+                  v-if="categoryLoading"
+                  class="space-y-2"
+                >
+                  <USkeleton
+                    v-for="index in 3"
+                    :key="index"
+                    class="h-10 w-full"
+                  />
+                </div>
+                <article
+                  v-for="item in filteredCategories"
+                  :key="item.id"
+                  class="rounded-md border border-default bg-muted/20 p-2"
+                >
+                  <div class="flex items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      class="size-4 shrink-0 rounded border-default accent-[var(--ui-primary)]"
+                      :checked="selectedCategoryIds.includes(item.id)"
+                      @change="toggleCategorySelected(item.id, ($event.target as HTMLInputElement).checked)"
+                    >
+                    <UInput
+                      v-model="categoryRename[item.id]"
+                      class="min-w-0 flex-1"
+                      size="sm"
+                    />
+                    <UButton
+                      size="xs"
+                      color="neutral"
+                      variant="soft"
+                      icon="i-lucide-save"
+                      :loading="updatingCategoryId === item.id"
+                      @click="renameCategory(item.id)"
+                    />
+                    <UButton
+                      size="xs"
+                      color="error"
+                      variant="ghost"
+                      icon="i-lucide-trash-2"
+                      :loading="deletingCategoryId === item.id"
+                      @click="removeCategory(item.id)"
+                    />
+                  </div>
+                </article>
+                <UAlert
+                  v-if="!categoryLoading && filteredCategories.length === 0"
+                  :title="categories.length === 0 ? '暂无分类' : '没有匹配的分类'"
+                  :description="categories.length === 0 ? '创建分类后可用于组织文章。' : '换个关键词再试。'"
+                  icon="i-lucide-folder-open"
+                  color="neutral"
+                  variant="soft"
+                />
+              </div>
+            </UCard>
+
+            <UCard :ui="{ root: 'rounded-lg', body: 'p-4 sm:p-5', header: 'p-4 sm:p-5' }">
+              <template #header>
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 class="text-base font-semibold text-highlighted">
+                      标签管理
+                    </h2>
+                    <p class="mt-1 text-xs text-toned">
+                      显示 {{ filteredTags.length }} / {{ tags.length }} 个标签
+                    </p>
+                  </div>
+                  <UIcon
+                    name="i-lucide-tags"
+                    class="size-5 text-primary"
+                  />
+                </div>
+              </template>
+
+              <div class="space-y-3">
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <UInput
+                    v-model="newTag.name"
+                    placeholder="标签名（必填）"
+                  />
+                  <UInput
+                    v-model="newTag.slug"
+                    placeholder="slug（可选）"
+                  />
+                </div>
+                <div class="flex justify-end">
+                  <UButton
+                    :loading="savingTag"
+                    label="新增标签"
+                    icon="i-lucide-plus"
+                    @click="createTagEntry"
+                  />
+                </div>
+              </div>
+
+              <div class="mt-4 max-h-[28rem] space-y-2 overflow-y-auto pr-1">
+                <div
+                  v-if="filteredTags.length > 0"
+                  class="sticky top-0 z-10 flex items-center justify-between gap-3 border border-default bg-default/95 px-3 py-2 text-xs text-toned"
+                >
+                  <label class="inline-flex items-center gap-2 font-medium">
+                    <input
+                      type="checkbox"
+                      class="size-4 rounded border-default accent-[var(--ui-primary)]"
+                      :checked="allVisibleTagsSelected"
+                      @change="toggleVisibleTags(($event.target as HTMLInputElement).checked)"
+                    >
+                    全选当前结果
+                    <span v-if="selectedTagIds.length > 0" class="text-muted">
+                      已选 {{ selectedTagIds.length }}
+                    </span>
+                  </label>
+                  <UButton
+                    size="xs"
+                    color="error"
+                    variant="ghost"
+                    icon="i-lucide-trash-2"
+                    label="批量删除"
+                    :disabled="selectedTagIds.length === 0"
+                    :loading="deletingTagId === '__batch__'"
+                    @click="removeSelectedTags"
+                  />
+                </div>
+
+                <div
+                  v-if="tagLoading"
+                  class="space-y-2"
+                >
+                  <USkeleton
+                    v-for="index in 3"
+                    :key="index"
+                    class="h-10 w-full"
+                  />
+                </div>
+                <article
+                  v-for="item in filteredTags"
+                  :key="item.id"
+                  class="rounded-md border border-default bg-muted/20 p-2"
+                >
+                  <div class="flex items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      class="size-4 shrink-0 rounded border-default accent-[var(--ui-primary)]"
+                      :checked="selectedTagIds.includes(item.id)"
+                      @change="toggleTagSelected(item.id, ($event.target as HTMLInputElement).checked)"
+                    >
+                    <UInput
+                      v-model="tagRename[item.id]"
+                      class="min-w-0 flex-1"
+                      size="sm"
+                    />
+                    <UButton
+                      size="xs"
+                      color="neutral"
+                      variant="soft"
+                      icon="i-lucide-save"
+                      :loading="updatingTagId === item.id"
+                      @click="renameTag(item.id)"
+                    />
+                    <UButton
+                      size="xs"
+                      color="error"
+                      variant="ghost"
+                      icon="i-lucide-trash-2"
+                      :loading="deletingTagId === item.id"
+                      @click="removeTag(item.id)"
+                    />
+                  </div>
+                </article>
+                <UAlert
+                  v-if="!tagLoading && filteredTags.length === 0"
+                  :title="tags.length === 0 ? '暂无标签' : '没有匹配的标签'"
+                  :description="tags.length === 0 ? '创建标签后可用于标记文章主题。' : '换个关键词再试。'"
+                  icon="i-lucide-tag"
+                  color="neutral"
+                  variant="soft"
+                />
+              </div>
+            </UCard>
+          </div>
         </section>
       </template>
     </main>

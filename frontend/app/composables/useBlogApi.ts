@@ -393,6 +393,20 @@ export async function fetchComments(postId: string, page = 1, pageSize = 50): Pr
     }
 }
 
+export async function fetchCommentQueue(page = 1, pageSize = 50): Promise<{ comments: CommentInfo[]; total: number }> {
+    const response = await $fetch<any>('/api/blog/comments', {
+        query: {
+            page,
+            pageSize
+        }
+    })
+
+    return {
+        comments: (response?.comments || response?.data?.comments || []).map((item: Record<string, any>) => normalizeComment(item)),
+        total: Number(response?.total || response?.data?.total || 0)
+    }
+}
+
 export async function createComment(payload: { postId: string; content: string; parentId?: string }): Promise<CommentInfo | null> {
     const { authFetch } = useAuth()
     const response = await authFetch<any>('/api/blog/comments', {

@@ -46,7 +46,16 @@ func (s *CommentService) CreateComment(ctx context.Context, req *pb.CreateCommen
 }
 
 func (s *CommentService) ListComments(ctx context.Context, req *pb.ListCommentsRequest) (*pb.ListCommentsReply, error) {
-	views, total, err := s.uc.ListByPost(ctx, req.PostId, req.Page, req.PageSize)
+	var (
+		views []*biz.CommentView
+		total int64
+		err   error
+	)
+	if req.PostId > 0 {
+		views, total, err = s.uc.ListByPost(ctx, req.PostId, req.Page, req.PageSize)
+	} else {
+		views, total, err = s.uc.ListAll(ctx, req.Page, req.PageSize)
+	}
 	if err != nil {
 		return nil, err
 	}
