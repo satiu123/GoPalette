@@ -70,7 +70,6 @@ function normalizeSessionReply(input?: SessionReply | null): AuthSession {
 }
 
 export function useAuth() {
-  const { csrf, headerName } = useCsrf()
   const loggedInCookie = useCookie<string | null>(LOGGED_IN_COOKIE)
   const userIdCookie = useCookie<string | null>(USER_ID_COOKIE)
 
@@ -82,6 +81,7 @@ export function useAuth() {
   const initialized = useState<boolean>('auth.initialized', () => false)
 
   function withCsrfHeaders(headers?: Record<string, string>) {
+    const { csrf, headerName } = useCsrf()
     const csrfToken = unref(csrf)
     const name = unref(headerName)
 

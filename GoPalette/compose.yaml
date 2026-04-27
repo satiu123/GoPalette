@@ -20,6 +20,8 @@ services:
       NUXT_GATEWAY_BASE: "http://gateway:8080"
       NUXT_PUBLIC_SITE_URL: "${NUXT_PUBLIC_SITE_URL:-http://localhost}"
       NUXT_PUBLIC_SITE_NAME: "${NUXT_PUBLIC_SITE_NAME:-GoPalette Blog}"
+      NITRO_CSURF_HTTPS: "${NITRO_CSURF_HTTPS:-false}"
+      NITRO_CSURF_COOKIE_KEY: "${NITRO_CSURF_COOKIE_KEY:-csrf}"
     depends_on:
       - gateway
     ports:
