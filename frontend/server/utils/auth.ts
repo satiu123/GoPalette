@@ -23,6 +23,15 @@ function isProd() {
   return !import.meta.dev
 }
 
+function authCookieSecure() {
+  const config = useRuntimeConfig()
+  const value = config.authCookieSecure
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'string') return value.toLowerCase() === 'true'
+
+  return isProd()
+}
+
 function decodeJwtPayload(token: string) {
   try {
     const part = token.split('.')[1]
@@ -74,7 +83,7 @@ function authCookieBase() {
   return {
     path: '/',
     sameSite: 'lax' as const,
-    secure: isProd()
+    secure: authCookieSecure()
   }
 }
 

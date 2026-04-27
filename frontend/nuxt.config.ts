@@ -4,6 +4,7 @@ const publicSiteUrl = import.meta.env.NUXT_PUBLIC_SITE_URL || 'http://127.0.0.1:
 const publicSiteName = import.meta.env.NUXT_PUBLIC_SITE_NAME || 'GoPalette Blog'
 const deepseekApiKey = import.meta.env.DEEPSEEK_API_KEY || ''
 const enablePrerender = import.meta.env.NUXT_ENABLE_PRERENDER === 'true'
+const authCookieSecure = import.meta.env.NUXT_AUTH_COOKIE_SECURE
 
 export default defineNuxtConfig({
   modules: [
@@ -29,6 +30,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     gatewayBase,
     deepseekApiKey,
+    authCookieSecure,
     public: {
       partykitHost: '',
       siteUrl: publicSiteUrl,
