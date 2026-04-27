@@ -26,10 +26,17 @@ html.dark .tiptap .shiki span {
 
 html {
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
 }
 
 body {
   overflow-x: hidden;
+}
+
+@supports not (scrollbar-gutter: stable) {
+  html {
+    overflow-y: scroll;
+  }
 }
 
 .article-viewer .tiptap {

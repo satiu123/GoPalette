@@ -11,7 +11,7 @@ import { createPost, deletePost, fetchPostBySlug, POST_STATUS_DRAFT, POST_STATUS
 const route = useRoute()
 const runtimeConfig = useRuntimeConfig()
 const toast = useToast()
-const { categories, tagSuggestions, ensureLoaded } = useWriteResources()
+const { categories, tagSuggestions } = useWriteResources()
 
 const room = computed(() => route.query.room as string | undefined)
 
@@ -397,8 +397,6 @@ async function removeCurrentPost() {
 }
 
 const editingSlug = computed(() => typeof route.query.slug === 'string' ? route.query.slug : '')
-
-await ensureLoaded()
 
 if (editingSlug.value) {
   const existingPost = await fetchPostBySlug(editingSlug.value)

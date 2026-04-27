@@ -1,0 +1,38 @@
+# VCS / IDE
+.git
+.github
+.vscode
+.idea
+
+# Local env and logs
+.env
+.env.*
+!.env.example
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Frontend generated artifacts
+frontend/node_modules
+frontend/.nuxt
+frontend/.output
+frontend/.cache
+frontend/coverage
+frontend/dist
+
+# Go build / test artifacts
+GoPalette/**/bin/
+GoPalette/**/dist/
+GoPalette/**/tmp/
+GoPalette/**/*.test
+GoPalette/**/*.out
+GoPalette/**/*.prof
+GoPalette/**/coverage/
+GoPalette/**/coverage.out
+
+# Local scratch / generated data
+GoPalette/posts.jsonl
+GoPalette/keywords.csv
+GoPalette/openapi.txt

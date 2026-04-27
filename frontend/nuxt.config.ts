@@ -3,6 +3,7 @@ const gatewayBase = import.meta.env.NUXT_GATEWAY_BASE || 'http://127.0.0.1:8080'
 const publicSiteUrl = import.meta.env.NUXT_PUBLIC_SITE_URL || 'http://127.0.0.1:3000'
 const publicSiteName = import.meta.env.NUXT_PUBLIC_SITE_NAME || 'GoPalette Blog'
 const deepseekApiKey = import.meta.env.DEEPSEEK_API_KEY || ''
+const enablePrerender = import.meta.env.NUXT_ENABLE_PRERENDER === 'true'
 
 export default defineNuxtConfig({
   modules: [
@@ -13,7 +14,7 @@ export default defineNuxtConfig({
   ],
 
   devtools: {
-    enabled: true
+    enabled: import.meta.dev
   },
 
   css: ['~/assets/css/main.css'],
@@ -37,13 +38,18 @@ export default defineNuxtConfig({
 
   nitro: {
     prerender: {
-      crawlLinks: true,
-      routes: ['/', '/posts', '/rss.xml', '/sitemap.xml']
+      crawlLinks: enablePrerender,
+      failOnError: false,
+      routes: enablePrerender ? ['/', '/posts', '/rss.xml', '/sitemap.xml'] : []
     }
   },
 
   hooks: {
     async 'prerender:routes'(ctx) {
+      if (!enablePrerender) {
+        return
+      }
+
       try {
         const categoryResponse = await fetch(`${gatewayBase}/v1/categories?page=1&pageSize=200`)
         if (categoryResponse.ok) {

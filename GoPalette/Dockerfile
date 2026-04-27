@@ -20,7 +20,8 @@ ARG HTTP_PORT
 ARG GRPC_PORT
 
 # 安装 ca-certificates 和 tzdata（时区数据），并清理缓存
-RUN apk --no-cache add ca-certificates tzdata
+RUN sed -i 's|https://dl-cdn.alpinelinux.org/alpine|https://mirrors.tuna.tsinghua.edu.cn/alpine|g' /etc/apk/repositories \
+    && apk --no-cache add ca-certificates tzdata
 
 COPY --from=builder /src/bin/server /app/server
 

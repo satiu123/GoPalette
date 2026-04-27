@@ -1,4 +1,30 @@
 services:
+  nginx:
+    build:
+      context: ..
+      dockerfile: GoPalette/nginx/Dockerfile
+      target: nginx
+    restart: always
+    depends_on:
+      - frontend
+    ports:
+      - "80:80"
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: GoPalette/nginx/Dockerfile
+      target: frontend-runtime
+    restart: always
+    environment:
+      NUXT_GATEWAY_BASE: "http://gateway:8080"
+      NUXT_PUBLIC_SITE_URL: "${NUXT_PUBLIC_SITE_URL:-http://localhost}"
+      NUXT_PUBLIC_SITE_NAME: "${NUXT_PUBLIC_SITE_NAME:-GoPalette Blog}"
+    depends_on:
+      - gateway
+    ports:
+      - "3001:3000"
+
   gateway:
     build:
       context: .
@@ -95,6 +121,8 @@ services:
       - etcd
   mariadb:
     image: mariadb
+    volumes:
+      - mariadb_data:/var/lib/mysql
     restart: always
     environment:
       MARIADB_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
@@ -142,7 +170,7 @@ services:
     volumes:
       - /meili_data:/meili_data
   etcd:
-    image: gcr.io/etcd-development/etcd:v3.6.10
+    image: quay.io/coreos/etcd:v3.6.10
     restart: always
     volumes:
       - /etcd_data:/etcd_data
@@ -195,7 +223,7 @@ services:
     ports:
       - "3000:3000"
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    image: ghcr.io/google/cadvisor:0.56.2
     restart: always
     volumes:
       - /:/rootfs:ro
@@ -218,3 +246,4 @@ services:
 volumes:
   prometheus_data:
   grafana_data:
+  mariadb_data:
