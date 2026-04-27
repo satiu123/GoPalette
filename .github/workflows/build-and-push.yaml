@@ -11,6 +11,16 @@ on:
         required: false
         type: boolean
         default: false
+      images:
+        description: 'Images to build: all, backend, web, frontend, nginx, or backend service names separated by commas.'
+        required: false
+        type: string
+        default: all
+      image_tag:
+        description: 'Optional Docker image tag to publish, for example v1.0.4.'
+        required: false
+        type: string
+        default: ''
   workflow_dispatch:
     inputs:
       push:
@@ -18,6 +28,16 @@ on:
         required: false
         type: boolean
         default: false
+      images:
+        description: 'Images to build: all, backend, web, frontend, nginx, or backend service names separated by commas.'
+        required: false
+        type: string
+        default: all
+      image_tag:
+        description: 'Optional Docker image tag to publish, for example v1.0.4.'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -27,18 +47,65 @@ env:
   IMAGE_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME || github.repository_owner }}
 
 jobs:
+  prepare-matrix:
+    name: Prepare image matrix
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.matrix.outputs.backend }}
+      web: ${{ steps.matrix.outputs.web }}
+      has_backend: ${{ steps.matrix.outputs.has_backend }}
+      has_web: ${{ steps.matrix.outputs.has_web }}
+
+    steps:
+      - name: Build selected matrices
+        id: matrix
+        env:
+          IMAGE_FILTER: ${{ github.event_name == 'push' && 'all' || inputs.images }}
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs')
+
+          const services = [
+            { name: 'user', path: 'app/user/service', http_port: '8000', grpc_port: '9000' },
+            { name: 'post', path: 'app/post/service', http_port: '8001', grpc_port: '9001' },
+            { name: 'comment', path: 'app/comment/service', http_port: '8002', grpc_port: '9002' },
+            { name: 'search', path: 'app/search/service', http_port: '8003', grpc_port: '9003' },
+            { name: 'bff', path: 'app/bff/service', http_port: '8004', grpc_port: '9004' },
+            { name: 'gateway', path: 'app/gateway/service', http_port: '8080', grpc_port: '0' }
+          ]
+          const webImages = [
+            { name: 'frontend', target: 'frontend-runtime' },
+            { name: 'nginx', target: 'nginx' }
+          ]
+
+          const filters = new Set(
+            (process.env.IMAGE_FILTER || 'all')
+              .split(',')
+              .map(item => item.trim().toLowerCase())
+              .filter(Boolean)
+          )
+          const all = filters.has('all')
+          const backendAll = all || filters.has('backend')
+          const webAll = all || filters.has('web')
+
+          const backend = services.filter(service => backendAll || filters.has(service.name))
+          const web = webImages.filter(image => webAll || filters.has(image.name))
+
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, [
+            `backend=${JSON.stringify({ service: backend })}`,
+            `web=${JSON.stringify({ image: web })}`,
+            `has_backend=${backend.length > 0}`,
+            `has_web=${web.length > 0}`
+          ].join('\n') + '\n')
+          NODE
+
   backend-images:
+    needs: prepare-matrix
+    if: needs.prepare-matrix.outputs.has_backend == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        service:
-          - { name: "user", path: "app/user/service", http_port: "8000", grpc_port: "9000" }
-          - { name: "post", path: "app/post/service", http_port: "8001", grpc_port: "9001" }
-          - { name: "comment", path: "app/comment/service", http_port: "8002", grpc_port: "9002" }
-          - { name: "search", path: "app/search/service", http_port: "8003", grpc_port: "9003" }
-          - { name: "bff", path: "app/bff/service", http_port: "8004", grpc_port: "9004" }
-          - { name: "gateway", path: "app/gateway/service", http_port: "8080", grpc_port: "0" }
+      matrix: ${{ fromJSON(needs.prepare-matrix.outputs.backend) }}
 
     name: Backend image / ${{ matrix.service.name }}
 
@@ -75,6 +142,7 @@ jobs:
           tags: |
             type=ref,event=tag
             type=sha
+            type=raw,value=${{ inputs.image_tag }},enable=${{ github.event_name != 'push' && inputs.image_tag != '' }}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
 
       - name: Build and push ${{ matrix.service.name }}
@@ -93,13 +161,12 @@ jobs:
           cache-to: type=gha,mode=max
 
   web-images:
+    needs: prepare-matrix
+    if: needs.prepare-matrix.outputs.has_web == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        image:
-          - { name: "frontend", target: "frontend-runtime" }
-          - { name: "nginx", target: "nginx" }
+      matrix: ${{ fromJSON(needs.prepare-matrix.outputs.web) }}
 
     name: Web image / ${{ matrix.image.name }}
 
@@ -136,6 +203,7 @@ jobs:
           tags: |
             type=ref,event=tag
             type=sha
+            type=raw,value=${{ inputs.image_tag }},enable=${{ github.event_name != 'push' && inputs.image_tag != '' }}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
 
       - name: Build and push ${{ matrix.image.name }}
