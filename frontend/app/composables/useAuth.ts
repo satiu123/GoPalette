@@ -82,17 +82,7 @@ export function useAuth() {
   const initialized = useState<boolean>('auth.initialized', () => false)
 
   function withCsrfHeaders(headers?: Record<string, string>) {
-    const csrfToken = unref(csrf)
-    const name = unref(headerName)
-
-    if (!csrfToken || !name) {
-      return headers
-    }
-
-    return {
-      ...(headers || {}),
-      [name]: csrfToken
-    }
+    return headers || {}
   }
 
   function syncSessionFromCookies() {
