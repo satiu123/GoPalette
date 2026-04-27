@@ -1,0 +1,12 @@
+go 1.25.0
+
+use (
+	./api
+	./app/bff/service
+	./app/comment/service
+	./app/gateway/service
+	./app/post/service
+	./app/search/service
+	./app/user/service
+	./pkg
+)
