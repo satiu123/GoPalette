@@ -59,6 +59,11 @@ errors:
 build:
 	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./...
 
+.PHONY: test
+# run workspace tests
+test:
+	go test work
+
 .PHONY: generate
 # generate
 generate:

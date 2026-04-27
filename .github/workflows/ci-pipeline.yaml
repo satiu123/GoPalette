@@ -1,0 +1,27 @@
+name: ci pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  test:
+    name: test
+    uses: ./.github/workflows/test.yaml
+
+  build-frontend:
+    name: build frontend
+    uses: ./.github/workflows/build-frontend.yaml
+
+  build-images:
+    name: build images
+    uses: ./.github/workflows/build-and-push.yaml
+    secrets: inherit
+    with:
+      push: false

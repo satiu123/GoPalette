@@ -1,0 +1,150 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_call:
+    inputs:
+      push:
+        description: Push images to Docker Hub.
+        required: false
+        type: boolean
+        default: false
+  workflow_dispatch:
+    inputs:
+      push:
+        description: Push images to Docker Hub.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME || github.repository_owner }}
+
+jobs:
+  backend-images:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - { name: "user", path: "app/user/service", http_port: "8000", grpc_port: "9000" }
+          - { name: "post", path: "app/post/service", http_port: "8001", grpc_port: "9001" }
+          - { name: "comment", path: "app/comment/service", http_port: "8002", grpc_port: "9002" }
+          - { name: "search", path: "app/search/service", http_port: "8003", grpc_port: "9003" }
+          - { name: "bff", path: "app/bff/service", http_port: "8004", grpc_port: "9004" }
+          - { name: "gateway", path: "app/gateway/service", http_port: "8080", grpc_port: "0" }
+
+    name: Backend image / ${{ matrix.service.name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Hub secrets
+        if: ${{ github.event_name == 'push' || inputs.push }}
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$DOCKERHUB_TOKEN" ]; then
+            echo "DOCKERHUB_USERNAME and DOCKERHUB_TOKEN are required when push is enabled." >&2
+            exit 1
+          fi
+
+      - name: Log in to Docker Hub
+        if: ${{ github.event_name == 'push' || inputs.push }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAMESPACE }}/gopalette-${{ matrix.service.name }}
+          tags: |
+            type=ref,event=tag
+            type=sha
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Build and push ${{ matrix.service.name }}
+        uses: docker/build-push-action@v5
+        with:
+          context: GoPalette
+          file: GoPalette/Dockerfile
+          push: ${{ github.event_name == 'push' || inputs.push }}
+          build-args: |
+            APP_RELATIVE_PATH=${{ matrix.service.path }}
+            HTTP_PORT=${{ matrix.service.http_port }}
+            GRPC_PORT=${{ matrix.service.grpc_port }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  web-images:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - { name: "frontend", target: "frontend-runtime" }
+          - { name: "nginx", target: "nginx" }
+
+    name: Web image / ${{ matrix.image.name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Hub secrets
+        if: ${{ github.event_name == 'push' || inputs.push }}
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$DOCKERHUB_TOKEN" ]; then
+            echo "DOCKERHUB_USERNAME and DOCKERHUB_TOKEN are required when push is enabled." >&2
+            exit 1
+          fi
+
+      - name: Log in to Docker Hub
+        if: ${{ github.event_name == 'push' || inputs.push }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAMESPACE }}/gopalette-${{ matrix.image.name }}
+          tags: |
+            type=ref,event=tag
+            type=sha
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Build and push ${{ matrix.image.name }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: GoPalette/nginx/Dockerfile
+          target: ${{ matrix.image.target }}
+          push: ${{ github.event_name == 'push' || inputs.push }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
