@@ -4,10 +4,21 @@ import { Completion } from '~/components/editor/CompletionExtension'
 import type { CompletionStorage } from '~/components/editor/CompletionExtension'
 
 type CompletionMode = 'continue' | 'fix' | 'extend' | 'reduce' | 'simplify' | 'summarize' | 'translate'
+type TransformMode = Exclude<CompletionMode, 'continue'>
+
+interface AiCandidate {
+  id: number
+  mode: TransformMode
+  language?: string
+  text: string
+  stopped?: boolean
+}
 
 interface UseEditorCompletionOptions {
   api?: string
 }
+
+const transformModes: CompletionMode[] = ['fix', 'extend', 'reduce', 'simplify', 'summarize', 'translate']
 
 export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined } | null | undefined>, options: UseEditorCompletionOptions = {}) {
   // CSRF protection
@@ -21,6 +32,27 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
   const mode = ref<CompletionMode>('continue')
   const language = ref<string>()
   const insertedChars = ref(0)
+  const activeRequestId = ref(0)
+  const candidateSeq = ref(0)
+  const candidates = ref<AiCandidate[]>([])
+  const activeCandidateIndex = ref(-1)
+  const reviewState = ref<{
+    pos: number
+    deleteRange: { from: number, to: number }
+    prompt: string
+    mode: TransformMode
+    language?: string
+  }>()
+
+  const isTransformMode = computed(() => transformModes.includes(mode.value))
+  const activeCandidate = computed(() => candidates.value[activeCandidateIndex.value])
+  const previewText = computed(() => {
+    if (isTransformMode.value && isLoading.value && completion.value) {
+      return completion.value
+    }
+    return activeCandidate.value?.text || ''
+  })
+  const isReviewOpen = computed(() => Boolean(reviewState.value && (isLoading.value || previewText.value || candidates.value.length)))
 
   // Helper to get completion storage
   function getCompletionStorage() {
@@ -45,6 +77,56 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
       source,
       chars: insertedChars.value
     })
+  }
+
+  function beginRequest(nextMode: CompletionMode) {
+    activeRequestId.value += 1
+    setCompletion('')
+    insertedChars.value = 0
+    mode.value = nextMode
+    getCompletionStorage()?.clearSuggestion()
+    return activeRequestId.value
+  }
+
+  function clearActiveRequest(options: { clearReview?: boolean } = {}) {
+    insertState.value = undefined
+    insertedChars.value = 0
+    getCompletionStorage()?.clearSuggestion()
+    if (options.clearReview) {
+      reviewState.value = undefined
+      candidates.value = []
+      activeCandidateIndex.value = -1
+    }
+  }
+
+  function addCandidate(text: string, stopped = false) {
+    if (!reviewState.value) return
+    const normalized = text.trim()
+    if (!normalized) return
+
+    candidateSeq.value += 1
+    candidates.value.push({
+      id: candidateSeq.value,
+      mode: reviewState.value.mode,
+      language: reviewState.value.language,
+      text: normalized,
+      stopped
+    })
+    activeCandidateIndex.value = candidates.value.length - 1
+  }
+
+  function stopGeneration() {
+    activeRequestId.value += 1
+    stop()
+    if (isTransformMode.value && reviewState.value) {
+      addCandidate(completion.value, true)
+      setCompletion('')
+      insertState.value = undefined
+      insertedChars.value = 0
+      return
+    }
+    setCompletion('')
+    clearActiveRequest()
   }
 
   const { completion, complete, isLoading, stop, setCompletion } = useCompletion({
@@ -72,33 +154,15 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
         }
       }
 
-      // For transform modes, insert the full completion with markdown parsing
-      const transformModes = ['fix', 'extend', 'reduce', 'simplify', 'summarize', 'translate']
-      if (transformModes.includes(mode.value) && insertState.value && completionText) {
-        const editor = editorRef.value?.editor
-        if (editor) {
-          // Delete the original selection if not already done
-          if (insertState.value.deleteRange) {
-            editor.chain()
-              .focus()
-              .deleteRange(insertState.value.deleteRange)
-              .run()
-          }
-          // Insert with markdown parsing
-          editor.chain()
-            .focus()
-            .insertContentAt(insertState.value.pos, completionText, { contentType: 'markdown' })
-            .run()
-        }
+      if (transformModes.includes(mode.value) && reviewState.value && completionText) {
+        addCandidate(completionText)
       }
 
       insertState.value = undefined
     },
     onError: (error) => {
       console.error('AI completion error:', error)
-      insertState.value = undefined
-      insertedChars.value = 0
-      getCompletionStorage()?.clearSuggestion()
+      clearActiveRequest({ clearReview: false })
     }
   })
 
@@ -123,10 +187,7 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
     } else if (insertState.value) {
       // Direct insertion/transform mode (from toolbar actions)
 
-      // Transform modes use markdown insertion - wait for full completion
-      const transformModes = ['fix', 'extend', 'reduce', 'simplify', 'summarize', 'translate']
       if (transformModes.includes(mode.value)) {
-        // Don't stream - will be handled in onFinish
         return
       }
 
@@ -171,27 +232,35 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
   function triggerTransform(editor: Editor, transformMode: Exclude<CompletionMode, 'continue'>, lang?: string) {
     if (isLoading.value) return
 
-    setCompletion('')
-    insertedChars.value = 0
-    getCompletionStorage()?.clearSuggestion()
-
     const { state } = editor
     const { selection } = state
 
     if (selection.empty) return
 
-    mode.value = transformMode
+    const requestId = beginRequest(transformMode)
     language.value = lang
-    const selectedText = state.doc.textBetween(selection.from, selection.to)
+    const selectedText = state.doc.textBetween(selection.from, selection.to, '\n\n')
 
-    // Replace the selected text with the transformed version
     insertState.value = { pos: selection.from, deleteRange: { from: selection.from, to: selection.to } }
+    reviewState.value = {
+      pos: selection.from,
+      deleteRange: { from: selection.from, to: selection.to },
+      prompt: selectedText,
+      mode: transformMode,
+      language: lang
+    }
+    candidates.value = []
+    activeCandidateIndex.value = -1
 
     console.info('[ai:editor] transform start', {
       mode: transformMode,
       selectedChars: selectedText.length
     })
-    complete(selectedText)
+    void complete(selectedText).finally(() => {
+      if (activeRequestId.value === requestId) {
+        activeRequestId.value = 0
+      }
+    })
   }
 
   function getMarkdownBefore(editor: Editor, pos: number): string {
@@ -205,57 +274,109 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
     return state.doc.textBetween(0, pos, '\n')
   }
 
+  function buildContinuePrompt(editor: Editor, pos: number) {
+    const markdownBefore = getMarkdownBefore(editor, pos)
+    const context = markdownBefore.slice(-2400).trim()
+    return [
+      'Continue the following draft from the cursor position.',
+      'Write only the next natural continuation. Do not repeat existing text.',
+      'Keep the same language, tone, and markdown style.',
+      '',
+      context
+    ].join('\n')
+  }
+
+  function startContinue(editor: Editor, insertPos: number, source: string) {
+    const requestId = beginRequest('continue')
+    language.value = undefined
+    const prompt = buildContinuePrompt(editor, insertPos)
+    insertState.value = { pos: insertPos }
+    console.info('[ai:editor] continue start', {
+      source,
+      promptChars: prompt.length,
+      position: insertPos
+    })
+    void complete(prompt).then((result) => {
+      if (activeRequestId.value !== requestId || !result) return
+      insertContinueText(editor, insertPos, result, 'promise')
+    }).finally(() => {
+      if (activeRequestId.value === requestId) {
+        activeRequestId.value = 0
+      }
+    })
+  }
+
   function triggerContinue(editor: Editor) {
     if (isLoading.value) return
 
-    setCompletion('')
-    insertedChars.value = 0
-    mode.value = 'continue'
-    getCompletionStorage()?.clearSuggestion()
     const { state } = editor
     const { selection } = state
+    const insertPos = selection.empty ? selection.from : selection.to
 
-    if (selection.empty) {
-      // No selection: continue from cursor position
-      const textBefore = getMarkdownBefore(editor, selection.from)
-      const insertPos = selection.from
-      insertState.value = { pos: insertPos }
-      console.info('[ai:editor] continue start', {
-        promptChars: textBefore.length,
-        position: insertPos
-      })
-      void complete(textBefore).then((result) => {
-        if (result) insertContinueText(editor, insertPos, result, 'promise')
-      })
-    } else {
-      // Text selected: append completion after the selection
-      const textBefore = getMarkdownBefore(editor, selection.to)
-      const insertPos = selection.to
-      insertState.value = { pos: insertPos }
-      console.info('[ai:editor] continue start', {
-        promptChars: textBefore.length,
-        position: insertPos
-      })
-      void complete(textBefore).then((result) => {
-        if (result) insertContinueText(editor, insertPos, result, 'promise')
-      })
+    startContinue(editor, insertPos, selection.empty ? 'cursor' : 'selection')
+  }
+
+  function acceptCandidate() {
+    const editor = editorRef.value?.editor
+    const state = reviewState.value
+    const text = previewText.value
+    if (!editor || !state || !text.trim()) return
+
+    if (isLoading.value) {
+      stop()
     }
+    activeRequestId.value += 1
+    editor.chain()
+      .focus()
+      .insertContentAt(state.deleteRange, text, { contentType: 'markdown' })
+      .run()
+    setCompletion('')
+    clearActiveRequest({ clearReview: true })
+  }
+
+  function discardCandidates() {
+    activeRequestId.value += 1
+    stop()
+    setCompletion('')
+    clearActiveRequest({ clearReview: true })
+  }
+
+  function selectCandidate(index: number) {
+    if (index < 0 || index >= candidates.value.length) return
+    activeCandidateIndex.value = index
+  }
+
+  function rerollCandidate() {
+    const state = reviewState.value
+    if (!state || isLoading.value) return
+
+    const requestId = beginRequest(state.mode)
+    language.value = state.language
+    insertState.value = { pos: state.pos, deleteRange: state.deleteRange }
+    console.info('[ai:editor] transform reroll', {
+      mode: state.mode,
+      previousCandidates: candidates.value.length
+    })
+    void complete(state.prompt).finally(() => {
+      if (activeRequestId.value === requestId) {
+        activeRequestId.value = 0
+      }
+    })
   }
 
   // Configure Completion extension
   const extension = Completion.configure({
     onTrigger: (editor) => {
       if (isLoading.value) return
-      setCompletion('')
-      insertedChars.value = 0
-      mode.value = 'continue'
-      const textBefore = getMarkdownBefore(editor, editor.state.selection.from)
+      const requestId = beginRequest('continue')
       const insertPos = editor.state.selection.from
+      const prompt = buildContinuePrompt(editor, insertPos)
       console.info('[ai:editor] inline continue start', {
-        promptChars: textBefore.length,
+        promptChars: prompt.length,
         position: insertPos
       })
-      void complete(textBefore).then((result) => {
+      void complete(prompt).then((result) => {
+        if (activeRequestId.value !== requestId) return
         const storage = getCompletionStorage()
         if (!result || !storage?.visible || storage.suggestion) return
         const textBeforePosition = editor.state.doc.textBetween(Math.max(0, insertPos - 1), insertPos)
@@ -267,14 +388,17 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
         console.info('[ai:editor] inline suggestion set from promise', {
           chars: suggestion.length
         })
+      }).finally(() => {
+        if (activeRequestId.value === requestId) {
+          activeRequestId.value = 0
+        }
       })
     },
     onAccept: () => {
       setCompletion('')
     },
     onDismiss: () => {
-      stop()
-      setCompletion('')
+      stopGeneration()
     }
   })
 
@@ -288,6 +412,15 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
       },
       isActive: () => !!(isLoading.value && mode.value === 'continue'),
       isDisabled: () => !!isLoading.value
+    },
+    aiStop: {
+      canExecute: () => !!isLoading.value,
+      execute: (editor: Editor) => {
+        stopGeneration()
+        return editor.chain()
+      },
+      isActive: () => !!isLoading.value,
+      isDisabled: () => !isLoading.value
     },
     aiFix: {
       canExecute: (editor: Editor) => !editor.state.selection.empty && !isLoading.value,
@@ -349,6 +482,18 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
     extension,
     handlers,
     isLoading,
-    mode
+    mode,
+    aiReview: {
+      candidates,
+      activeCandidateIndex,
+      activeCandidate,
+      previewText,
+      isOpen: isReviewOpen,
+      accept: acceptCandidate,
+      discard: discardCandidates,
+      reroll: rerollCandidate,
+      select: selectCandidate,
+      stop: stopGeneration
+    }
   }
 }

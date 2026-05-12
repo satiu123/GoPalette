@@ -27,6 +27,7 @@ services:
       NITRO_CSURF_COOKIE_KEY: "${NITRO_CSURF_COOKIE_KEY:-csrf}"
       NITRO_CSURF_COOKIE_SECURE: "${NITRO_CSURF_COOKIE_SECURE:-true}"
       NITRO_AUTH_COOKIE_SECURE: "${NITRO_AUTH_COOKIE_SECURE:-true}"
+      NUXT_DEEPSEEK_API_KEY: "${NUXT_DEEPSEEK_API_KEY}"
     depends_on:
       - gateway
     ports:

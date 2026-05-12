@@ -24,7 +24,7 @@ const appConfig = useAppConfig()
 
 const editorRef = useTemplateRef('editorRef')
 
-const { extension: Completion, handlers: aiHandlers, isLoading: aiLoading } = useEditorCompletion(editorRef)
+const { extension: Completion, handlers: aiHandlers, isLoading: aiLoading, aiReview } = useEditorCompletion(editorRef)
 
 const {
   enabled: collaborationEnabled,
@@ -489,6 +489,82 @@ const extensions = computed(() => [
 
       <UEditorToolbar :editor="editor" :items="toolbarItems" />
     </AppHeader>
+
+    <div
+      v-if="aiReview.isOpen.value"
+      class="fixed bottom-6 right-6 z-50 w-[min(520px,calc(100vw-2rem))] rounded-xl border border-default bg-default/95 p-4 shadow-xl backdrop-blur"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <UIcon name="i-lucide-sparkles" class="text-primary" />
+          <p class="text-sm font-medium text-highlighted">
+            AI candidate
+          </p>
+          <UBadge
+            v-if="aiLoading"
+            label="Streaming"
+            color="primary"
+            variant="soft"
+          />
+        </div>
+
+        <div class="flex items-center gap-1">
+          <UButton
+            v-if="aiLoading"
+            size="xs"
+            color="error"
+            variant="soft"
+            icon="i-lucide-square"
+            label="Stop"
+            @click="aiReview.stop"
+          />
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-refresh-cw"
+            label="Reroll"
+            :disabled="aiLoading"
+            @click="aiReview.reroll"
+          />
+          <UButton
+            size="xs"
+            icon="i-lucide-check"
+            label="Accept"
+            :disabled="!aiReview.previewText.value.trim()"
+            @click="aiReview.accept"
+          />
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-x"
+            @click="aiReview.discard"
+          />
+        </div>
+      </div>
+
+      <div
+        class="mt-3 max-h-56 overflow-auto rounded-lg border border-default bg-elevated/50 p-3 text-sm leading-6 whitespace-pre-wrap text-toned"
+      >
+        {{ aiReview.previewText.value || 'Waiting for AI output...' }}
+      </div>
+
+      <div
+        v-if="aiReview.candidates.value.length > 0"
+        class="mt-3 flex flex-wrap gap-2"
+      >
+        <UButton
+          v-for="(candidate, index) in aiReview.candidates.value"
+          :key="candidate.id"
+          size="xs"
+          :color="index === aiReview.activeCandidateIndex.value ? 'primary' : 'neutral'"
+          :variant="index === aiReview.activeCandidateIndex.value ? 'soft' : 'ghost'"
+          :label="`${index + 1}${candidate.stopped ? ' partial' : ''}`"
+          @click="aiReview.select(index)"
+        />
+      </div>
+    </div>
 
     <section class="mx-auto mb-6 w-full max-w-5xl">
       <UCard>

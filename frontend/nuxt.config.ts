@@ -1,10 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-const gatewayBase = import.meta.env.NUXT_GATEWAY_BASE || 'http://127.0.0.1:8080'
-const publicSiteUrl = import.meta.env.NUXT_PUBLIC_SITE_URL || 'http://127.0.0.1:3000'
-const publicSiteName = import.meta.env.NUXT_PUBLIC_SITE_NAME || 'GoPalette Blog'
-const deepseekApiKey = import.meta.env.DEEPSEEK_API_KEY || ''
-const enablePrerender = import.meta.env.NUXT_ENABLE_PRERENDER === 'true'
-const authCookieSecure = import.meta.env.NUXT_AUTH_COOKIE_SECURE || ''
+const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env || {}
+const prerenderGatewayBase = env.NUXT_GATEWAY_BASE || 'http://127.0.0.1:8080'
+const enablePrerender = env.NUXT_ENABLE_PRERENDER === 'true'
 
 export default defineNuxtConfig({
   modules: [
@@ -28,13 +25,13 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    gatewayBase,
-    deepseekApiKey,
-    authCookieSecure,
+    gatewayBase: 'http://127.0.0.1:8080',
+    deepseekApiKey: '',
+    authCookieSecure: '',
     public: {
       partykitHost: '',
-      siteUrl: publicSiteUrl,
-      siteName: publicSiteName
+      siteUrl: 'http://127.0.0.1:3000',
+      siteName: 'GoPalette Blog'
     }
   },
 
@@ -53,7 +50,7 @@ export default defineNuxtConfig({
       }
 
       try {
-        const categoryResponse = await fetch(`${gatewayBase}/v1/categories?page=1&pageSize=200`)
+        const categoryResponse = await fetch(`${prerenderGatewayBase}/v1/categories?page=1&pageSize=200`)
         if (categoryResponse.ok) {
           const categoryPayload = await categoryResponse.json() as any
           const categoryList = categoryPayload?.categories || categoryPayload?.items || categoryPayload?.data?.categories || []
@@ -66,7 +63,7 @@ export default defineNuxtConfig({
           }
         }
 
-        const tagResponse = await fetch(`${gatewayBase}/v1/tags?page=1&pageSize=200`)
+        const tagResponse = await fetch(`${prerenderGatewayBase}/v1/tags?page=1&pageSize=200`)
         if (tagResponse.ok) {
           const tagPayload = await tagResponse.json() as any
           const tagList = tagPayload?.tags || tagPayload?.items || tagPayload?.data?.tags || []
@@ -79,7 +76,7 @@ export default defineNuxtConfig({
           }
         }
 
-        const response = await fetch(`${gatewayBase}/v1/posts?page=1&pageSize=1000`)
+        const response = await fetch(`${prerenderGatewayBase}/v1/posts?page=1&pageSize=1000`)
         if (!response.ok) {
           console.warn(`[ssg] skip dynamic post prerender: ${response.status} ${response.statusText}`)
           return

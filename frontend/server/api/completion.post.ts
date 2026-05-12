@@ -9,6 +9,8 @@ function toErrorMessage(error: unknown) {
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event)
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env || {}
+  const deepseekApiKey = config.deepseekApiKey || env.DEEPSEEK_API_KEY || ''
   const { prompt, mode, language } = await readBody(event)
   const startedAt = Date.now()
   const requestId = Math.random().toString(36).slice(2, 10)
@@ -21,7 +23,7 @@ export default defineEventHandler(async (event) => {
     })
     throw createError({ statusCode: 400, message: 'Prompt is required' })
   }
-  if (!config.deepseekApiKey) {
+  if (!deepseekApiKey) {
     console.error('[ai:completion] rejected', {
       requestId,
       reason: 'missing_deepseek_api_key'
@@ -40,43 +42,45 @@ export default defineEventHandler(async (event) => {
   switch (mode) {
     case 'fix':
       system = `You are a writing assistant. Fix all spelling and grammar errors in the given text. ${preserveMarkdown} Only output the corrected text, nothing else.`
-      maxOutputTokens = 500
+      maxOutputTokens = 800
       break
     case 'extend':
       system = `You are a writing assistant. Extend the given text with more details, examples, and explanations while maintaining the same style. ${preserveMarkdown} Only output the extended text, nothing else.`
-      maxOutputTokens = 500
+      maxOutputTokens = 1400
       break
     case 'reduce':
       system = `You are a writing assistant. Make the given text more concise by removing unnecessary words while keeping the meaning. ${preserveMarkdown} Only output the reduced text, nothing else.`
-      maxOutputTokens = 300
+      maxOutputTokens = 700
       break
     case 'simplify':
       system = `You are a writing assistant. Simplify the given text to make it easier to understand, using simpler words and shorter sentences. ${preserveMarkdown} Only output the simplified text, nothing else.`
-      maxOutputTokens = 400
+      maxOutputTokens = 900
       break
     case 'summarize':
       system = 'You are a writing assistant. Summarize the given text concisely while keeping the key points. Only output the summary, nothing else.'
-      maxOutputTokens = 200
+      maxOutputTokens = 600
       break
     case 'translate':
       system = `You are a writing assistant. Translate the given text to ${language || 'English'}. ${preserveMarkdown} Only output the translated text, nothing else.`
-      maxOutputTokens = 500
+      maxOutputTokens = 1200
       break
     case 'continue':
     default:
-      system = `You are a writing assistant providing inline autocompletions.
+      system = `You are a writing assistant helping continue a draft.
 CRITICAL RULES:
-- Output ONLY the NEW text that comes AFTER the user's input
+- Output ONLY the NEW text that should come AFTER the cursor
 - NEVER repeat any words from the end of the user's text
-- Keep completions short (1 sentence max)
+- Keep completions concise: 1-3 sentences or one short paragraph
 - Match the tone and style of the existing text
+- Preserve the user's language and markdown style
+- Do not add explanations, labels, or quotation marks
 - ${preserveMarkdown}`
-      maxOutputTokens = 25
+      maxOutputTokens = 180
       break
   }
 
   const deepseek = createDeepSeek({
-    apiKey: config.deepseekApiKey
+    apiKey: deepseekApiKey
   })
 
   console.info('[ai:completion] start', {

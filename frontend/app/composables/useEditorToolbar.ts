@@ -8,7 +8,7 @@ interface UseEditorToolbarOptions {
 export function useEditorToolbar<T extends EditorCustomHandlers>(_customHandlers?: T, options: UseEditorToolbarOptions = {}) {
   const { aiLoading } = options
 
-  const toolbarItems: EditorToolbarItem<T>[][] = [[{
+  const toolbarItems = computed(() => [[{
     kind: 'undo',
     icon: 'i-lucide-undo',
     tooltip: { text: 'Undo' }
@@ -21,13 +21,23 @@ export function useEditorToolbar<T extends EditorCustomHandlers>(_customHandlers
     label: 'Add',
     icon: 'i-lucide-image',
     tooltip: { text: 'Add image' }
-  }], [{
-    kind: 'aiContinue',
-    label: 'AI',
-    icon: 'i-lucide-sparkles',
-    tooltip: { text: 'AI continue' },
-    loading: aiLoading?.value
-  }]]
+  }], [
+    aiLoading?.value
+      ? {
+          kind: 'aiStop',
+          label: 'Stop',
+          icon: 'i-lucide-square',
+          color: 'error',
+          variant: 'soft',
+          tooltip: { text: 'Stop AI generation' }
+        }
+      : {
+          kind: 'aiContinue',
+          label: 'AI',
+          icon: 'i-lucide-sparkles',
+          tooltip: { text: 'AI continue' }
+        }
+  ]] satisfies EditorToolbarItem<T>[][])
 
   const bubbleToolbarItems = computed(() => [[{
     icon: 'i-lucide-sparkles',
@@ -39,6 +49,11 @@ export function useEditorToolbar<T extends EditorCustomHandlers>(_customHandlers
       align: 'start'
     },
     items: [{
+      kind: 'aiStop',
+      label: 'Stop generation',
+      icon: 'i-lucide-square',
+      color: 'error'
+    }, {
       kind: 'aiFix',
       label: 'Fix spelling & grammar',
       icon: 'i-lucide-spell-check'

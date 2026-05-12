@@ -27,7 +27,13 @@ function authCookieSecure() {
   const config = useRuntimeConfig()
   const value = config.authCookieSecure
   if (typeof value === 'boolean') return value
-  if (typeof value === 'string') return value.toLowerCase() === 'true'
+  if (typeof value === 'string' && value.trim()) return value.toLowerCase() === 'true'
+
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env || {}
+  const nitroValue = env.NITRO_AUTH_COOKIE_SECURE
+  if (typeof nitroValue === 'string' && nitroValue.trim()) {
+    return nitroValue.toLowerCase() === 'true'
+  }
 
   return isProd()
 }
