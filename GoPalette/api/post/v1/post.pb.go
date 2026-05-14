@@ -24,13 +24,15 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// PostStatus 定义了帖子的状态枚举类型，包括草稿、已发布和已归档三种状态
+// PostStatus 定义了帖子的状态枚举类型，包括草稿、已发布、已归档、私密和下线状态
 type PostStatus int32
 
 const (
 	PostStatus_DRAFT     PostStatus = 0 // 草稿
 	PostStatus_PUBLISHED PostStatus = 1 // 已发布
 	PostStatus_ARCHIVED  PostStatus = 2 // 已归档
+	PostStatus_PRIVATE   PostStatus = 3 // 私密
+	PostStatus_OFFLINE   PostStatus = 4 // 下线
 )
 
 // Enum value maps for PostStatus.
@@ -39,11 +41,15 @@ var (
 		0: "DRAFT",
 		1: "PUBLISHED",
 		2: "ARCHIVED",
+		3: "PRIVATE",
+		4: "OFFLINE",
 	}
 	PostStatus_value = map[string]int32{
 		"DRAFT":     0,
 		"PUBLISHED": 1,
 		"ARCHIVED":  2,
+		"PRIVATE":   3,
+		"OFFLINE":   4,
 	}
 )
 
@@ -1355,6 +1361,8 @@ type GetAuthorPostStatsReply struct {
 	Views         int64                  `protobuf:"varint,5,opt,name=views,proto3" json:"views,omitempty"`
 	Likes         int64                  `protobuf:"varint,6,opt,name=likes,proto3" json:"likes,omitempty"`
 	Comments      int64                  `protobuf:"varint,7,opt,name=comments,proto3" json:"comments,omitempty"`
+	Private       int64                  `protobuf:"varint,8,opt,name=private,proto3" json:"private,omitempty"`
+	Offline       int64                  `protobuf:"varint,9,opt,name=offline,proto3" json:"offline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1434,6 +1442,20 @@ func (x *GetAuthorPostStatsReply) GetLikes() int64 {
 func (x *GetAuthorPostStatsReply) GetComments() int64 {
 	if x != nil {
 		return x.Comments
+	}
+	return 0
+}
+
+func (x *GetAuthorPostStatsReply) GetPrivate() int64 {
+	if x != nil {
+		return x.Private
+	}
+	return 0
+}
+
+func (x *GetAuthorPostStatsReply) GetOffline() int64 {
+	if x != nil {
+		return x.Offline
 	}
 	return 0
 }
@@ -3185,7 +3207,7 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\"l\n" +
 	"\x19GetAuthorPostStatsRequest\x12\x1b\n" +
 	"\tauthor_id\x18\x01 \x01(\x03R\bauthorId\x122\n" +
-	"\x15include_non_published\x18\x02 \x01(\bR\x13includeNonPublished\"\xc9\x01\n" +
+	"\x15include_non_published\x18\x02 \x01(\bR\x13includeNonPublished\"\xfd\x01\n" +
 	"\x17GetAuthorPostStatsReply\x12\x14\n" +
 	"\x05posts\x18\x01 \x01(\x03R\x05posts\x12\x1c\n" +
 	"\tpublished\x18\x02 \x01(\x03R\tpublished\x12\x16\n" +
@@ -3193,7 +3215,9 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\barchived\x18\x04 \x01(\x03R\barchived\x12\x14\n" +
 	"\x05views\x18\x05 \x01(\x03R\x05views\x12\x14\n" +
 	"\x05likes\x18\x06 \x01(\x03R\x05likes\x12\x1a\n" +
-	"\bcomments\x18\a \x01(\x03R\bcomments\"\x82\x01\n" +
+	"\bcomments\x18\a \x01(\x03R\bcomments\x12\x18\n" +
+	"\aprivate\x18\b \x01(\x03R\aprivate\x12\x18\n" +
+	"\aoffline\x18\t \x01(\x03R\aoffline\"\x82\x01\n" +
 	"\x19ListTopAuthorPostsRequest\x12\x1b\n" +
 	"\tauthor_id\x18\x01 \x01(\x03R\bauthorId\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x03R\x05limit\x122\n" +
@@ -3296,12 +3320,14 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\x03tag\x18\x01 \x01(\v2\x16.api.post.v1.TagDetailR\x03tag\"O\n" +
 	"\rListTagsReply\x12(\n" +
 	"\x04tags\x18\x01 \x03(\v2\x14.api.post.v1.TagInfoR\x04tags\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total*4\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total*N\n" +
 	"\n" +
 	"PostStatus\x12\t\n" +
 	"\x05DRAFT\x10\x00\x12\r\n" +
 	"\tPUBLISHED\x10\x01\x12\f\n" +
-	"\bARCHIVED\x10\x022\x8f\v\n" +
+	"\bARCHIVED\x10\x02\x12\v\n" +
+	"\aPRIVATE\x10\x03\x12\v\n" +
+	"\aOFFLINE\x10\x042\x8f\v\n" +
 	"\x04Post\x12`\n" +
 	"\n" +
 	"CreatePost\x12\x1e.api.post.v1.CreatePostRequest\x1a\x1c.api.post.v1.CreatePostReply\"\x14\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/posts\x12e\n" +

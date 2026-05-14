@@ -9,11 +9,13 @@ option go_package = "github.com/satiu123/GoPalette/api/post/v1;v1";
 option java_multiple_files = true;
 option java_package = "api.post.v1";
 
-// PostStatus 定义了帖子的状态枚举类型，包括草稿、已发布和已归档三种状态
+// PostStatus 定义了帖子的状态枚举类型，包括草稿、已发布、已归档、私密和下线状态
 enum PostStatus {
   DRAFT     = 0; // 草稿
   PUBLISHED = 1; // 已发布
   ARCHIVED  = 2; // 已归档
+  PRIVATE   = 3; // 私密
+  OFFLINE   = 4; // 下线
 }
 
 // Post服务定义了标准的CRUD接口，用于创建、更新、删除、获取和列出帖子
@@ -310,6 +312,8 @@ message GetAuthorPostStatsReply {
   int64 views = 5;
   int64 likes = 6;
   int64 comments = 7;
+  int64 private = 8;
+  int64 offline = 9;
 }
 
 message ListTopAuthorPostsRequest {

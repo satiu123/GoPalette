@@ -2,24 +2,37 @@
 import {
   POST_STATUS_ARCHIVED,
   POST_STATUS_DRAFT,
+  POST_STATUS_OFFLINE,
   POST_STATUS_PUBLISHED,
+  POST_STATUS_PRIVATE,
+  USER_ROLE_ADMIN,
+  USER_ROLE_USER,
+  USER_STATUS_ACTIVE,
+  USER_STATUS_INACTIVE,
   createCategory,
+  createAdminUser,
   createTag,
+  deleteAdminUser,
   deleteCategory,
   deleteComment,
   deletePost,
   deleteTag,
   fetchCategories,
+  fetchAdminUsers,
   fetchCommentQueue,
   fetchComments,
   fetchPosts,
   fetchTags,
   searchPosts,
   updateCategory,
+  updateAdminUser,
   updatePost,
-  updateTag
+  updateTag,
+  reviewComment,
+  COMMENT_STATUS_DELETED,
+  COMMENT_STATUS_NORMAL
 } from '~/composables/useBlogApi'
-import type { BlogPostItem, CategoryItem, CommentInfo, TagItem } from '~/composables/useBlogApi'
+import type { AdminUserItem, BlogPostItem, CategoryItem, CommentInfo, TagItem } from '~/composables/useBlogApi'
 
 const toast = useToast()
 const {
@@ -51,6 +64,23 @@ const commentRows = ref<CommentInfo[]>([])
 const commentTotal = ref(0)
 const selectedCommentIds = ref<string[]>([])
 const deletingCommentId = ref('')
+const reviewingCommentId = ref('')
+
+const userPage = ref(1)
+const userPageSize = 20
+const userLoading = ref(false)
+const userRows = ref<AdminUserItem[]>([])
+const userTotal = ref(0)
+const selectedUserIds = ref<string[]>([])
+const savingUser = ref(false)
+const updatingUserId = ref('')
+const deletingUserId = ref('')
+const newUser = reactive({
+  username: '',
+  email: '',
+  password: '',
+  role: USER_ROLE_USER as 0 | 1
+})
 
 const categories = ref<CategoryItem[]>([])
 const tags = ref<TagItem[]>([])
@@ -137,6 +167,14 @@ function toggleVisibleComments(checked: boolean) {
   toggleVisibleSelection(selectedCommentIds, commentRows.value, checked)
 }
 
+function toggleUserSelected(id: string, checked: boolean) {
+  toggleSelected(selectedUserIds, id, checked)
+}
+
+function toggleVisibleUsers(checked: boolean) {
+  toggleVisibleSelection(selectedUserIds, userRows.value, checked)
+}
+
 function toggleCategorySelected(id: string, checked: boolean) {
   toggleSelected(selectedCategoryIds, id, checked)
 }
@@ -156,12 +194,16 @@ function toggleVisibleTags(checked: boolean) {
 function postStatusText(status: number) {
   if (status === POST_STATUS_PUBLISHED) return '已发布'
   if (status === POST_STATUS_ARCHIVED) return '已归档'
+  if (status === POST_STATUS_PRIVATE) return '私密'
+  if (status === POST_STATUS_OFFLINE) return '已下线'
   return '草稿'
 }
 
 function postStatusColor(status: number) {
   if (status === POST_STATUS_PUBLISHED) return 'success'
   if (status === POST_STATUS_ARCHIVED) return 'warning'
+  if (status === POST_STATUS_PRIVATE) return 'primary'
+  if (status === POST_STATUS_OFFLINE) return 'error'
   return 'neutral'
 }
 
@@ -191,6 +233,27 @@ function commentStatusColor(status: CommentInfo['status']) {
   if (value === 2) return 'warning'
   if (value === 3) return 'error'
   return 'success'
+}
+
+function toNumericValue(value: number | string | undefined, fallback: number) {
+  if (typeof value === 'number') return value
+  const text = String(value || '').trim().toUpperCase()
+  if (text === 'ADMIN' || text === 'INACTIVE') return 1
+  if (text === 'USER' || text === 'ACTIVE') return 0
+  const parsed = Number(text)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+function userRoleText(role: AdminUserItem['role']) {
+  return toNumericValue(role, USER_ROLE_USER) === USER_ROLE_ADMIN ? '管理员' : '用户'
+}
+
+function userStatusText(status: AdminUserItem['status']) {
+  return toNumericValue(status, USER_STATUS_ACTIVE) === USER_STATUS_INACTIVE ? '停用' : '活跃'
+}
+
+function userStatusColor(status: AdminUserItem['status']) {
+  return toNumericValue(status, USER_STATUS_ACTIVE) === USER_STATUS_INACTIVE ? 'warning' : 'success'
 }
 
 function toCover(seed: string) {
@@ -335,6 +398,170 @@ async function removeSelectedComments() {
     })
   } finally {
     deletingCommentId.value = ''
+  }
+}
+
+async function setCommentReviewStatus(id: string, status: number) {
+  if (!id || reviewingCommentId.value) return
+
+  reviewingCommentId.value = id
+  try {
+    await reviewComment(id, status)
+    toast.add({ title: status === COMMENT_STATUS_NORMAL ? '评论已通过' : '评论已删除', color: 'success' })
+    await loadComments()
+  } catch (error: unknown) {
+    toast.add({
+      title: '审核评论失败',
+      description: getErrorMessage(error, '请稍后重试'),
+      color: 'error'
+    })
+  } finally {
+    reviewingCommentId.value = ''
+  }
+}
+
+async function reviewSelectedComments(status: number) {
+  const ids = [...selectedCommentIds.value]
+  if (ids.length === 0 || reviewingCommentId.value) return
+  const action = status === COMMENT_STATUS_NORMAL ? '通过' : '删除'
+  if (!askConfirm(`确认${action}选中的 ${ids.length} 条评论吗？`)) return
+
+  reviewingCommentId.value = '__batch__'
+  try {
+    await Promise.all(ids.map(id => reviewComment(id, status)))
+    selectedCommentIds.value = []
+    toast.add({ title: `选中评论已${action}`, color: 'success' })
+    await loadComments()
+  } catch (error: unknown) {
+    toast.add({
+      title: '批量审核评论失败',
+      description: getErrorMessage(error, '请稍后重试'),
+      color: 'error'
+    })
+  } finally {
+    reviewingCommentId.value = ''
+  }
+}
+
+async function loadUsers() {
+  userLoading.value = true
+  try {
+    const response = await fetchAdminUsers(userPage.value, userPageSize)
+    userRows.value = response.users
+    userTotal.value = response.total
+    selectedUserIds.value = keepExistingSelection(selectedUserIds.value, userRows.value)
+  } catch (error: unknown) {
+    toast.add({
+      title: '加载用户失败',
+      description: getErrorMessage(error, '请确认当前账号有管理员权限'),
+      color: 'error'
+    })
+  } finally {
+    userLoading.value = false
+  }
+}
+
+async function createUserEntry() {
+  if (!newUser.username.trim() || !newUser.email.trim() || !newUser.password.trim() || savingUser.value) return
+
+  savingUser.value = true
+  try {
+    await createAdminUser({
+      username: newUser.username.trim(),
+      email: newUser.email.trim(),
+      password: newUser.password,
+      role: newUser.role
+    })
+    newUser.username = ''
+    newUser.email = ''
+    newUser.password = ''
+    newUser.role = USER_ROLE_USER
+    toast.add({ title: '用户创建成功', color: 'success' })
+    await loadUsers()
+  } catch (error: unknown) {
+    toast.add({
+      title: '创建用户失败',
+      description: getErrorMessage(error, '请检查邮箱是否已存在'),
+      color: 'error'
+    })
+  } finally {
+    savingUser.value = false
+  }
+}
+
+async function setUserStatus(item: AdminUserItem, status: number) {
+  if (!item.id || updatingUserId.value) return
+
+  updatingUserId.value = item.id
+  try {
+    await updateAdminUser(item.id, {
+      username: item.username,
+      email: item.email,
+      role: toNumericValue(item.role, USER_ROLE_USER),
+      status,
+      bio: item.bio || '',
+      location: item.location || '',
+      avatarURL: item.avatarURL || '',
+      updateMask: 'status'
+    })
+    toast.add({ title: '用户状态已更新', color: 'success' })
+    await loadUsers()
+  } catch (error: unknown) {
+    toast.add({
+      title: '更新用户失败',
+      description: getErrorMessage(error, '请稍后重试'),
+      color: 'error'
+    })
+  } finally {
+    updatingUserId.value = ''
+  }
+}
+
+async function setUserRole(item: AdminUserItem, role: number) {
+  if (!item.id || updatingUserId.value) return
+
+  updatingUserId.value = item.id
+  try {
+    await updateAdminUser(item.id, {
+      username: item.username,
+      email: item.email,
+      role,
+      status: toNumericValue(item.status, USER_STATUS_ACTIVE),
+      bio: item.bio || '',
+      location: item.location || '',
+      avatarURL: item.avatarURL || '',
+      updateMask: 'role'
+    })
+    toast.add({ title: '用户角色已更新', color: 'success' })
+    await loadUsers()
+  } catch (error: unknown) {
+    toast.add({
+      title: '更新角色失败',
+      description: getErrorMessage(error, '请稍后重试'),
+      color: 'error'
+    })
+  } finally {
+    updatingUserId.value = ''
+  }
+}
+
+async function removeUser(id: string) {
+  if (!id || deletingUserId.value) return
+  if (!askConfirm('确认删除该用户吗？此操作不可恢复。')) return
+
+  deletingUserId.value = id
+  try {
+    await deleteAdminUser(id)
+    toast.add({ title: '用户已删除', color: 'success' })
+    await loadUsers()
+  } catch (error: unknown) {
+    toast.add({
+      title: '删除用户失败',
+      description: getErrorMessage(error, '请稍后重试'),
+      color: 'error'
+    })
+  } finally {
+    deletingUserId.value = ''
   }
 }
 
@@ -636,10 +863,13 @@ async function removeSelectedTags() {
 
 const totalPages = computed(() => Math.max(1, Math.ceil(postTotal.value / pageSize)))
 const commentTotalPages = computed(() => Math.max(1, Math.ceil(commentTotal.value / commentPageSize)))
+const userTotalPages = computed(() => Math.max(1, Math.ceil(userTotal.value / userPageSize)))
 const visiblePostTotal = computed(() => postTotal.value || postRows.value.length)
 const publishedPostCount = computed(() => postRows.value.filter(item => item.status === POST_STATUS_PUBLISHED).length)
 const draftPostCount = computed(() => postRows.value.filter(item => item.status === POST_STATUS_DRAFT).length)
 const archivedPostCount = computed(() => postRows.value.filter(item => item.status === POST_STATUS_ARCHIVED).length)
+const privatePostCount = computed(() => postRows.value.filter(item => item.status === POST_STATUS_PRIVATE).length)
+const offlinePostCount = computed(() => postRows.value.filter(item => item.status === POST_STATUS_OFFLINE).length)
 const taxonomyTotal = computed(() => categories.value.length + tags.value.length)
 const taxonomyQuery = computed(() => taxonomyKeyword.value.trim().toLowerCase())
 const filteredCategories = computed(() => {
@@ -656,6 +886,7 @@ const filteredTags = computed(() => {
 })
 const allVisiblePostsSelected = computed(() => postRows.value.length > 0 && postRows.value.every(item => selectedPostIds.value.includes(item.id)))
 const allVisibleCommentsSelected = computed(() => commentRows.value.length > 0 && commentRows.value.every(item => selectedCommentIds.value.includes(item.id)))
+const allVisibleUsersSelected = computed(() => userRows.value.length > 0 && userRows.value.every(item => selectedUserIds.value.includes(item.id)))
 const allVisibleCategoriesSelected = computed(() => filteredCategories.value.length > 0 && filteredCategories.value.every(item => selectedCategoryIds.value.includes(item.id)))
 const allVisibleTagsSelected = computed(() => filteredTags.value.length > 0 && filteredTags.value.every(item => selectedTagIds.value.includes(item.id)))
 const activeCommentPostTitle = computed(() => {
@@ -676,7 +907,7 @@ const adminStats = computed(() => [
   {
     label: '已发布',
     value: publishedPostCount.value,
-    meta: `草稿 ${draftPostCount.value} / 归档 ${archivedPostCount.value}`,
+    meta: `草稿 ${draftPostCount.value} / 私密 ${privatePostCount.value} / 下线 ${offlinePostCount.value} / 归档 ${archivedPostCount.value}`,
     icon: 'i-lucide-send',
     color: 'text-success'
   },
@@ -693,6 +924,13 @@ const adminStats = computed(() => [
     meta: `${categories.value.length} 个分类 / ${tags.value.length} 个标签`,
     icon: 'i-lucide-tags',
     color: 'text-info'
+  },
+  {
+    label: '用户',
+    value: userTotal.value || userRows.value.length,
+    meta: `${userRows.value.filter(item => toNumericValue(item.role, USER_ROLE_USER) === USER_ROLE_ADMIN).length} 个管理员`,
+    icon: 'i-lucide-users',
+    color: 'text-primary'
   }
 ])
 
@@ -702,6 +940,10 @@ watch(postPage, () => {
 
 watch(commentPage, () => {
   void loadComments()
+})
+
+watch(userPage, () => {
+  void loadUsers()
 })
 
 onMounted(async () => {
@@ -731,6 +973,7 @@ onMounted(async () => {
   await Promise.all([
     loadPosts(),
     loadComments(),
+    loadUsers(),
     loadTaxonomy()
   ])
 })
@@ -776,8 +1019,8 @@ useSeoMeta({
               variant="soft"
               icon="i-lucide-refresh-cw"
               label="刷新数据"
-              :loading="postLoading || categoryLoading || tagLoading"
-              @click="loadPosts(); loadTaxonomy()"
+              :loading="postLoading || commentLoading || userLoading || categoryLoading || tagLoading"
+              @click="loadPosts(); loadComments(); loadUsers(); loadTaxonomy()"
             />
             <UButton
               to="/write"
@@ -787,7 +1030,7 @@ useSeoMeta({
           </div>
         </div>
 
-        <section class="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section class="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <article
             v-for="item in adminStats"
             :key="item.label"
@@ -896,6 +1139,26 @@ useSeoMeta({
                 :disabled="selectedPostIds.length === 0"
                 :loading="updatingPostId === '__batch__'"
                 @click="setSelectedPostStatus(POST_STATUS_ARCHIVED)"
+              />
+              <UButton
+                size="xs"
+                color="primary"
+                variant="soft"
+                icon="i-lucide-lock"
+                label="批量私密"
+                :disabled="selectedPostIds.length === 0"
+                :loading="updatingPostId === '__batch__'"
+                @click="setSelectedPostStatus(POST_STATUS_PRIVATE)"
+              />
+              <UButton
+                size="xs"
+                color="error"
+                variant="soft"
+                icon="i-lucide-cloud-off"
+                label="批量下线"
+                :disabled="selectedPostIds.length === 0"
+                :loading="updatingPostId === '__batch__'"
+                @click="setSelectedPostStatus(POST_STATUS_OFFLINE)"
               />
               <UButton
                 size="xs"
@@ -1031,6 +1294,26 @@ useSeoMeta({
                     @click="setPostStatus(item, POST_STATUS_ARCHIVED)"
                   />
                   <UButton
+                    v-if="item.status !== POST_STATUS_PRIVATE"
+                    size="xs"
+                    color="primary"
+                    variant="soft"
+                    icon="i-lucide-lock"
+                    :loading="updatingPostId === item.id"
+                    label="私密"
+                    @click="setPostStatus(item, POST_STATUS_PRIVATE)"
+                  />
+                  <UButton
+                    v-if="item.status !== POST_STATUS_OFFLINE"
+                    size="xs"
+                    color="error"
+                    variant="soft"
+                    icon="i-lucide-cloud-off"
+                    :loading="updatingPostId === item.id"
+                    label="下线"
+                    @click="setPostStatus(item, POST_STATUS_OFFLINE)"
+                  />
+                  <UButton
                     size="xs"
                     color="neutral"
                     variant="ghost"
@@ -1151,6 +1434,26 @@ useSeoMeta({
                 <span v-if="commentPostId.trim()">文章 ID: {{ commentPostId.trim() }}</span>
                 <UButton
                   size="xs"
+                  color="success"
+                  variant="soft"
+                  icon="i-lucide-check"
+                  label="批量通过"
+                  :disabled="selectedCommentIds.length === 0"
+                  :loading="reviewingCommentId === '__batch__'"
+                  @click="reviewSelectedComments(COMMENT_STATUS_NORMAL)"
+                />
+                <UButton
+                  size="xs"
+                  color="warning"
+                  variant="soft"
+                  icon="i-lucide-ban"
+                  label="批量驳回"
+                  :disabled="selectedCommentIds.length === 0"
+                  :loading="reviewingCommentId === '__batch__'"
+                  @click="reviewSelectedComments(COMMENT_STATUS_DELETED)"
+                />
+                <UButton
+                  size="xs"
                   color="error"
                   variant="ghost"
                   icon="i-lucide-trash-2"
@@ -1212,15 +1515,37 @@ useSeoMeta({
                       </p>
                     </div>
 
-                    <UButton
-                      :loading="deletingCommentId === item.id"
-                      size="xs"
-                      color="error"
-                      variant="ghost"
-                      icon="i-lucide-trash-2"
-                      label="删除"
-                      @click="removeComment(item.id)"
-                    />
+                    <div class="flex flex-wrap items-center justify-end gap-2">
+                      <UButton
+                        v-if="toCommentStatus(item.status) === 2"
+                        :loading="reviewingCommentId === item.id"
+                        size="xs"
+                        color="success"
+                        variant="soft"
+                        icon="i-lucide-check"
+                        label="通过"
+                        @click="setCommentReviewStatus(item.id, COMMENT_STATUS_NORMAL)"
+                      />
+                      <UButton
+                        v-if="toCommentStatus(item.status) !== 3"
+                        :loading="reviewingCommentId === item.id"
+                        size="xs"
+                        color="warning"
+                        variant="soft"
+                        icon="i-lucide-ban"
+                        label="驳回"
+                        @click="setCommentReviewStatus(item.id, COMMENT_STATUS_DELETED)"
+                      />
+                      <UButton
+                        :loading="deletingCommentId === item.id"
+                        size="xs"
+                        color="error"
+                        variant="ghost"
+                        icon="i-lucide-trash-2"
+                        label="删除"
+                        @click="removeComment(item.id)"
+                      />
+                    </div>
                   </div>
 
                   <p class="mt-3 whitespace-pre-wrap text-sm text-toned">
@@ -1262,6 +1587,232 @@ useSeoMeta({
                   :disabled="commentPage >= commentTotalPages"
                   @click="commentPage = Math.min(commentTotalPages, commentPage + 1)"
                 />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="mt-6 rounded-lg border border-default bg-default">
+          <div class="flex flex-wrap items-end justify-between gap-3 border-b border-default p-4 sm:p-5">
+            <div>
+              <h2 class="text-base font-semibold text-highlighted">
+                用户管理
+              </h2>
+              <p class="mt-1 text-xs text-toned">
+                查看账号、切换状态和维护角色
+              </p>
+            </div>
+
+            <UButton
+              :loading="userLoading"
+              label="刷新用户"
+              icon="i-lucide-refresh-cw"
+              color="neutral"
+              variant="soft"
+              @click="loadUsers"
+            />
+          </div>
+
+          <div class="grid gap-4 p-4 lg:grid-cols-[20rem_minmax(0,1fr)] sm:p-5">
+            <div class="rounded-lg border border-default p-4">
+              <h3 class="text-sm font-semibold text-highlighted">
+                新增用户
+              </h3>
+              <div class="mt-4 space-y-3">
+                <UInput
+                  v-model="newUser.username"
+                  placeholder="用户名"
+                />
+                <UInput
+                  v-model="newUser.email"
+                  placeholder="邮箱"
+                  type="email"
+                />
+                <UInput
+                  v-model="newUser.password"
+                  placeholder="初始密码"
+                  type="password"
+                />
+                <USelect
+                  v-model="newUser.role"
+                  :items="[
+                    { label: '普通用户', value: USER_ROLE_USER },
+                    { label: '管理员', value: USER_ROLE_ADMIN }
+                  ]"
+                />
+                <UButton
+                  class="w-full justify-center"
+                  :loading="savingUser"
+                  label="创建用户"
+                  icon="i-lucide-user-plus"
+                  @click="createUserEntry"
+                />
+              </div>
+            </div>
+
+            <div class="min-w-0">
+              <div
+                v-if="userRows.length > 0"
+                class="mb-3 flex flex-wrap items-center justify-between gap-3 text-xs text-toned"
+              >
+                <label class="inline-flex items-center gap-2 font-medium">
+                  <input
+                    type="checkbox"
+                    class="size-4 rounded border-default accent-[var(--ui-primary)]"
+                    :checked="allVisibleUsersSelected"
+                    @change="toggleVisibleUsers(($event.target as HTMLInputElement).checked)"
+                  >
+                  当前页全选
+                  <span v-if="selectedUserIds.length > 0" class="text-muted">
+                    已选 {{ selectedUserIds.length }}
+                  </span>
+                </label>
+                <span>共 {{ userTotal || userRows.length }} 个用户</span>
+              </div>
+
+              <div
+                v-if="userLoading && userRows.length === 0"
+                class="space-y-3"
+              >
+                <USkeleton
+                  v-for="index in 3"
+                  :key="index"
+                  class="h-20 w-full rounded-lg"
+                />
+              </div>
+
+              <div class="space-y-3">
+                <article
+                  v-for="item in userRows"
+                  :key="item.id"
+                  class="rounded-lg border border-default p-4"
+                >
+                  <div class="grid gap-3 xl:grid-cols-[auto_minmax(0,1fr)_auto] xl:items-center">
+                    <input
+                      type="checkbox"
+                      class="mt-1 size-4 rounded border-default accent-[var(--ui-primary)] xl:mt-0"
+                      :checked="selectedUserIds.includes(item.id)"
+                      @change="toggleUserSelected(item.id, ($event.target as HTMLInputElement).checked)"
+                    >
+                    <div class="min-w-0">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <p class="text-sm font-semibold text-highlighted">
+                          {{ item.username || `用户 ${item.id}` }}
+                        </p>
+                        <UBadge
+                          size="xs"
+                          variant="soft"
+                          :color="toNumericValue(item.role, USER_ROLE_USER) === USER_ROLE_ADMIN ? 'primary' : 'neutral'"
+                        >
+                          {{ userRoleText(item.role) }}
+                        </UBadge>
+                        <UBadge
+                          size="xs"
+                          variant="soft"
+                          :color="userStatusColor(item.status)"
+                        >
+                          {{ userStatusText(item.status) }}
+                        </UBadge>
+                      </div>
+                      <p class="mt-2 text-xs text-toned">
+                        {{ item.email || '-' }} · ID {{ item.id }}<span v-if="item.location"> · {{ item.location }}</span>
+                      </p>
+                      <p
+                        v-if="item.bio"
+                        class="mt-2 line-clamp-1 text-xs text-muted"
+                      >
+                        {{ item.bio }}
+                      </p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2 xl:justify-end">
+                      <UButton
+                        v-if="toNumericValue(item.role, USER_ROLE_USER) !== USER_ROLE_ADMIN"
+                        size="xs"
+                        color="primary"
+                        variant="soft"
+                        icon="i-lucide-shield"
+                        label="设为管理员"
+                        :loading="updatingUserId === item.id"
+                        @click="setUserRole(item, USER_ROLE_ADMIN)"
+                      />
+                      <UButton
+                        v-if="toNumericValue(item.role, USER_ROLE_USER) !== USER_ROLE_USER"
+                        size="xs"
+                        color="neutral"
+                        variant="soft"
+                        icon="i-lucide-user"
+                        label="设为用户"
+                        :loading="updatingUserId === item.id"
+                        @click="setUserRole(item, USER_ROLE_USER)"
+                      />
+                      <UButton
+                        v-if="toNumericValue(item.status, USER_STATUS_ACTIVE) !== USER_STATUS_INACTIVE"
+                        size="xs"
+                        color="warning"
+                        variant="soft"
+                        icon="i-lucide-user-x"
+                        label="停用"
+                        :loading="updatingUserId === item.id"
+                        @click="setUserStatus(item, USER_STATUS_INACTIVE)"
+                      />
+                      <UButton
+                        v-if="toNumericValue(item.status, USER_STATUS_ACTIVE) !== USER_STATUS_ACTIVE"
+                        size="xs"
+                        color="success"
+                        variant="soft"
+                        icon="i-lucide-user-check"
+                        label="启用"
+                        :loading="updatingUserId === item.id"
+                        @click="setUserStatus(item, USER_STATUS_ACTIVE)"
+                      />
+                      <UButton
+                        size="xs"
+                        color="error"
+                        variant="ghost"
+                        icon="i-lucide-trash-2"
+                        label="删除"
+                        :loading="deletingUserId === item.id"
+                        @click="removeUser(item.id)"
+                      />
+                    </div>
+                  </div>
+                </article>
+              </div>
+
+              <UAlert
+                v-if="!userLoading && userRows.length === 0"
+                title="暂无用户"
+                description="创建用户后会显示在这里。"
+                icon="i-lucide-users"
+                color="neutral"
+                variant="soft"
+              />
+
+              <div
+                v-if="userRows.length > 0"
+                class="mt-4 flex items-center justify-between gap-3 border-t border-default pt-3"
+              >
+                <span class="text-xs text-toned">每页 {{ userPageSize }} 个</span>
+                <div class="flex items-center gap-2">
+                  <UButton
+                    size="xs"
+                    color="neutral"
+                    variant="soft"
+                    icon="i-lucide-chevron-left"
+                    :disabled="userPage <= 1"
+                    @click="userPage = Math.max(1, userPage - 1)"
+                  />
+                  <span class="text-xs text-toned">第 {{ userPage }} / {{ userTotalPages }} 页</span>
+                  <UButton
+                    size="xs"
+                    color="neutral"
+                    variant="soft"
+                    icon="i-lucide-chevron-right"
+                    :disabled="userPage >= userTotalPages"
+                    @click="userPage = Math.min(userTotalPages, userPage + 1)"
+                  />
+                </div>
               </div>
             </div>
           </div>

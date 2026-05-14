@@ -81,6 +81,14 @@ func (s *CommentService) DeleteComment(ctx context.Context, req *pb.DeleteCommen
 	return &pb.DeleteCommentReply{Success: true}, nil
 }
 
+func (s *CommentService) ReviewComment(ctx context.Context, req *pb.ReviewCommentRequest) (*pb.CommentInfo, error) {
+	comment, err := s.uc.Review(ctx, req.Id, int32(req.Status))
+	if err != nil {
+		return nil, err
+	}
+	return s.toPB(comment, nil, nil), nil
+}
+
 func (s *CommentService) GetUserCommentStats(ctx context.Context, req *pb.GetUserCommentStatsRequest) (*pb.GetUserCommentStatsReply, error) {
 	total, err := s.uc.GetUserCommentStats(ctx, req.UserId)
 	if err != nil {

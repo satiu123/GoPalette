@@ -76,6 +76,21 @@ function normalizeComment(input: Record<string, any>): CommentInfo {
     }
 }
 
+function normalizeAdminUser(input: Record<string, any>): AdminUserItem {
+    return {
+        id: String(input?.id || ''),
+        username: String(input?.username || ''),
+        email: String(input?.email || ''),
+        role: typeof input?.role === 'number' || typeof input?.role === 'string' ? input.role : USER_ROLE_USER,
+        status: typeof input?.status === 'number' || typeof input?.status === 'string' ? input.status : USER_STATUS_ACTIVE,
+        avatarURL: String(input?.avatarURL || input?.avatarUrl || input?.avatar_u_r_l || input?.avatar_url || ''),
+        bio: String(input?.bio || ''),
+        location: String(input?.location || ''),
+        createdAt: String(input?.createdAt || input?.created_at || ''),
+        updatedAt: String(input?.updatedAt || input?.updated_at || '')
+    }
+}
+
 export interface PostDetail {
     info?: PostInfo
     content?: string
@@ -120,9 +135,31 @@ export interface TagItem {
     name: string
 }
 
+export interface AdminUserItem {
+    id: string
+    username: string
+    email: string
+    role: number | string
+    status: number | string
+    avatarURL?: string
+    bio?: string
+    location?: string
+    createdAt?: string
+    updatedAt?: string
+}
+
 export const POST_STATUS_DRAFT = 0
 export const POST_STATUS_PUBLISHED = 1
 export const POST_STATUS_ARCHIVED = 2
+export const POST_STATUS_PRIVATE = 3
+export const POST_STATUS_OFFLINE = 4
+export const COMMENT_STATUS_NORMAL = 1
+export const COMMENT_STATUS_PENDING = 2
+export const COMMENT_STATUS_DELETED = 3
+export const USER_ROLE_USER = 0
+export const USER_ROLE_ADMIN = 1
+export const USER_STATUS_ACTIVE = 0
+export const USER_STATUS_INACTIVE = 1
 
 function toPostStatus(value: number | string | undefined) {
     if (typeof value === 'number') return value
@@ -131,6 +168,8 @@ function toPostStatus(value: number | string | undefined) {
     if (!text) return POST_STATUS_DRAFT
     if (text === 'PUBLISHED') return POST_STATUS_PUBLISHED
     if (text === 'ARCHIVED') return POST_STATUS_ARCHIVED
+    if (text === 'PRIVATE') return POST_STATUS_PRIVATE
+    if (text === 'OFFLINE') return POST_STATUS_OFFLINE
     if (text === 'DRAFT') return POST_STATUS_DRAFT
 
     const parsed = Number(text)
@@ -422,6 +461,91 @@ export async function createComment(payload: { postId: string; content: string; 
 export async function deleteComment(id: string): Promise<boolean> {
     const { authFetch } = useAuth()
     const response = await authFetch<any>(`/api/blog/comments/${id}`, {
+        method: 'DELETE',
+        headers: withCsrfHeaders()
+    })
+
+    return Boolean(response?.success ?? response?.data?.success ?? true)
+}
+
+export async function reviewComment(id: string, status: number): Promise<CommentInfo | null> {
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>(`/api/blog/comments/${id}`, {
+        method: 'PATCH',
+        headers: withCsrfHeaders(),
+        body: {
+            status
+        }
+    })
+
+    const comment = response?.comment || response?.data?.comment || response?.data || response
+    return comment ? normalizeComment(comment as Record<string, any>) : null
+}
+
+export async function fetchAdminUsers(page = 1, pageSize = 20): Promise<{ users: AdminUserItem[]; total: number }> {
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>('/api/user/users', {
+        method: 'GET',
+        query: {
+            page,
+            pageSize
+        }
+    })
+
+    const users = (response?.users || response?.data?.users || []) as Array<Record<string, any>>
+    return {
+        users: users.map(item => normalizeAdminUser(item)),
+        total: Number(response?.total || response?.data?.total || 0)
+    }
+}
+
+export async function createAdminUser(payload: {
+    username: string
+    email: string
+    password: string
+    role: number
+}): Promise<AdminUserItem | null> {
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>('/api/user/users', {
+        method: 'POST',
+        headers: withCsrfHeaders(),
+        body: payload
+    })
+
+    const user = response?.user || response?.data?.user || response?.data || response
+    return user ? normalizeAdminUser(user as Record<string, any>) : null
+}
+
+export async function updateAdminUser(id: string, payload: {
+    username?: string
+    email?: string
+    role?: number
+    status?: number
+    bio?: string
+    location?: string
+    avatarURL?: string
+    updateMask?: string
+}): Promise<AdminUserItem | null> {
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>(`/api/user/users/${id}`, {
+        method: 'PATCH',
+        query: {
+            updateMask: payload.updateMask || 'username,email,role,status,bio,location,avatarURL'
+        },
+        headers: withCsrfHeaders(),
+        body: {
+            id,
+            ...payload
+        }
+    })
+
+    const user = response?.user || response?.data?.user || response?.data || response
+    return user ? normalizeAdminUser(user as Record<string, any>) : null
+}
+
+export async function deleteAdminUser(id: string): Promise<boolean> {
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>(`/api/user/users/${id}`, {
         method: 'DELETE',
         headers: withCsrfHeaders()
     })

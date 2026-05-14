@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { POST_STATUS_ARCHIVED, POST_STATUS_DRAFT, POST_STATUS_PUBLISHED, deletePost, updatePost } from '~/composables/useBlogApi'
+import { POST_STATUS_ARCHIVED, POST_STATUS_DRAFT, POST_STATUS_OFFLINE, POST_STATUS_PRIVATE, POST_STATUS_PUBLISHED, deletePost, updatePost } from '~/composables/useBlogApi'
 
 interface UserDashboardInfo {
   id: string
@@ -109,6 +109,8 @@ function toPostStatus(value: unknown) {
   if (!text) return POST_STATUS_DRAFT
   if (text === 'PUBLISHED') return POST_STATUS_PUBLISHED
   if (text === 'ARCHIVED') return POST_STATUS_ARCHIVED
+  if (text === 'PRIVATE') return POST_STATUS_PRIVATE
+  if (text === 'OFFLINE') return POST_STATUS_OFFLINE
   if (text === 'DRAFT') return POST_STATUS_DRAFT
 
   const parsed = Number(text)
@@ -160,14 +162,18 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 function toPostStatusText(value: number) {
-  if (value === 1) return '已发布'
-  if (value === 2) return '已归档'
+  if (value === POST_STATUS_PUBLISHED) return '已发布'
+  if (value === POST_STATUS_ARCHIVED) return '已归档'
+  if (value === POST_STATUS_PRIVATE) return '私密'
+  if (value === POST_STATUS_OFFLINE) return '已下线'
   return '草稿'
 }
 
 function toPostStatusColor(value: number) {
-  if (value === 1) return 'success'
-  if (value === 2) return 'warning'
+  if (value === POST_STATUS_PUBLISHED) return 'success'
+  if (value === POST_STATUS_ARCHIVED) return 'warning'
+  if (value === POST_STATUS_PRIVATE) return 'primary'
+  if (value === POST_STATUS_OFFLINE) return 'error'
   return 'neutral'
 }
 
@@ -717,6 +723,24 @@ useSeoMeta({
                     :loading="updatingPostId === item.id"
                     label="归档"
                     @click="changePostStatus(item, POST_STATUS_ARCHIVED)"
+                  />
+                  <UButton
+                    v-if="canManagePosts && item.status !== POST_STATUS_PRIVATE"
+                    size="xs"
+                    color="primary"
+                    variant="soft"
+                    :loading="updatingPostId === item.id"
+                    label="私密"
+                    @click="changePostStatus(item, POST_STATUS_PRIVATE)"
+                  />
+                  <UButton
+                    v-if="canManagePosts && item.status !== POST_STATUS_OFFLINE"
+                    size="xs"
+                    color="error"
+                    variant="soft"
+                    :loading="updatingPostId === item.id"
+                    label="下线"
+                    @click="changePostStatus(item, POST_STATUS_OFFLINE)"
                   />
                   <UButton
                     v-if="canManagePosts"

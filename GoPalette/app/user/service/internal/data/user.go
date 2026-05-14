@@ -71,6 +71,8 @@ func (r *userRepo) Update(ctx context.Context, u *biz.User, fields []string) (*b
 			updates["username"] = u.Username
 		case "email":
 			updates["email"] = u.Email
+		case "role":
+			updates["role"] = u.Role
 		case "avatar_u_r_l", "avatarURL":
 			updates["avatar_url"] = u.AvatarURL
 		case "status":

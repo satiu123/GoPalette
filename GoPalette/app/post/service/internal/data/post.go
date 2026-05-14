@@ -234,6 +234,8 @@ func (r *postRepo) GetAuthorStats(ctx context.Context, authorID int64, published
 		Published int64
 		Drafts    int64
 		Archived  int64
+		Private   int64
+		Offline   int64
 		Views     int64
 		Likes     int64
 		Comments  int64
@@ -250,6 +252,8 @@ func (r *postRepo) GetAuthorStats(ctx context.Context, authorID int64, published
 			"SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS published, " +
 			"SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS drafts, " +
 			"SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS archived, " +
+			"SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) AS private, " +
+			"SUM(CASE WHEN status = 4 THEN 1 ELSE 0 END) AS offline, " +
 			"COALESCE(SUM(view_count), 0) AS views, " +
 			"COALESCE(SUM(like_count), 0) AS likes, " +
 			"COALESCE(SUM(comment_count), 0) AS comments",
@@ -263,6 +267,8 @@ func (r *postRepo) GetAuthorStats(ctx context.Context, authorID int64, published
 		Published: out.Published,
 		Drafts:    out.Drafts,
 		Archived:  out.Archived,
+		Private:   out.Private,
+		Offline:   out.Offline,
 		Views:     out.Views,
 		Likes:     out.Likes,
 		Comments:  out.Comments,

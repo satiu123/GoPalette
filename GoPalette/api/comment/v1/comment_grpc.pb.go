@@ -22,6 +22,7 @@ const (
 	Comment_CreateComment_FullMethodName          = "/api.comment.v1.Comment/CreateComment"
 	Comment_ListComments_FullMethodName           = "/api.comment.v1.Comment/ListComments"
 	Comment_DeleteComment_FullMethodName          = "/api.comment.v1.Comment/DeleteComment"
+	Comment_ReviewComment_FullMethodName          = "/api.comment.v1.Comment/ReviewComment"
 	Comment_GetUserCommentStats_FullMethodName    = "/api.comment.v1.Comment/GetUserCommentStats"
 	Comment_ListUserRecentComments_FullMethodName = "/api.comment.v1.Comment/ListUserRecentComments"
 )
@@ -38,6 +39,8 @@ type CommentClient interface {
 	ListComments(ctx context.Context, in *ListCommentsRequest, opts ...grpc.CallOption) (*ListCommentsReply, error)
 	// 删除评论
 	DeleteComment(ctx context.Context, in *DeleteCommentRequest, opts ...grpc.CallOption) (*DeleteCommentReply, error)
+	// 管理员审核评论状态
+	ReviewComment(ctx context.Context, in *ReviewCommentRequest, opts ...grpc.CallOption) (*CommentInfo, error)
 	// 获取用户评论统计
 	GetUserCommentStats(ctx context.Context, in *GetUserCommentStatsRequest, opts ...grpc.CallOption) (*GetUserCommentStatsReply, error)
 	// 获取用户近期评论
@@ -82,6 +85,16 @@ func (c *commentClient) DeleteComment(ctx context.Context, in *DeleteCommentRequ
 	return out, nil
 }
 
+func (c *commentClient) ReviewComment(ctx context.Context, in *ReviewCommentRequest, opts ...grpc.CallOption) (*CommentInfo, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommentInfo)
+	err := c.cc.Invoke(ctx, Comment_ReviewComment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *commentClient) GetUserCommentStats(ctx context.Context, in *GetUserCommentStatsRequest, opts ...grpc.CallOption) (*GetUserCommentStatsReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetUserCommentStatsReply)
@@ -114,6 +127,8 @@ type CommentServer interface {
 	ListComments(context.Context, *ListCommentsRequest) (*ListCommentsReply, error)
 	// 删除评论
 	DeleteComment(context.Context, *DeleteCommentRequest) (*DeleteCommentReply, error)
+	// 管理员审核评论状态
+	ReviewComment(context.Context, *ReviewCommentRequest) (*CommentInfo, error)
 	// 获取用户评论统计
 	GetUserCommentStats(context.Context, *GetUserCommentStatsRequest) (*GetUserCommentStatsReply, error)
 	// 获取用户近期评论
@@ -136,6 +151,9 @@ func (UnimplementedCommentServer) ListComments(context.Context, *ListCommentsReq
 }
 func (UnimplementedCommentServer) DeleteComment(context.Context, *DeleteCommentRequest) (*DeleteCommentReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteComment not implemented")
+}
+func (UnimplementedCommentServer) ReviewComment(context.Context, *ReviewCommentRequest) (*CommentInfo, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReviewComment not implemented")
 }
 func (UnimplementedCommentServer) GetUserCommentStats(context.Context, *GetUserCommentStatsRequest) (*GetUserCommentStatsReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUserCommentStats not implemented")
@@ -218,6 +236,24 @@ func _Comment_DeleteComment_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Comment_ReviewComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReviewCommentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CommentServer).ReviewComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Comment_ReviewComment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CommentServer).ReviewComment(ctx, req.(*ReviewCommentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Comment_GetUserCommentStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetUserCommentStatsRequest)
 	if err := dec(in); err != nil {
@@ -272,6 +308,10 @@ var Comment_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteComment",
 			Handler:    _Comment_DeleteComment_Handler,
+		},
+		{
+			MethodName: "ReviewComment",
+			Handler:    _Comment_ReviewComment_Handler,
 		},
 		{
 			MethodName: "GetUserCommentStats",

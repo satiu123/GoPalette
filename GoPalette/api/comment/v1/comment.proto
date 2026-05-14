@@ -40,6 +40,14 @@ service Comment {
     };
   }
 
+  // 管理员审核评论状态
+  rpc ReviewComment (ReviewCommentRequest) returns (CommentInfo) {
+    option (google.api.http) = {
+      patch: "/v1/comments/{id}"
+      body: "*"
+    };
+  }
+
   // 获取用户评论统计
   rpc GetUserCommentStats (GetUserCommentStatsRequest) returns (GetUserCommentStatsReply) {
     option (google.api.http) = {
@@ -100,6 +108,11 @@ message DeleteCommentRequest {
 
 message DeleteCommentReply {
   bool success = 1;
+}
+
+message ReviewCommentRequest {
+  int64         id     = 1;
+  CommentStatus status = 2;
 }
 
 message GetUserCommentStatsRequest {

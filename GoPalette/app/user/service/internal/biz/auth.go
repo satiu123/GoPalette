@@ -57,6 +57,10 @@ func (uc *AuthUsecase) Login(ctx context.Context, email, password string) (strin
 		uc.logger.WithContext(ctx).Warnf("登录失败: 用户不存在 email=%s", email)
 		return "", "", pb.ErrorUserNotFound("用户 %s 不存在", email)
 	}
+	if user.Status == int32(pb.UserStatus_INACTIVE) {
+		uc.logger.WithContext(ctx).Warnf("登录失败: 用户已停用 user_id=%d email=%s", user.ID, email)
+		return "", "", pb.ErrorAccessDenied("%s", "用户已停用")
+	}
 
 	// 验证密码
 	if !util.CheckPasswordHash(password, user.Password) {

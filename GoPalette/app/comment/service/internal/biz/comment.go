@@ -51,6 +51,7 @@ type CommentRepo interface {
 	CountByUser(ctx context.Context, userID int64) (int64, error)
 	ListRecentByUser(ctx context.Context, userID, limit int64) ([]*Comment, error)
 	UpdateRootID(ctx context.Context, id, rootID int64) error
+	UpdateStatus(ctx context.Context, id int64, status int32) error
 	SoftDelete(ctx context.Context, id int64) error
 }
 
@@ -169,6 +170,43 @@ func (uc *CommentUsecase) Delete(ctx context.Context, id int64) error {
 		uc.logger.WithContext(ctx).Warnf("decr post comment_count failed, post_id=%d err=%v", comment.PostID, err)
 	}
 	return nil
+}
+
+func (uc *CommentUsecase) Review(ctx context.Context, id int64, status int32) (*Comment, error) {
+	if err := CheckAdmin(ctx); err != nil {
+		return nil, err
+	}
+	if id <= 0 {
+		return nil, pb.ErrorInvalidArgument("%s", "评论ID无效")
+	}
+	if status != CommentStatusNormal && status != CommentStatusDeleted {
+		return nil, pb.ErrorInvalidArgument("%s", "审核状态仅支持通过或删除")
+	}
+
+	comment, err := uc.repo.GetByID(ctx, id)
+	if err != nil || comment == nil {
+		return nil, pb.ErrorCommentNotFound("%s", "评论不存在")
+	}
+	if comment.Status == status {
+		return comment, nil
+	}
+
+	if status == CommentStatusDeleted {
+		if err := uc.repo.SoftDelete(ctx, id); err != nil {
+			return nil, err
+		}
+		if comment.Status != CommentStatusDeleted {
+			if err := uc.postRepo.IncrCommentCount(ctx, comment.PostID, -1); err != nil {
+				uc.logger.WithContext(ctx).Warnf("decr post comment_count failed, post_id=%d err=%v", comment.PostID, err)
+			}
+		}
+		return uc.repo.GetByID(ctx, id)
+	}
+
+	if err := uc.repo.UpdateStatus(ctx, id, status); err != nil {
+		return nil, err
+	}
+	return uc.repo.GetByID(ctx, id)
 }
 
 func (uc *CommentUsecase) ListByPost(ctx context.Context, postID, page, pageSize int64) ([]*CommentView, int64, error) {

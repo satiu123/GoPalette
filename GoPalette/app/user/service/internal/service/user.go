@@ -96,6 +96,7 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 		ID:          req.Id,
 		Username:    req.User.Username,
 		Email:       req.User.Email,
+		Role:        int32(req.User.Role),
 		AvatarURL:   req.User.AvatarURL,
 		Status:      int32(req.User.Status),
 		Bio:         req.User.Bio,
@@ -118,7 +119,7 @@ func (s *UserService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 	if err := s.uc.DeleteUser(ctx, req.Id); err != nil {
 		return nil, err
 	}
-	return &pb.DeleteUserReply{}, nil
+	return &pb.DeleteUserReply{Success: true}, nil
 }
 func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserReply, error) {
 	user, err := s.uc.GetUser(ctx, req.Id)

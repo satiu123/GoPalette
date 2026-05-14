@@ -25,7 +25,10 @@ import (
 // 3. 创建用户时密码加密失败（模拟 HashPassword 返回错误，返回内部服务器错误）
 // 4. 仓库层创建失败（模拟 repo.Create 返回错误，返回相同错误）
 func TestUserUsecase_CreateUser(t *testing.T) {
-	ctx := context.Background()
+	ctx := jwt.NewContext(context.Background(), &auth.AuthClaims{
+		UserID: 1,
+		Role:   int32(pb.Role_ADMIN),
+	})
 
 	tests := []struct {
 		name         string

@@ -54,6 +54,10 @@ func NewUserUsecase(repo UserRepo, logger log.Logger) *UserUsecase {
 }
 
 func (uc *UserUsecase) CreateUser(ctx context.Context, u *User) (*User, error) {
+	if err := CheckAdmin(ctx); err != nil {
+		return nil, err
+	}
+
 	exist, _ := uc.repo.FindByEmail(ctx, u.Email)
 	if exist != nil {
 		return nil, pb.ErrorEmailConflict("邮箱 %s 已存在", u.Email)
@@ -85,7 +89,6 @@ func (uc *UserUsecase) Register(ctx context.Context, u *User) (*User, error) {
 	return uc.repo.Create(ctx, u)
 }
 
-// UpdateUser 仅更新基本信息，不允许修改密码和角色等敏感字段
 func (uc *UserUsecase) UpdateUser(ctx context.Context, u *User, fields []string) (*User, error) {
 	if err := CheckOwner(ctx, u.ID); err != nil {
 		return nil, err
@@ -154,7 +157,10 @@ func (uc *UserUsecase) ListUsersByIDs(ctx context.Context, ids []int64) ([]*User
 func filterSensitiveFields(fields []string) []string {
 	filtered := make([]string, 0)
 	for _, f := range fields {
-		if f != "password" && f != "role" {
+		switch strings.TrimSpace(f) {
+		case "password", "role":
+			continue
+		default:
 			filtered = append(filtered, f)
 		}
 	}
@@ -165,7 +171,7 @@ func normalizeUserUpdateFields(fields []string) []string {
 	normalized := make([]string, 0, len(fields))
 	for _, field := range fields {
 		switch strings.TrimSpace(field) {
-		case "username", "email", "status", "bio", "location", "social_links", "socialLinks", "avatar_u_r_l", "avatarURL":
+		case "username", "email", "role", "status", "bio", "location", "social_links", "socialLinks", "avatar_u_r_l", "avatarURL":
 			normalized = append(normalized, field)
 		}
 	}

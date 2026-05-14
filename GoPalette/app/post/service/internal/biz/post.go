@@ -54,6 +54,8 @@ type AuthorPostStats struct {
 	Published int64
 	Drafts    int64
 	Archived  int64
+	Private   int64
+	Offline   int64
 	Views     int64
 	Likes     int64
 	Comments  int64

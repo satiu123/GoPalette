@@ -192,6 +192,30 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.comment.v1.DeleteCommentReply'
+        patch:
+            tags:
+                - Comment
+            description: 管理员审核评论状态
+            operationId: Comment_ReviewComment
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.comment.v1.ReviewCommentRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.comment.v1.CommentInfo'
     /v1/posts:
         get:
             tags:
@@ -1026,6 +1050,14 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/api.comment.v1.CommentInfo'
+        api.comment.v1.ReviewCommentRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                status:
+                    type: integer
+                    format: enum
         api.post.v1.AuthorInfo:
             type: object
             properties:
@@ -1135,6 +1167,10 @@ components:
                 likes:
                     type: string
                 comments:
+                    type: string
+                private:
+                    type: string
+                offline:
                     type: string
         api.post.v1.GetCategoryReply:
             type: object

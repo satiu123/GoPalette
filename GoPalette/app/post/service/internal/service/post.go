@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/satiu123/GoPalette/pkg/auth"
 
@@ -55,11 +56,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest)
 	if err != nil {
 		return nil, err
 	}
-	if pb.PostStatus(createdPost.Status) == pb.PostStatus_PUBLISHED {
-		if _, syncErr := s.searchc.SyncPost(ctx, s.toSearchSyncReq(createdPost)); syncErr != nil {
-			s.logger.WithContext(ctx).Warnf("同步搜索索引失败(create): %v", syncErr)
-		}
-	}
+	s.enqueueSearchIndexUpdate("create", createdPost)
 	return &pb.CreatePostReply{
 		Post: s.toPBDetail(createdPost),
 	}, nil
@@ -80,15 +77,7 @@ func (s *PostService) UpdatePost(ctx context.Context, req *pb.UpdatePostRequest)
 	if err != nil {
 		return nil, err
 	}
-	if pb.PostStatus(updatedPost.Status) == pb.PostStatus_PUBLISHED {
-		if _, syncErr := s.searchc.SyncPost(ctx, s.toSearchSyncReq(updatedPost)); syncErr != nil {
-			s.logger.WithContext(ctx).Warnf("同步搜索索引失败(update): %v", syncErr)
-		}
-	} else {
-		if _, delErr := s.searchc.DeleteIndex(ctx, &searchpb.DeleteIndexRequest{PostId: updatedPost.ID}); delErr != nil {
-			s.logger.WithContext(ctx).Warnf("同步删除搜索索引失败(update): %v", delErr)
-		}
-	}
+	s.enqueueSearchIndexUpdate("update", updatedPost)
 	return &pb.UpdatePostReply{
 		Post: s.toPBDetail(updatedPost),
 	}, nil
@@ -98,9 +87,7 @@ func (s *PostService) DeletePost(ctx context.Context, req *pb.DeletePostRequest)
 	if err != nil {
 		return nil, err
 	}
-	if _, delErr := s.searchc.DeleteIndex(ctx, &searchpb.DeleteIndexRequest{PostId: req.Id}); delErr != nil {
-		s.logger.WithContext(ctx).Warnf("同步删除搜索索引失败(delete): %v", delErr)
-	}
+	s.enqueueSearchIndexDelete("delete", req.Id)
 	return &pb.DeletePostReply{Success: true}, nil
 }
 func (s *PostService) GetPost(ctx context.Context, req *pb.GetPostRequest) (*pb.GetPostReply, error) {
@@ -177,6 +164,8 @@ func (s *PostService) GetAuthorPostStats(ctx context.Context, req *pb.GetAuthorP
 		Views:     stats.Views,
 		Likes:     stats.Likes,
 		Comments:  stats.Comments,
+		Private:   stats.Private,
+		Offline:   stats.Offline,
 	}, nil
 }
 
@@ -341,6 +330,41 @@ func (s *PostService) toSearchSyncReq(p *biz.Post) *searchpb.SyncPostRequest {
 		Tags:         sanitizeStrings(p.Tags),
 		CreatedAt:    timestamppb.New(p.CreatedAt),
 	}
+}
+
+func (s *PostService) enqueueSearchIndexUpdate(action string, p *biz.Post) {
+	if p == nil {
+		return
+	}
+	if pb.PostStatus(p.Status) != pb.PostStatus_PUBLISHED {
+		s.enqueueSearchIndexDelete(action, p.ID)
+		return
+	}
+
+	req := s.toSearchSyncReq(p)
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if _, err := s.searchc.SyncPost(ctx, req); err != nil {
+			s.logger.WithContext(ctx).Warnf("异步更新搜索索引失败(%s): post_id=%d err=%v", action, req.Id, err)
+		}
+	}()
+}
+
+func (s *PostService) enqueueSearchIndexDelete(action string, postID int64) {
+	if postID <= 0 {
+		return
+	}
+
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if _, err := s.searchc.DeleteIndex(ctx, &searchpb.DeleteIndexRequest{PostId: postID}); err != nil {
+			s.logger.WithContext(ctx).Warnf("异步删除搜索索引失败(%s): post_id=%d err=%v", action, postID, err)
+		}
+	}()
 }
 
 func truncateRunes(s string, max int) string {

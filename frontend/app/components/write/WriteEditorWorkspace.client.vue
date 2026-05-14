@@ -6,7 +6,7 @@ import { TableKit } from '@tiptap/extension-table'
 import { CellSelection } from '@tiptap/pm/tables'
 import { CodeBlockShiki } from 'tiptap-extension-code-block-shiki'
 import { ImageUpload } from '~/components/editor/ImageUploadExtension'
-import { createPost, deletePost, fetchPostBySlug, POST_STATUS_DRAFT, POST_STATUS_PUBLISHED, updatePost } from '~/composables/useBlogApi'
+import { createPost, deletePost, fetchPostBySlug, POST_STATUS_DRAFT, POST_STATUS_PRIVATE, POST_STATUS_PUBLISHED, updatePost } from '~/composables/useBlogApi'
 
 const route = useRoute()
 const runtimeConfig = useRuntimeConfig()
@@ -349,7 +349,7 @@ async function savePost(status: number) {
     lastSavedAt.value = new Date().toISOString()
 
     toast.add({
-      title: status === POST_STATUS_PUBLISHED ? '发布成功' : '草稿已保存',
+      title: status === POST_STATUS_PUBLISHED ? '发布成功' : status === POST_STATUS_PRIVATE ? '已保存为私密' : '草稿已保存',
       description: `文章标识：${saved.id}`,
       color: 'success'
     })
@@ -370,6 +370,10 @@ function saveDraft() {
 
 function publishNow() {
   return savePost(POST_STATUS_PUBLISHED)
+}
+
+function savePrivate() {
+  return savePost(POST_STATUS_PRIVATE)
 }
 
 async function removeCurrentPost() {
@@ -471,6 +475,17 @@ const extensions = computed(() => [
           :loading="isSaving"
           label="发布"
           @click="publishNow"
+        />
+
+        <UButton
+          icon="i-lucide-lock"
+          color="primary"
+          variant="soft"
+          size="sm"
+          :disabled="!canSubmit || isSaving"
+          :loading="isSaving"
+          label="私密"
+          @click="savePrivate"
         />
 
         <UButton

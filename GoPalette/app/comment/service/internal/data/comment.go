@@ -166,6 +166,17 @@ func (r *commentRepo) UpdateRootID(ctx context.Context, id, rootID int64) error 
 	return r.data.db.WithContext(ctx).Model(&Comment{}).Where("id = ?", id).Update("root_id", rootID).Error
 }
 
+func (r *commentRepo) UpdateStatus(ctx context.Context, id int64, status int32) error {
+	res := r.data.db.WithContext(ctx).Model(&Comment{}).Where("id = ?", id).Update("status", status)
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return pb.ErrorCommentNotFound("%s", "评论不存在")
+	}
+	return nil
+}
+
 func (r *commentRepo) SoftDelete(ctx context.Context, id int64) error {
 	updates := map[string]any{
 		"content": "[该评论已删除]",

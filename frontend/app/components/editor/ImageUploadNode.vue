@@ -53,7 +53,7 @@ async function onFileChange() {
       ref="fileUploadRef"
       accept="image/*"
       label="Upload an image"
-      :description="error || 'SVG, PNG, JPG or GIF (max. 2MB)'"
+      :description="error || 'SVG, PNG, JPG or GIF (max. 5MB)'"
       :preview="false"
       class="min-h-48"
       :ui="{ description: error ? 'text-error' : '' }"
