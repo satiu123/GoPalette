@@ -11,6 +11,7 @@ import { createPost, deletePost, fetchPostBySlug, POST_STATUS_DRAFT, POST_STATUS
 const route = useRoute()
 const runtimeConfig = useRuntimeConfig()
 const toast = useToast()
+const { csrf, headerName } = useCsrf()
 const { categories, tagSuggestions } = useWriteResources()
 
 const room = computed(() => route.query.room as string | undefined)
@@ -79,6 +80,7 @@ const selectedTags = computed(() => parseTags(postMeta.tagsText))
 
 const isSaving = ref(false)
 const deletingPost = ref(false)
+const generatingSummary = ref(false)
 const lastSavedAt = ref('')
 const slugTouched = ref(false)
 
@@ -280,8 +282,74 @@ function removeTag(tag: string) {
   postMeta.tagsText = merged.join(', ')
 }
 
-function fillSummaryFromContent() {
-  postMeta.summary = plainTextSummary(content.value)
+function getErrorMessage(error: unknown) {
+  if (error && typeof error === 'object') {
+    const data = 'data' in error ? (error as { data?: { message?: unknown } }).data : undefined
+    if (typeof data?.message === 'string') return data.message
+    if ('message' in error && typeof (error as { message?: unknown }).message === 'string') return (error as { message: string }).message
+  }
+
+  return '请稍后重试'
+}
+
+function withCsrfHeaders(headers?: Record<string, string>) {
+  const token = unref(csrf)
+  const name = unref(headerName)
+
+  if (!token || !name) {
+    return headers
+  }
+
+  return {
+    ...(headers || {}),
+    [name]: token
+  }
+}
+
+async function fillSummaryFromContent() {
+  if (generatingSummary.value) return
+
+  const source = content.value.trim()
+  if (!source) {
+    toast.add({
+      title: '无法生成摘要',
+      description: '请先填写正文内容',
+      color: 'warning'
+    })
+    return
+  }
+
+  generatingSummary.value = true
+
+  try {
+    const response = await $fetch<{ summary?: string }>('/api/blog/summary', {
+      method: 'POST',
+      headers: withCsrfHeaders(),
+      body: {
+        title: postMeta.title.trim(),
+        content: source
+      }
+    })
+    const summary = response.summary?.trim()
+
+    if (!summary) {
+      throw new Error('未生成有效摘要')
+    }
+
+    postMeta.summary = summary
+    toast.add({
+      title: '摘要已生成',
+      color: 'success'
+    })
+  } catch (error: unknown) {
+    toast.add({
+      title: '摘要生成失败',
+      description: getErrorMessage(error),
+      color: 'error'
+    })
+  } finally {
+    generatingSummary.value = false
+  }
 }
 
 function formatLastSavedAt() {
@@ -700,7 +768,16 @@ const extensions = computed(() => [
                 />
                 <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-toned">
                   <span>{{ (postMeta.summary || plainTextSummary(content)).length }}/140</span>
-                  <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-wand-sparkles" label="从正文生成摘要" @click="fillSummaryFromContent" />
+                  <UButton
+                    size="xs"
+                    color="neutral"
+                    variant="ghost"
+                    icon="i-lucide-wand-sparkles"
+                    label="从正文生成摘要"
+                    :loading="generatingSummary"
+                    :disabled="generatingSummary || !content.trim()"
+                    @click="fillSummaryFromContent"
+                  />
                 </div>
               </div>
             </UFormField>
