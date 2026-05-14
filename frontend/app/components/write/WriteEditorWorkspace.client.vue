@@ -240,6 +240,25 @@ function onUpdate(value: string) {
   content.value = value
 }
 
+function isDesktopEditorViewport() {
+  return globalThis.window?.matchMedia('(min-width: 768px)').matches ?? true
+}
+
+const mobileToolbarItems = computed(() =>
+  bubbleToolbarItems.value.map(group =>
+    group.map(item => {
+      if ('label' in item && (item.label === 'Improve' || item.label === 'Turn into')) {
+        return {
+          ...item,
+          label: undefined
+        }
+      }
+
+      return item
+    })
+  )
+)
+
 function toSlug(value: string) {
   return value
     .toLowerCase()
@@ -517,7 +536,7 @@ const extensions = computed(() => [
     placeholder="Write, type '/' for commands..."
     class="min-h-screen"
     :ui="{
-      base: 'p-4 sm:p-14',
+      base: 'p-4 pt-20 sm:p-14',
       content: 'max-w-4xl mx-auto'
     }"
     @update:model-value="onUpdate"
@@ -583,6 +602,26 @@ const extensions = computed(() => [
       <div class="hidden items-center gap-2 sm:flex">
         <EditorCollaborationUsers :users="connectedUsers" />
       </div>
+
+      <template #search>
+        <div class="mx-auto max-w-xl overflow-x-auto">
+          <UEditorToolbar
+            :editor="editor"
+            :items="mobileToolbarItems"
+            layout="fixed"
+            class="w-full min-w-max justify-between"
+            :ui="{
+              base: 'w-full justify-between',
+              group: 'flex-1 justify-center',
+              separator: 'shrink-0'
+            }"
+          >
+            <template #link>
+              <EditorLinkPopover :editor="editor" />
+            </template>
+          </UEditorToolbar>
+        </div>
+      </template>
     </AppHeader>
 
     <div
@@ -661,7 +700,7 @@ const extensions = computed(() => [
       </div>
     </div>
 
-    <section class="mx-auto mb-6 w-full max-w-5xl">
+    <section class="mx-auto mb-6 mt-16 w-full max-w-5xl md:mt-0">
       <UCard>
         <template #header>
           <div class="flex flex-wrap items-center justify-between gap-3">
@@ -821,6 +860,9 @@ const extensions = computed(() => [
       :items="bubbleToolbarItems"
       layout="bubble"
       :should-show="({ editor, view, state }: any) => {
+        if (!isDesktopEditorViewport()) {
+          return false
+        }
         if (editor.isActive('imageUpload') || editor.isActive('image') || state.selection instanceof CellSelection) {
           return false
         }
@@ -838,6 +880,9 @@ const extensions = computed(() => [
       :items="getImageToolbarItems(editor)"
       layout="bubble"
       :should-show="({ editor, view }: any) => {
+        if (!isDesktopEditorViewport()) {
+          return false
+        }
         return editor.isActive('image') && view.hasFocus()
       }"
     />
@@ -847,6 +892,9 @@ const extensions = computed(() => [
       :items="getTableToolbarItems(editor)"
       layout="bubble"
       :should-show="({ editor, view }: any) => {
+        if (!isDesktopEditorViewport()) {
+          return false
+        }
         return editor.state.selection instanceof CellSelection && view.hasFocus()
       }"
     />

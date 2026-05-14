@@ -10,7 +10,9 @@ const slots = useSlots()
   <UHeader
     :toggle="{ class: 'md:hidden' }"
     :ui="{
-      root: 'border-b border-default bg-default/96 transition-colors duration-200',
+      root: props.compact
+        ? 'sticky top-0 z-50 border-b border-default bg-default/96 transition-colors duration-200'
+        : 'border-b border-default bg-default/96 transition-colors duration-200',
       container: 'gap-3 px-4 py-3 sm:px-14!',
       left: 'min-w-0 items-center gap-3',
       center: 'hidden min-w-0 flex-1 justify-center px-2 md:flex',
@@ -31,7 +33,7 @@ const slots = useSlots()
       </div>
     </template>
 
-    <template v-if="slots.search">
+    <template v-if="slots.search && !props.compact">
       <div class="w-full max-w-md">
         <slot name="search" />
       </div>
