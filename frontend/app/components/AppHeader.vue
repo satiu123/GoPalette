@@ -1,4 +1,8 @@
 <script setup lang="ts">
+const props = defineProps<{
+  compact?: boolean
+}>()
+
 const slots = useSlots()
 </script>
 
@@ -17,6 +21,7 @@ const slots = useSlots()
       <NuxtLink
         to="/"
         class="motion-link flex shrink-0 items-center gap-2"
+        :class="props.compact ? 'max-[360px]:hidden' : ''"
       >
         <span class="text-lg font-semibold tracking-tight text-highlighted sm:text-xl">GoPalette</span>
       </NuxtLink>
@@ -41,7 +46,7 @@ const slots = useSlots()
       </div>
 
       <USeparator
-        v-if="slots.default"
+        v-if="slots.default && !props.compact"
         orientation="vertical"
         class="h-7"
       />
@@ -49,6 +54,7 @@ const slots = useSlots()
       <div
         role="group"
         class="flex items-center gap-0.5"
+        :class="props.compact ? 'hidden sm:flex' : ''"
       >
         <UColorModeButton size="sm" />
 
@@ -70,7 +76,7 @@ const slots = useSlots()
     </template>
 
     <template v-if="slots.search" #bottom>
-      <div class="border-t border-default px-4 pb-3 pt-2 md:hidden">
+      <div class="border-t border-default bg-default/96 px-4 pb-3 pt-2 shadow-sm backdrop-blur md:hidden">
         <slot name="search" />
       </div>
     </template>

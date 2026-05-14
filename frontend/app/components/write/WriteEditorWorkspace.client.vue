@@ -455,8 +455,12 @@ const extensions = computed(() => [
     @update:model-value="onUpdate"
     @create="onCreate"
   >
-    <AppHeader>
-      <div class="flex items-center gap-2">
+    <AppHeader compact>
+      <div class="flex min-w-0 items-center gap-1 sm:gap-2">
+        <UEditorToolbar :editor="editor" :items="toolbarItems" />
+
+        <USeparator orientation="vertical" class="h-7 max-[380px]:hidden" />
+
         <UButton
           icon="i-lucide-save"
           color="neutral"
@@ -465,6 +469,8 @@ const extensions = computed(() => [
           :disabled="!canSubmit || isSaving"
           :loading="isSaving"
           label="草稿"
+          aria-label="保存草稿"
+          :ui="{ label: 'max-sm:sr-only' }"
           @click="saveDraft"
         />
 
@@ -474,6 +480,8 @@ const extensions = computed(() => [
           :disabled="!canSubmit || isSaving"
           :loading="isSaving"
           label="发布"
+          aria-label="发布"
+          :ui="{ label: 'max-sm:sr-only' }"
           @click="publishNow"
         />
 
@@ -485,6 +493,8 @@ const extensions = computed(() => [
           :disabled="!canSubmit || isSaving"
           :loading="isSaving"
           label="私密"
+          aria-label="保存为私密"
+          :ui="{ label: 'max-sm:sr-only' }"
           @click="savePrivate"
         />
 
@@ -496,13 +506,15 @@ const extensions = computed(() => [
           variant="ghost"
           :loading="deletingPost"
           label="删除"
+          aria-label="删除"
+          :ui="{ label: 'max-sm:sr-only' }"
           @click="removeCurrentPost"
         />
       </div>
 
-      <EditorCollaborationUsers :users="connectedUsers" />
-
-      <UEditorToolbar :editor="editor" :items="toolbarItems" />
+      <div class="hidden items-center gap-2 sm:flex">
+        <EditorCollaborationUsers :users="connectedUsers" />
+      </div>
     </AppHeader>
 
     <div

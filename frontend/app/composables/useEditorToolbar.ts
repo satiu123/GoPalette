@@ -16,28 +16,7 @@ export function useEditorToolbar<T extends EditorCustomHandlers>(_customHandlers
     kind: 'redo',
     icon: 'i-lucide-redo',
     tooltip: { text: 'Redo' }
-  }], [{
-    kind: 'imageUpload',
-    label: 'Add',
-    icon: 'i-lucide-image',
-    tooltip: { text: 'Add image' }
-  }], [
-    aiLoading?.value
-      ? {
-          kind: 'aiStop',
-          label: 'Stop',
-          icon: 'i-lucide-square',
-          color: 'error',
-          variant: 'soft',
-          tooltip: { text: 'Stop AI generation' }
-        }
-      : {
-          kind: 'aiContinue',
-          label: 'AI',
-          icon: 'i-lucide-sparkles',
-          tooltip: { text: 'AI continue' }
-        }
-  ]] satisfies EditorToolbarItem<T>[][])
+  }]] satisfies EditorToolbarItem<T>[][])
 
   const bubbleToolbarItems = computed(() => [[{
     icon: 'i-lucide-sparkles',
