@@ -11,6 +11,34 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: GoPalette
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: GoPalette/go.work
+          cache-dependency-path: |
+            GoPalette/**/go.sum
+
+      - name: Go vet
+        run: go vet work
+
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+
+      - name: Staticcheck
+        run: staticcheck work
+
   frontend:
     name: frontend
     runs-on: ubuntu-latest

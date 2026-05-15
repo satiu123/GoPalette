@@ -11,6 +11,10 @@ permissions:
   packages: write
 
 jobs:
+  lint:
+    name: lint
+    uses: ./.github/workflows/lint.yaml
+
   test:
     name: test
     uses: ./.github/workflows/test.yaml
