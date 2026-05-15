@@ -157,8 +157,8 @@ jobs:
             GRPC_PORT=${{ matrix.service.grpc_port }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=backend-${{ matrix.service.name }}
+          cache-to: type=gha,scope=backend-${{ matrix.service.name }},mode=max
 
   web-images:
     needs: prepare-matrix
@@ -215,5 +215,5 @@ jobs:
           push: ${{ github.event_name == 'push' || inputs.push }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=web-${{ matrix.image.name }}
+          cache-to: type=gha,scope=web-${{ matrix.image.name }},mode=max
