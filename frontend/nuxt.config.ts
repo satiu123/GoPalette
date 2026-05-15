@@ -39,12 +39,12 @@ export default defineNuxtConfig({
     }
   },
 
-  compatibilityDate: '2025-01-15',
-
   sourcemap: {
     client: false,
     server: false
   },
+
+  compatibilityDate: '2025-01-15',
 
   nitro: {
     sourceMap: false,
