@@ -26,6 +26,9 @@ func NewWhiteListMatcher() selector.MatchFunc {
 	whiteList["/api.post.v1.Post/GetPost"] = struct{}{}
 	whiteList["/api.post.v1.Post/ListPosts"] = struct{}{}
 	whiteList["/api.post.v1.Post/ListPostsForIndex"] = struct{}{}
+	whiteList["/api.post.v1.Post/ListAuthorPosts"] = struct{}{}
+	whiteList["/api.post.v1.Post/GetAuthorPostStats"] = struct{}{}
+	whiteList["/api.post.v1.Post/ListTopAuthorPosts"] = struct{}{}
 	whiteList["/api.post.v1.Post/IncrCommentCount"] = struct{}{}
 	whiteList["/api.post.v1.Post/RecordPostView"] = struct{}{}
 	whiteList["/api.post.v1.Category/GetCategory"] = struct{}{}

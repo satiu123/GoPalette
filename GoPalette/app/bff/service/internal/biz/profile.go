@@ -52,11 +52,28 @@ func (uc *ProfileUsecase) GetFullUserProfile(ctx context.Context, req *bffv1.Get
 	g, gctx := errgroup.WithContext(downstreamCtx)
 
 	g.Go(func() error {
-		res, err := uc.data.UserClient().GetUser(gctx, &userv1.GetUserRequest{Id: userID})
+		if includeNonPublished {
+			res, err := uc.data.UserClient().GetUser(gctx, &userv1.GetUserRequest{Id: userID})
+			if err != nil {
+				return err
+			}
+			userInfo = res.User
+			return nil
+		}
+
+		res, err := uc.data.UserClient().BatchGetUsers(gctx, &userv1.BatchGetUsersRequest{Ids: []int64{userID}})
 		if err != nil {
 			return err
 		}
-		userInfo = res.User
+		if len(res.Users) == 0 {
+			return errors.NotFound("USER_NOT_FOUND", "用户不存在")
+		}
+		profile := res.Users[0]
+		userInfo = &userv1.UserInfo{
+			Id:        profile.Id,
+			Username:  profile.Username,
+			AvatarURL: profile.AvatarUrl,
+		}
 		return nil
 	})
 

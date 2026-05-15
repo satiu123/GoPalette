@@ -97,6 +97,21 @@ function formatCount(value: number) {
   return new Intl.NumberFormat('zh-CN').format(value)
 }
 
+function normalizePostStatus(value: unknown) {
+  if (typeof value === 'number') return value
+
+  const text = String(value || '').trim().toUpperCase()
+  if (!text) return 0
+  if (text === 'PUBLISHED') return 1
+  if (text === 'ARCHIVED') return 2
+  if (text === 'PRIVATE') return 3
+  if (text === 'OFFLINE') return 4
+  if (text === 'DRAFT') return 0
+
+  const numeric = Number(text)
+  return Number.isFinite(numeric) ? numeric : 0
+}
+
 function toAvatarFallback(name: string) {
   const text = name.trim()
   if (!text) return '作'
@@ -113,7 +128,7 @@ function normalizePost(input: DataRecord): BlogPostItem {
     title: toText(pick(input, ['title']), '未命名文章'),
     summary: toText(pick(input, ['summary']), '暂无摘要'),
     slug: toText(pick(input, ['slug'])),
-    status: toNumber(pick(input, ['status'])),
+    status: normalizePostStatus(pick(input, ['status'])),
     tags: Array.isArray(input.tags) ? input.tags.map(tag => String(tag)) : [],
     category: toText(pick(category, ['name']), '未分类'),
     categoryId: toText(pick(category, ['id'])),

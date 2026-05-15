@@ -93,11 +93,12 @@ const canSubmit = computed(() => {
   return Boolean(postMeta.title.trim() && content.value.trim())
 })
 
+const canPublish = computed(() => publishChecks.value.every(item => item.ready))
+
 const categoryOptions = computed(() =>
   categories.value.map(category => ({
     id: category.id,
-    label: category.name,
-    description: `ID: ${category.id}`
+    label: category.name
   }))
 )
 
@@ -134,96 +135,7 @@ const publishChecks = computed(() => [
 const readyCheckCount = computed(() => publishChecks.value.filter(item => item.ready).length)
 const publishReadiness = computed(() => `${readyCheckCount.value}/${publishChecks.value.length}`)
 
-const content = ref(`# Nuxt Editor Template :sparkles:
-
-A Notion-like WYSIWYG editor with AI-powered completions and real-time collaboration in [Vue](https://vuejs.org/) & [Nuxt](https://nuxt.com/).
-
-> Add [\`?room=my-room\`](/write?room=my-room) to the URL and share the link to collaborate with others.
-
----
-
-## Rich Text Editing
-
-Full formatting support with **bold**, *italic*, <u>underline</u>, ~~strikethrough~~, and \`inline code\`.
-
-![Image Placeholder](/placeholder.jpeg)
-
-### Code Blocks
-
-Code blocks are supported with syntax highlighting using [Shiki](https://shiki.dev/).
-
-\`\`\`vue
-<template>
-  <UEditor v-slot="{ editor }" v-model="value" content-type="markdown">
-    <UEditorToolbar :editor="editor" :items="items" />
-  </UEditor>
-</template>
-\`\`\`
-
-### Lists
-
-1. Numbered lists for sequential items
-2. With automatic numbering
-
-- Bullet lists work too
-  - With nested items
-  - At multiple levels
-
-- [ ] Task lists for todos
-- [x] Mark items as complete
-
-### Tables
-
-Insert and edit tables with row/column controls and cell selection.
-
-| Feature | Description | Status |
-| ------- | ----------- | ------ |
-| Tables | Full table support | ✅ |
-| Markdown | Content serialization | ✅ |
-
----
-
-## Features
-
-### Bubble & Fixed Toolbars
-
-Select text to see the bubble toolbar with formatting options. The fixed toolbar at the top provides quick access to common actions.
-
-### Drag Handle
-
-Use the drag handle on the left side of any block to reorder, duplicate, delete, or convert between block types.
-
-### Slash Commands
-
-Type \`/\` anywhere to access quick insertion commands for headings, lists, code blocks, tables, images, and more.
-
-### Image Upload
-
-Custom image upload node powered by [\`UFileUpload\`](https://ui.nuxt.com/docs/components/file-upload) component and [NuxtHub](https://hub.nuxt.com/docs/blob) with [Vercel Blob](https://vercel.com/docs/vercel-blob) support.
-
-<div data-type="image-upload"></div>
-
-### Mentions & Emojis
-
-Mention collaborators with \`@\` and add emojis with \`:\` syntax :rocket:
-
-### AI-powered Features
-
-Inline completions and text transformations powered by [AI SDK](https://ai-sdk.dev/).
-
-- **Autocompletion**: Suggestions appear as you type
-- **Selection actions**: Fix, extend, simplify, or translate selected text
-
-> *Pro tip: Press \`⌘J\` to manually trigger AI completion.*
-
-### Real-time Collaboration
-
-Collaborative editing powered by [PartyKit](https://partykit.io/). Add [\`?room=my-room\`](/write?room=my-room) to the URL and share the link to collaborate with others in real-time. See collaborators' cursors and selections as they type.
-
----
-
-Visit the [Nuxt UI documentation](https://ui.nuxt.com/docs/components/editor) to learn more about the Editor component.
-`)
+const content = ref('')
 
 function onCreate({ editor }: { editor: Editor }) {
   if (!collaborationEnabled) return
@@ -392,6 +304,7 @@ function normalizeSlug() {
 
 function generateSlugFromTitle() {
   postMeta.slug = toSlug(postMeta.title)
+  slugTouched.value = false
 }
 
 function markSlugTouched() {
@@ -411,6 +324,20 @@ async function savePost(status: number) {
   if (!canSubmit.value || isSaving.value) return
 
   fillSlugIfNeeded()
+
+  if (status === POST_STATUS_PUBLISHED && !canPublish.value) {
+    const missing = publishChecks.value
+      .filter(item => !item.ready)
+      .map(item => item.label)
+      .join('、')
+
+    toast.add({
+      title: '发布信息不完整',
+      description: `请先补全：${missing}`,
+      color: 'warning'
+    })
+    return
+  }
 
   isSaving.value = true
 
@@ -575,7 +502,7 @@ const extensions = computed(() => [
         <UButton
           icon="i-lucide-send"
           size="sm"
-          :disabled="!canSubmit || isSaving"
+          :disabled="!canSubmit || !canPublish || isSaving"
           :loading="isSaving"
           label="发布"
           aria-label="发布"
@@ -774,6 +701,7 @@ const extensions = computed(() => [
             <UFormField
               label="分类"
               name="categoryId"
+              required
             >
               <USelectMenu
                 v-model="postMeta.categoryId"
@@ -787,10 +715,6 @@ const extensions = computed(() => [
               >
                 <template #item-label="{ item }">
                   <span>{{ item.label }}</span>
-                </template>
-
-                <template #item-description="{ item }">
-                  <span>{{ item.description }}</span>
                 </template>
               </USelectMenu>
               <p class="mt-2 text-xs text-toned">
