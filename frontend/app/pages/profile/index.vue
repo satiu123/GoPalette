@@ -17,7 +17,6 @@ const toast = useToast()
 const router = useRouter()
 
 const { session, user, isLoggedIn, initAuth, fetchProfile, logout } = useAuth()
-const { preload: preloadWrite, isPreloading: writePreloading, isReady: writePreloaded, errorMessage: writePreloadError } = useWritePreload()
 
 const loading = ref(true)
 const dashboard = ref<UserDashboardResponse | null>(null)
@@ -87,6 +86,22 @@ const sortedActivePosts = computed(() => [...(dashboard.value?.topPosts || [])]
   .sort((a, b) => (b.views + b.likes * 3 + b.comments * 5) - (a.views + a.likes * 3 + a.comments * 5))
   .slice(0, 4))
 
+const postSlugById = computed(() => {
+  const entries = [
+    ...(dashboard.value?.authorPosts || []),
+    ...(dashboard.value?.topPosts || [])
+  ]
+    .filter(post => post.id && post.slug)
+    .map(post => [post.id, post.slug] as const)
+
+  return new Map(entries)
+})
+
+function commentTarget(comment: { id: string, postId: string }) {
+  const slug = postSlugById.value.get(comment.postId)
+  return slug ? `/posts/${slug}#comment-${comment.id}` : '/posts'
+}
+
 async function loadDashboard(userId: string) {
   dashboardError.value = ''
   try {
@@ -125,17 +140,6 @@ onMounted(async () => {
 async function onLogout() {
   await logout()
   await router.push('/login')
-}
-
-async function onPreloadWrite() {
-  const ok = await preloadWrite()
-  toast.add({
-    color: ok ? 'success' : 'error',
-    title: ok ? '写作工作台已预加载' : '预加载失败',
-    description: ok
-      ? '接下来进入写作页会更快。'
-      : (writePreloadError.value || '请稍后重试')
-  })
 }
 
 useSeoMeta({
@@ -214,15 +218,6 @@ useSeoMeta({
               variant="soft"
               icon="i-lucide-settings"
               label="资料设置"
-            />
-            <UButton
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-download"
-              :loading="writePreloading"
-              :disabled="writePreloaded || writePreloading"
-              :label="writePreloaded ? '已预加载' : '预加载'"
-              @click="onPreloadWrite"
             />
           </div>
         </div>
@@ -493,10 +488,11 @@ useSeoMeta({
               v-else
               class="mt-4 space-y-3"
             >
-              <div
+              <NuxtLink
                 v-for="comment in dashboard.recentComments"
                 :key="comment.id"
-                class="rounded-lg border border-default px-3 py-2"
+                :to="commentTarget(comment)"
+                class="block rounded-lg border border-default px-3 py-2 transition-colors hover:border-primary/50 hover:bg-muted/40"
               >
                 <p class="line-clamp-2 text-sm text-highlighted">
                   {{ comment.content }}
@@ -504,7 +500,7 @@ useSeoMeta({
                 <p class="mt-1 text-xs text-toned">
                   {{ comment.createdAt }} · {{ comment.authorName }}
                 </p>
-              </div>
+              </NuxtLink>
             </div>
           </section>
         </aside>

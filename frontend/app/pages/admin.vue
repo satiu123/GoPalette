@@ -1008,9 +1008,6 @@ useSeoMeta({
             <h1 class="text-2xl font-semibold text-highlighted sm:text-3xl">
               后台管理
             </h1>
-            <p class="mt-1 text-sm text-toned">
-              管理文章发布流转、评论审核和内容结构
-            </p>
           </div>
 
           <div class="flex flex-wrap items-center gap-2">

@@ -234,7 +234,7 @@ export function normalizeDashboard(raw: DataRecord): UserDashboardResponse {
         postId: toText(pick(item, ['postId', 'post_id'])),
         content: toText(pick(item, ['content']), '暂无评论内容'),
         createdAt: formatDashboardDate(pick(item, ['createdAt', 'created_at']), true),
-        authorName: toText(pick(author, ['name']), '匿名用户')
+        authorName: toText(pick(author, ['name', 'username']), '匿名用户')
       }
     })
   }

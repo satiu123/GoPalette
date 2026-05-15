@@ -246,7 +246,6 @@ useSeoMeta({
                 label="邮箱"
                 name="email"
                 required
-                hint="当前版本会直接同步邮箱，后续可接入验证流程。"
               >
                 <UInput
                   v-model="form.email"
@@ -255,10 +254,6 @@ useSeoMeta({
                   placeholder="name@example.com"
                 />
               </UFormField>
-
-              <div class="rounded-lg border border-dashed border-default p-4 text-sm text-toned">
-                个人简介、网站和社交链接需要后端资料字段支持；当前页面先保留清晰入口，避免提交后丢数据。
-              </div>
 
               <div class="flex flex-wrap items-center gap-2 pt-2">
                 <UButton

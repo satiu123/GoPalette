@@ -98,14 +98,14 @@ func (s *CommentService) GetUserCommentStats(ctx context.Context, req *pb.GetUse
 }
 
 func (s *CommentService) ListUserRecentComments(ctx context.Context, req *pb.ListUserRecentCommentsRequest) (*pb.ListUserRecentCommentsReply, error) {
-	comments, err := s.uc.ListUserRecentComments(ctx, req.UserId, req.Limit)
+	views, err := s.uc.ListUserRecentComments(ctx, req.UserId, req.Limit)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]*pb.CommentInfo, 0, len(comments))
-	for _, item := range comments {
-		items = append(items, s.toPB(item, nil, nil))
+	items := make([]*pb.CommentInfo, 0, len(views))
+	for _, item := range views {
+		items = append(items, s.toPB(item.Comment, item.Author, item.ReplyToAuthor))
 	}
 
 	return &pb.ListUserRecentCommentsReply{Comments: items}, nil

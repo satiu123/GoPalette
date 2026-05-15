@@ -895,6 +895,7 @@ useHead({
         <div class="mt-8 space-y-5">
           <article
             v-for="item in comments"
+            :id="`comment-${item.id}`"
             :key="item.id"
             class="rounded-xl border border-default bg-default p-4 sm:p-5"
           >
@@ -980,6 +981,7 @@ useHead({
                 >
                   <article
                     v-for="reply in item.replies"
+                    :id="`comment-${reply.id}`"
                     :key="reply.id"
                     class="rounded-xl bg-elevated/40 p-4"
                   >

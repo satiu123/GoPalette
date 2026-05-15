@@ -343,7 +343,7 @@ func (uc *CommentUsecase) GetUserCommentStats(ctx context.Context, userID int64)
 	return uc.repo.CountByUser(ctx, userID)
 }
 
-func (uc *CommentUsecase) ListUserRecentComments(ctx context.Context, userID, limit int64) ([]*Comment, error) {
+func (uc *CommentUsecase) ListUserRecentComments(ctx context.Context, userID, limit int64) ([]*CommentView, error) {
 	if userID <= 0 {
 		return nil, pb.ErrorInvalidArgument("%s", "user_id 无效")
 	}
@@ -354,7 +354,39 @@ func (uc *CommentUsecase) ListUserRecentComments(ctx context.Context, userID, li
 		limit = 50
 	}
 
-	return uc.repo.ListRecentByUser(ctx, userID, limit)
+	comments, err := uc.repo.ListRecentByUser(ctx, userID, limit)
+	if err != nil {
+		return nil, err
+	}
+	if len(comments) == 0 {
+		return []*CommentView{}, nil
+	}
+
+	userIDSet := make(map[int64]struct{})
+	for _, c := range comments {
+		userIDSet[c.UserID] = struct{}{}
+	}
+
+	userIDs := make([]int64, 0, len(userIDSet))
+	for id := range userIDSet {
+		userIDs = append(userIDs, id)
+	}
+	profiles, err := uc.userRepo.BatchGetProfiles(ctx, userIDs)
+	if err != nil {
+		uc.logger.WithContext(ctx).Warnf("batch get users failed: %v", err)
+		profiles = map[int64]*UserProfile{}
+	}
+
+	views := make([]*CommentView, 0, len(comments))
+	for _, c := range comments {
+		views = append(views, &CommentView{
+			Comment: c,
+			Author:  profiles[c.UserID],
+			Replies: []*CommentView{},
+		})
+	}
+
+	return views, nil
 }
 
 func hasSensitiveWord(content string) bool {
