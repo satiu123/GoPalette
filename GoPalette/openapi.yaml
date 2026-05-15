@@ -394,6 +394,31 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.post.v1.TogglePostLikeReply'
+    /v1/posts/{id}/view:
+        post:
+            tags:
+                - Post
+            description: RecordPostView 记录文章浏览，服务端按 viewer_key 去重后自增浏览量
+            operationId: Post_RecordPostView
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.post.v1.RecordPostViewRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.RecordPostViewReply'
     /v1/profiles/{userId}:
         get:
             tags:
@@ -1296,6 +1321,20 @@ components:
                     type: string
                     format: date-time
             description: PostInfo 包含了帖子的基本信息
+        api.post.v1.RecordPostViewReply:
+            type: object
+            properties:
+                counted:
+                    type: boolean
+                viewCount:
+                    type: string
+        api.post.v1.RecordPostViewRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                viewerKey:
+                    type: string
         api.post.v1.TagDetail:
             type: object
             properties:

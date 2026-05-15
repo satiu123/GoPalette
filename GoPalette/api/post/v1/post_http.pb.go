@@ -28,6 +28,7 @@ const OperationPostListAuthorPosts = "/api.post.v1.Post/ListAuthorPosts"
 const OperationPostListPosts = "/api.post.v1.Post/ListPosts"
 const OperationPostListTopAuthorPosts = "/api.post.v1.Post/ListTopAuthorPosts"
 const OperationPostListUserLikedPosts = "/api.post.v1.Post/ListUserLikedPosts"
+const OperationPostRecordPostView = "/api.post.v1.Post/RecordPostView"
 const OperationPostTogglePostLike = "/api.post.v1.Post/TogglePostLike"
 const OperationPostUpdatePost = "/api.post.v1.Post/UpdatePost"
 
@@ -50,6 +51,8 @@ type PostHTTPServer interface {
 	ListTopAuthorPosts(context.Context, *ListTopAuthorPostsRequest) (*ListTopAuthorPostsReply, error)
 	// ListUserLikedPosts ListUserLikedPosts 获取用户点赞/收藏文章列表
 	ListUserLikedPosts(context.Context, *ListUserLikedPostsRequest) (*ListUserLikedPostsReply, error)
+	// RecordPostView RecordPostView 记录文章浏览，服务端按 viewer_key 去重后自增浏览量
+	RecordPostView(context.Context, *RecordPostViewRequest) (*RecordPostViewReply, error)
 	// TogglePostLike TogglePostLike 点赞/取消点赞
 	TogglePostLike(context.Context, *TogglePostLikeRequest) (*TogglePostLikeReply, error)
 	// UpdatePost UpdatePost 更新帖子，输入帖子ID和要更新的字段列表，返回更新后的帖子详细信息
@@ -68,6 +71,7 @@ func RegisterPostHTTPServer(s *http.Server, srv PostHTTPServer) {
 	r.GET("/v1/users/{author_id}/posts/stats", _Post_GetAuthorPostStats0_HTTP_Handler(srv))
 	r.GET("/v1/users/{author_id}/posts/top", _Post_ListTopAuthorPosts0_HTTP_Handler(srv))
 	r.POST("/v1/posts/{id}/comment-count:incr", _Post_IncrCommentCount0_HTTP_Handler(srv))
+	r.POST("/v1/posts/{id}/view", _Post_RecordPostView0_HTTP_Handler(srv))
 	r.POST("/v1/posts/{id}/like", _Post_TogglePostLike0_HTTP_Handler(srv))
 	r.GET("/v1/users/{user_id}/likes", _Post_ListUserLikedPosts0_HTTP_Handler(srv))
 }
@@ -295,6 +299,31 @@ func _Post_IncrCommentCount0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Cont
 	}
 }
 
+func _Post_RecordPostView0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in RecordPostViewRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPostRecordPostView)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.RecordPostView(ctx, req.(*RecordPostViewRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*RecordPostViewReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _Post_TogglePostLike0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in TogglePostLikeRequest
@@ -361,6 +390,8 @@ type PostHTTPClient interface {
 	ListTopAuthorPosts(ctx context.Context, req *ListTopAuthorPostsRequest, opts ...http.CallOption) (rsp *ListTopAuthorPostsReply, err error)
 	// ListUserLikedPosts ListUserLikedPosts 获取用户点赞/收藏文章列表
 	ListUserLikedPosts(ctx context.Context, req *ListUserLikedPostsRequest, opts ...http.CallOption) (rsp *ListUserLikedPostsReply, err error)
+	// RecordPostView RecordPostView 记录文章浏览，服务端按 viewer_key 去重后自增浏览量
+	RecordPostView(ctx context.Context, req *RecordPostViewRequest, opts ...http.CallOption) (rsp *RecordPostViewReply, err error)
 	// TogglePostLike TogglePostLike 点赞/取消点赞
 	TogglePostLike(ctx context.Context, req *TogglePostLikeRequest, opts ...http.CallOption) (rsp *TogglePostLikeReply, err error)
 	// UpdatePost UpdatePost 更新帖子，输入帖子ID和要更新的字段列表，返回更新后的帖子详细信息
@@ -495,6 +526,20 @@ func (c *PostHTTPClientImpl) ListUserLikedPosts(ctx context.Context, in *ListUse
 	opts = append(opts, http.Operation(OperationPostListUserLikedPosts))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// RecordPostView RecordPostView 记录文章浏览，服务端按 viewer_key 去重后自增浏览量
+func (c *PostHTTPClientImpl) RecordPostView(ctx context.Context, in *RecordPostViewRequest, opts ...http.CallOption) (*RecordPostViewReply, error) {
+	var out RecordPostViewReply
+	pattern := "/v1/posts/{id}/view"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationPostRecordPostView))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

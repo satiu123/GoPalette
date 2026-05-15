@@ -82,6 +82,13 @@ service Post {
       body: "*"
     };
   };
+  // RecordPostView 记录文章浏览，服务端按 viewer_key 去重后自增浏览量
+  rpc RecordPostView (RecordPostViewRequest) returns (RecordPostViewReply){
+    option (google.api.http) = {
+      post: "/v1/posts/{id}/view"
+      body: "*"
+    };
+  };
   // TogglePostLike 点赞/取消点赞
   rpc TogglePostLike (TogglePostLikeRequest) returns (TogglePostLikeReply){
     option (google.api.http) = {
@@ -359,6 +366,16 @@ message IncrCommentCountRequest {
 
 message IncrCommentCountReply {
   bool success = 1;
+}
+
+message RecordPostViewRequest {
+  int64 id = 1;
+  string viewer_key = 2; // 服务端生成的匿名访客/登录用户哈希，不接收明文身份
+}
+
+message RecordPostViewReply {
+  bool counted = 1; // 本次是否计入浏览量
+  int64 view_count = 2; // 当前浏览量
 }
 
 message TogglePostLikeRequest {

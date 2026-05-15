@@ -2,7 +2,7 @@
 import { TaskList, TaskItem } from '@tiptap/extension-list'
 import { TableKit } from '@tiptap/extension-table'
 import { CodeBlockShiki } from 'tiptap-extension-code-block-shiki'
-import { POST_STATUS_PUBLISHED, createComment, deleteComment, fetchComments, fetchPostBySlug, fetchPosts } from '~/composables/useBlogApi'
+import { POST_STATUS_PUBLISHED, createComment, deleteComment, fetchComments, fetchPostBySlug, fetchPosts, recordPostView } from '~/composables/useBlogApi'
 import type { CommentInfo } from '~/composables/useBlogApi'
 
 const toast = useToast()
@@ -36,6 +36,7 @@ const post = computed(() => postData.value)
 const comments = ref<CommentInfo[]>([])
 const commentsTotal = ref(0)
 const commentsLoading = ref(false)
+const visibleViewCount = ref(post.value?.viewCount || 0)
 const submittingComment = ref(false)
 const deletingCommentId = ref('')
 const commentText = ref('')
@@ -286,6 +287,27 @@ async function loadComments() {
   }
 }
 
+const viewedPostIds = new Set<string>()
+
+async function recordCurrentPostView() {
+  if (!import.meta.client) return
+
+  const current = post.value
+  if (!current?.id || viewedPostIds.has(current.id)) return
+
+  viewedPostIds.add(current.id)
+  visibleViewCount.value = current.viewCount || visibleViewCount.value
+
+  try {
+    const result = await recordPostView(current.id)
+    if (Number.isFinite(result.viewCount) && result.viewCount !== undefined) {
+      visibleViewCount.value = result.viewCount
+    }
+  } catch {
+    // 阅读统计失败不阻断文章浏览。
+  }
+}
+
 async function submitComment() {
   const content = commentText.value.trim()
   if (!content) {
@@ -411,12 +433,15 @@ onMounted(async () => {
   }
 
   await loadComments()
+  await recordCurrentPostView()
   await refreshArticleEnhancements()
 })
 
 watch(post, async (value) => {
   if (!value?.id) return
+  visibleViewCount.value = value.viewCount || 0
   await loadComments()
+  await recordCurrentPostView()
   await refreshArticleEnhancements()
 })
 
@@ -559,6 +584,8 @@ useHead({
             <span>{{ post.publishedAt }}</span>
             <span>·</span>
             <span>{{ post.readingMinutes }} 分钟</span>
+            <span>·</span>
+            <span>{{ visibleViewCount }} 阅读</span>
             <span>·</span>
             <NuxtLink
               v-if="post.authorId"
