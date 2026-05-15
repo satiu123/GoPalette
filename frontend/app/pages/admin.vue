@@ -45,6 +45,14 @@ const {
 } = useAuth()
 
 const checkingAuth = ref(true)
+const adminSectionItems = [
+  { id: 'posts', label: '文章', icon: 'i-lucide-files' },
+  { id: 'comments', label: '评论', icon: 'i-lucide-message-square-text' },
+  { id: 'users', label: '用户', icon: 'i-lucide-users' },
+  { id: 'taxonomy', label: '分类标签', icon: 'i-lucide-tags' }
+] as const
+type AdminSectionId = typeof adminSectionItems[number]['id']
+const activeAdminSection = ref<AdminSectionId>('posts')
 
 const postKeyword = ref('')
 const postPage = ref(1)
@@ -866,10 +874,6 @@ const commentTotalPages = computed(() => Math.max(1, Math.ceil(commentTotal.valu
 const userTotalPages = computed(() => Math.max(1, Math.ceil(userTotal.value / userPageSize)))
 const visiblePostTotal = computed(() => postTotal.value || postRows.value.length)
 const publishedPostCount = computed(() => postRows.value.filter(item => item.status === POST_STATUS_PUBLISHED).length)
-const draftPostCount = computed(() => postRows.value.filter(item => item.status === POST_STATUS_DRAFT).length)
-const archivedPostCount = computed(() => postRows.value.filter(item => item.status === POST_STATUS_ARCHIVED).length)
-const privatePostCount = computed(() => postRows.value.filter(item => item.status === POST_STATUS_PRIVATE).length)
-const offlinePostCount = computed(() => postRows.value.filter(item => item.status === POST_STATUS_OFFLINE).length)
 const taxonomyTotal = computed(() => categories.value.length + tags.value.length)
 const taxonomyQuery = computed(() => taxonomyKeyword.value.trim().toLowerCase())
 const filteredCategories = computed(() => {
@@ -889,46 +893,35 @@ const allVisibleCommentsSelected = computed(() => commentRows.value.length > 0 &
 const allVisibleUsersSelected = computed(() => userRows.value.length > 0 && userRows.value.every(item => selectedUserIds.value.includes(item.id)))
 const allVisibleCategoriesSelected = computed(() => filteredCategories.value.length > 0 && filteredCategories.value.every(item => selectedCategoryIds.value.includes(item.id)))
 const allVisibleTagsSelected = computed(() => filteredTags.value.length > 0 && filteredTags.value.every(item => selectedTagIds.value.includes(item.id)))
-const activeCommentPostTitle = computed(() => {
-  const postId = commentPostId.value.trim()
-  if (!postId) return ''
-
-  return postRows.value.find(item => item.id === postId)?.title || ''
-})
 
 const adminStats = computed(() => [
   {
-    label: '文章总量',
+    label: '文章',
     value: visiblePostTotal.value,
-    meta: postKeyword.value.trim() ? '当前检索结果' : '当前分页范围',
     icon: 'i-lucide-files',
     color: 'text-primary'
   },
   {
-    label: '已发布',
+    label: '发布',
     value: publishedPostCount.value,
-    meta: `草稿 ${draftPostCount.value} / 私密 ${privatePostCount.value} / 下线 ${offlinePostCount.value} / 归档 ${archivedPostCount.value}`,
     icon: 'i-lucide-send',
     color: 'text-success'
   },
   {
-    label: '评论队列',
+    label: '评论',
     value: commentTotal.value || commentRows.value.length,
-    meta: activeCommentPostTitle.value || (commentPostId.value.trim() ? '已选择文章' : '全站队列'),
     icon: 'i-lucide-message-square-text',
     color: 'text-warning'
   },
   {
-    label: '内容结构',
+    label: '分类标签',
     value: taxonomyTotal.value,
-    meta: `${categories.value.length} 个分类 / ${tags.value.length} 个标签`,
     icon: 'i-lucide-tags',
     color: 'text-info'
   },
   {
     label: '用户',
     value: userTotal.value || userRows.value.length,
-    meta: `${userRows.value.filter(item => toNumericValue(item.role, USER_ROLE_USER) === USER_ROLE_ADMIN).length} 个管理员`,
     icon: 'i-lucide-users',
     color: 'text-primary'
   }
@@ -1050,21 +1043,32 @@ useSeoMeta({
                 />
               </div>
             </div>
-            <p class="mt-3 truncate text-xs text-muted">
-              {{ item.meta }}
-            </p>
           </article>
         </section>
 
-        <section class="rounded-lg border border-default bg-default">
+        <nav class="mb-4 flex flex-wrap gap-2 border-b border-default">
+          <UButton
+            v-for="item in adminSectionItems"
+            :key="item.id"
+            :icon="item.icon"
+            :label="item.label"
+            size="sm"
+            :color="activeAdminSection === item.id ? 'primary' : 'neutral'"
+            :variant="activeAdminSection === item.id ? 'soft' : 'ghost'"
+            class="rounded-b-none"
+            @click="activeAdminSection = item.id"
+          />
+        </nav>
+
+        <section
+          v-show="activeAdminSection === 'posts'"
+          class="rounded-lg border border-default bg-default"
+        >
           <div class="flex flex-wrap items-end justify-between gap-3 border-b border-default p-4 sm:p-5">
             <div>
               <h2 class="text-base font-semibold text-highlighted">
                 文章管理
               </h2>
-              <p class="mt-1 text-xs text-toned">
-                快速检索、切换状态和进入编辑
-              </p>
             </div>
 
             <div class="flex w-full flex-wrap items-end gap-2 lg:w-auto">
@@ -1374,15 +1378,15 @@ useSeoMeta({
           </div>
         </section>
 
-        <section class="mt-6 rounded-lg border border-default bg-default">
+        <section
+          v-show="activeAdminSection === 'comments'"
+          class="rounded-lg border border-default bg-default"
+        >
           <div class="flex flex-wrap items-end justify-between gap-3 border-b border-default p-4 sm:p-5">
             <div>
               <h2 class="text-base font-semibold text-highlighted">
-                全站评论队列
+                评论管理
               </h2>
-              <p class="mt-1 text-xs text-toned">
-                {{ activeCommentPostTitle || (commentPostId.trim() ? '按文章过滤评论' : '默认显示全站最新评论') }}
-              </p>
             </div>
 
             <div class="flex w-full flex-wrap items-end gap-2 lg:w-auto">
@@ -1426,7 +1430,7 @@ useSeoMeta({
                   :disabled="commentRows.length === 0"
                   @change="toggleVisibleComments(($event.target as HTMLInputElement).checked)"
                 >
-                {{ commentPostId.trim() ? '当前文章' : '全站队列' }} · 共 {{ commentTotal || commentRows.length }} 条评论
+                共 {{ commentTotal || commentRows.length }} 条
                 <span
                   v-if="selectedCommentIds.length > 0"
                   class="text-muted"
@@ -1597,15 +1601,15 @@ useSeoMeta({
           </div>
         </section>
 
-        <section class="mt-6 rounded-lg border border-default bg-default">
+        <section
+          v-show="activeAdminSection === 'users'"
+          class="rounded-lg border border-default bg-default"
+        >
           <div class="flex flex-wrap items-end justify-between gap-3 border-b border-default p-4 sm:p-5">
             <div>
               <h2 class="text-base font-semibold text-highlighted">
                 用户管理
               </h2>
-              <p class="mt-1 text-xs text-toned">
-                查看账号、切换状态和维护角色
-              </p>
             </div>
 
             <UButton
@@ -1826,15 +1830,14 @@ useSeoMeta({
           </div>
         </section>
 
-        <section class="mt-6">
+        <section
+          v-show="activeAdminSection === 'taxonomy'"
+        >
           <div class="mb-3 flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 class="text-base font-semibold text-highlighted">
-                内容结构
+                分类标签
               </h2>
-              <p class="mt-1 text-xs text-toned">
-                {{ taxonomyTotal }} 个条目，支持快速过滤和就地维护
-              </p>
             </div>
 
             <UInput
