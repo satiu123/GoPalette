@@ -80,15 +80,30 @@ useHead({
 <template>
   <div class="min-h-screen bg-default">
     <AppHeader>
-      <UButton to="/posts" icon="i-lucide-book-open" size="sm" class="sm:hidden" />
-      <UButton to="/posts" icon="i-lucide-book-open" label="文章归档" size="sm" class="hidden sm:inline-flex" />
+      <UButton
+        to="/posts"
+        icon="i-lucide-book-open"
+        size="sm"
+        class="sm:hidden"
+      />
+      <UButton
+        to="/posts"
+        icon="i-lucide-book-open"
+        label="文章归档"
+        size="sm"
+        class="hidden sm:inline-flex"
+      />
     </AppHeader>
 
     <main class="mx-auto w-full max-w-6xl px-4 pb-20 pt-10 sm:px-14">
       <section class="motion-fade-up rounded-2xl border border-default bg-muted/30 p-6 sm:p-8">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div class="space-y-3">
-            <UBadge color="primary" variant="subtle" :label="`分类：${categoryName}`" />
+            <UBadge
+              color="primary"
+              variant="subtle"
+              :label="`分类：${categoryName}`"
+            />
             <div>
               <h1 class="text-2xl font-semibold text-highlighted sm:text-4xl">
                 {{ categoryName }}
@@ -99,33 +114,58 @@ useHead({
             </div>
           </div>
 
-          <UButton to="/posts" color="neutral" variant="soft" trailing-icon="i-lucide-arrow-right" label="查看全部文章" />
+          <UButton
+            to="/posts"
+            color="neutral"
+            variant="soft"
+            trailing-icon="i-lucide-arrow-right"
+            label="查看全部文章"
+          />
         </div>
       </section>
 
-      <section v-if="siblingCategories.length" class="motion-fade-up motion-delay-1 mt-6 flex flex-wrap gap-2">
+      <section
+        v-if="siblingCategories.length"
+        class="motion-fade-up motion-delay-1 mt-6 flex flex-wrap gap-2"
+      >
         <NuxtLink
           v-for="item in siblingCategories"
           :key="item.id"
           :to="categoryPath(item.name)"
           class="inline-flex"
         >
-          <UBadge :label="item.name" color="neutral" variant="outline" class="hover:border-primary hover:text-primary" />
+          <UBadge
+            :label="item.name"
+            color="neutral"
+            variant="outline"
+            class="hover:border-primary hover:text-primary"
+          />
         </NuxtLink>
       </section>
 
-      <section v-if="paginatedPosts.length" class="motion-fade-up motion-delay-2 mt-8 grid gap-4 md:grid-cols-2">
+      <section
+        v-if="paginatedPosts.length"
+        class="motion-fade-up motion-delay-2 mt-8 grid gap-4 md:grid-cols-2"
+      >
         <UCard
           v-for="post in paginatedPosts"
           :key="post.id"
           :ui="{ body: 'p-0' }"
           class="motion-card motion-panel overflow-hidden"
         >
-          <img :src="post.cover" :alt="post.title" class="h-40 w-full object-cover">
+          <img
+            :src="post.cover"
+            :alt="post.title"
+            class="h-40 w-full object-cover"
+          >
 
           <div class="space-y-3 p-5">
             <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
-              <UBadge :label="post.category" color="primary" variant="subtle" />
+              <UBadge
+                :label="post.category"
+                color="primary"
+                variant="subtle"
+              />
               <span>{{ post.publishedAt }}</span>
               <span>·</span>
               <span>{{ post.readingMinutes }} 分钟</span>
@@ -161,7 +201,10 @@ useHead({
         </UCard>
       </section>
 
-      <section v-else class="motion-fade-up motion-delay-2 mt-8">
+      <section
+        v-else
+        class="motion-fade-up motion-delay-2 mt-8"
+      >
         <UCard>
           <div class="py-10 text-center">
             <p class="text-base font-medium text-highlighted">
@@ -174,7 +217,10 @@ useHead({
         </UCard>
       </section>
 
-      <section v-if="totalPages > 1" class="mt-8 flex items-center justify-between">
+      <section
+        v-if="totalPages > 1"
+        class="mt-8 flex items-center justify-between"
+      >
         <UButton
           icon="i-lucide-chevron-left"
           label="上一页"

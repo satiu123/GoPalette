@@ -39,11 +39,16 @@ async function onSubmit() {
       : '/profile'
 
     await router.push(redirect)
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const typed = error as { message?: unknown, data?: { message?: unknown } }
     toast.add({
       color: 'error',
       title: '登录失败',
-      description: error?.data?.message || error?.message || '请检查邮箱和密码'
+      description: typeof typed.data?.message === 'string'
+        ? typed.data.message
+        : typeof typed.message === 'string'
+          ? typed.message
+          : '请检查邮箱和密码'
     })
   } finally {
     submitting.value = false

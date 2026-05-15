@@ -13,7 +13,7 @@ const currentPage = ref(Math.max(1, Number(route.query.page || 1)))
 const pageSize = 8
 const searchLoading = ref(false)
 let searchSeq = 0
-const searchState = ref<{ items: Array<{ id: string; title: string; summary: string; slug: string; category: string; tags: string[]; publishedAt: string; readingMinutes: number; cover: string }>; total: number; totalPages: number }>({
+const searchState = ref<{ items: Array<{ id: string, title: string, summary: string, slug: string, category: string, tags: string[], publishedAt: string, readingMinutes: number, cover: string }>, total: number, totalPages: number }>({
   items: [],
   total: 0,
   totalPages: 0
@@ -271,13 +271,25 @@ useHead({
         />
       </template>
 
-      <UButton to="/write" icon="i-lucide-pen-line" size="sm" class="sm:hidden" />
-      <UButton to="/write" icon="i-lucide-pen-line" label="写文章" size="sm" class="hidden sm:inline-flex" />
+      <UButton
+        to="/write"
+        icon="i-lucide-pen-line"
+        size="sm"
+        class="sm:hidden"
+      />
+      <UButton
+        to="/write"
+        icon="i-lucide-pen-line"
+        label="写文章"
+        size="sm"
+        class="hidden sm:inline-flex"
+      />
     </AppHeader>
 
     <main class="mx-auto w-full max-w-6xl px-4 pb-20 pt-10 sm:px-14">
       <section
-        class="motion-fade-up mb-6 flex flex-col gap-4 rounded-2xl border border-default bg-muted/30 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        class="motion-fade-up mb-6 flex flex-col gap-4 rounded-2xl border border-default bg-muted/30 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+      >
         <div>
           <h1 class="text-2xl font-semibold text-highlighted sm:text-3xl">
             文章归档
@@ -286,22 +298,39 @@ useHead({
             共 {{ keyword.trim() ? searchState.total : filteredPosts.length }} 篇文章 · 第 {{ currentPage }} / {{ totalPages
             }} 页
           </p>
-          <p v-if="selectedTag" class="mt-2 text-sm text-toned">
+          <p
+            v-if="selectedTag"
+            class="mt-2 text-sm text-toned"
+          >
             当前标签：#{{ selectedTag }}
           </p>
         </div>
       </section>
 
       <section class="motion-fade-up motion-delay-1 mb-6 flex flex-wrap gap-2">
-        <UButton size="xs" label="全部" :variant="selectedCategory ? 'ghost' : 'solid'"
-          :color="selectedCategory ? 'neutral' : 'primary'" @click="clearCategory" />
+        <UButton
+          size="xs"
+          label="全部"
+          :variant="selectedCategory ? 'ghost' : 'solid'"
+          :color="selectedCategory ? 'neutral' : 'primary'"
+          @click="clearCategory"
+        />
 
-        <UButton v-for="category in categories" :key="category" size="xs" :label="category"
-          :variant="selectedCategory === category ? 'solid' : 'ghost'" :color="selectedCategory === category ? 'primary' : 'neutral'"
-          @click="selectCategory(category)" />
+        <UButton
+          v-for="category in categories"
+          :key="category"
+          size="xs"
+          :label="category"
+          :variant="selectedCategory === category ? 'solid' : 'ghost'"
+          :color="selectedCategory === category ? 'primary' : 'neutral'"
+          @click="selectCategory(category)"
+        />
       </section>
 
-      <section v-if="selectedTag" class="motion-fade-up mb-6 flex flex-wrap gap-2">
+      <section
+        v-if="selectedTag"
+        class="motion-fade-up mb-6 flex flex-wrap gap-2"
+      >
         <UButton
           size="xs"
           color="primary"
@@ -319,23 +348,44 @@ useHead({
       </section>
 
       <section class="motion-fade-up motion-delay-2 grid gap-4 md:grid-cols-2">
-        <UCard v-for="post in paginatedPosts" :key="post.id" :ui="{ body: 'p-0' }" class="motion-card motion-panel overflow-hidden">
-          <img :src="post.cover" :alt="post.title" class="h-40 w-full object-cover">
+        <UCard
+          v-for="post in paginatedPosts"
+          :key="post.id"
+          :ui="{ body: 'p-0' }"
+          class="motion-card motion-panel overflow-hidden"
+        >
+          <img
+            :src="post.cover"
+            :alt="post.title"
+            class="h-40 w-full object-cover"
+          >
 
           <div class="space-y-3 p-5">
             <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
-              <UBadge :label="post.category" color="primary" variant="subtle" />
+              <UBadge
+                :label="post.category"
+                color="primary"
+                variant="subtle"
+              />
               <span>{{ post.publishedAt }}</span>
               <span>·</span>
               <span>{{ post.readingMinutes }} 分钟</span>
             </div>
 
-            <NuxtLink :to="`/posts/${post.slug}`"
-              class="motion-link block text-lg font-semibold text-highlighted hover:text-primary">
+            <NuxtLink
+              :to="`/posts/${post.slug}`"
+              class="motion-link block text-lg font-semibold text-highlighted hover:text-primary"
+            >
+              <!-- eslint-disable-next-line vue/no-v-html -->
               <span v-html="renderHighlightedText(post.title)" />
             </NuxtLink>
 
-            <p class="line-clamp-2 text-sm text-toned" v-html="renderHighlightedText(post.summary)" />
+            <!-- eslint-disable vue/no-v-html -->
+            <p
+              class="line-clamp-2 text-sm text-toned"
+              v-html="renderHighlightedText(post.summary)"
+            />
+            <!-- eslint-enable vue/no-v-html -->
 
             <div class="flex flex-wrap gap-2">
               <UButton
@@ -352,20 +402,35 @@ useHead({
         </UCard>
       </section>
 
-      <p v-if="searchLoading" class="mt-4 text-sm text-toned">
+      <p
+        v-if="searchLoading"
+        class="mt-4 text-sm text-toned"
+      >
         正在检索相关文章...
       </p>
 
       <section class="motion-fade-up motion-delay-3 mt-8 flex items-center justify-between rounded-xl border border-default bg-muted/20 p-4">
-        <UButton icon="i-lucide-chevron-left" label="上一页" color="neutral" variant="ghost" :disabled="currentPage <= 1"
-          @click="goPrevPage" />
+        <UButton
+          icon="i-lucide-chevron-left"
+          label="上一页"
+          color="neutral"
+          variant="ghost"
+          :disabled="currentPage <= 1"
+          @click="goPrevPage"
+        />
 
         <p class="text-sm text-toned">
           第 {{ currentPage }} / {{ totalPages }} 页
         </p>
 
-        <UButton trailing-icon="i-lucide-chevron-right" label="下一页" color="neutral" variant="ghost"
-          :disabled="currentPage >= totalPages" @click="goNextPage" />
+        <UButton
+          trailing-icon="i-lucide-chevron-right"
+          label="下一页"
+          color="neutral"
+          variant="ghost"
+          :disabled="currentPage >= totalPages"
+          @click="goNextPage"
+        />
       </section>
     </main>
   </div>

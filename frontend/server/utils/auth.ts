@@ -243,7 +243,7 @@ export async function gatewayFetch<T>(
     return await $fetch<T>(joinURL(config.gatewayBase, path), {
       method: options?.method,
       query: options?.query,
-      body: options?.body as BodyInit | Record<string, any> | null | undefined,
+      body: options?.body as BodyInit | Record<string, unknown> | null | undefined,
       headers: Object.keys(headers).length ? headers : undefined
     })
   }

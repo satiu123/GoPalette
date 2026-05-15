@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { EditorCustomHandlers } from '@nuxt/ui'
 import type { Editor } from '@tiptap/core'
+import type { Selection } from '@tiptap/pm/state'
+import type { EditorView } from '@tiptap/pm/view'
 import { TaskList, TaskItem } from '@tiptap/extension-list'
 import { TableKit } from '@tiptap/extension-table'
 import { CellSelection } from '@tiptap/pm/tables'
@@ -24,6 +26,9 @@ const user = useState('user', () => ({
 const appConfig = useAppConfig()
 
 const editorRef = useTemplateRef('editorRef')
+
+type EditorToolbarContext = { editor: Editor, view: EditorView, state: { selection: Selection } }
+type EditorToolbarViewContext = { editor: Editor, view: EditorView }
 
 const { extension: Completion, handlers: aiHandlers, isLoading: aiLoading, aiReview } = useEditorCompletion(editorRef)
 
@@ -103,7 +108,7 @@ const selectedCategoryName = computed(() => {
 
 const selectedTagNames = computed<string[]>({
   get: () => selectedTags.value,
-  set: value => {
+  set: (value) => {
     postMeta.tagsText = Array.from(new Set(value.map(tag => tag.trim()).filter(Boolean))).join(', ')
   }
 })
@@ -111,7 +116,7 @@ const selectedTagNames = computed<string[]>({
 const wordCount = computed(() => {
   return content.value
     .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/[#>*`_~\[\]()!-]/g, ' ')
+    .replace(/[#>*`_~[\]()!-]/g, ' ')
     .replace(/\s+/g, '')
     .length
 })
@@ -246,7 +251,7 @@ function isDesktopEditorViewport() {
 
 const mobileToolbarItems = computed(() =>
   bubbleToolbarItems.value.map(group =>
-    group.map(item => {
+    group.map((item) => {
       if ('label' in item && (item.label === 'Improve' || item.label === 'Turn into')) {
         return {
           ...item,
@@ -270,7 +275,7 @@ function toSlug(value: string) {
 
 function plainTextSummary(markdown: string) {
   const text = markdown
-    .replace(/[#>*`_~\[\]()!-]/g, ' ')
+    .replace(/[#>*`_~[\]()!-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 
@@ -440,10 +445,10 @@ async function savePost(status: number) {
       description: `文章标识：${saved.id}`,
       color: 'success'
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     toast.add({
       title: '保存失败',
-      description: error?.message || '请检查网关与后端服务状态',
+      description: getErrorMessage(error),
       color: 'error'
     })
   } finally {
@@ -544,9 +549,15 @@ const extensions = computed(() => [
   >
     <AppHeader compact>
       <div class="flex min-w-0 items-center gap-1 sm:gap-2">
-        <UEditorToolbar :editor="editor" :items="toolbarItems" />
+        <UEditorToolbar
+          :editor="editor"
+          :items="toolbarItems"
+        />
 
-        <USeparator orientation="vertical" class="h-7 max-[380px]:hidden" />
+        <USeparator
+          orientation="vertical"
+          class="h-7 max-[380px]:hidden"
+        />
 
         <UButton
           icon="i-lucide-save"
@@ -630,7 +641,10 @@ const extensions = computed(() => [
     >
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-2">
-          <UIcon name="i-lucide-sparkles" class="text-primary" />
+          <UIcon
+            name="i-lucide-sparkles"
+            class="text-primary"
+          />
           <p class="text-sm font-medium text-highlighted">
             AI candidate
           </p>
@@ -722,11 +736,23 @@ const extensions = computed(() => [
 
         <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
           <div class="grid gap-4 md:grid-cols-2">
-            <UFormField label="标题" name="title" required>
-              <UInput v-model="postMeta.title" placeholder="请输入文章标题" @blur="handleTitleBlur" />
+            <UFormField
+              label="标题"
+              name="title"
+              required
+            >
+              <UInput
+                v-model="postMeta.title"
+                placeholder="请输入文章标题"
+                @blur="handleTitleBlur"
+              />
             </UFormField>
 
-            <UFormField label="Slug" name="slug" required>
+            <UFormField
+              label="Slug"
+              name="slug"
+              required
+            >
               <div class="flex gap-2">
                 <UInput
                   v-model="postMeta.slug"
@@ -745,7 +771,10 @@ const extensions = computed(() => [
               </div>
             </UFormField>
 
-            <UFormField label="分类" name="categoryId">
+            <UFormField
+              label="分类"
+              name="categoryId"
+            >
               <USelectMenu
                 v-model="postMeta.categoryId"
                 :items="categoryOptions"
@@ -769,7 +798,10 @@ const extensions = computed(() => [
               </p>
             </UFormField>
 
-            <UFormField label="标签" name="tagsText">
+            <UFormField
+              label="标签"
+              name="tagsText"
+            >
               <USelectMenu
                 v-model="selectedTagNames"
                 :items="tagSuggestions"
@@ -797,7 +829,11 @@ const extensions = computed(() => [
               </div>
             </UFormField>
 
-            <UFormField label="摘要" name="summary" class="md:col-span-2">
+            <UFormField
+              label="摘要"
+              name="summary"
+              class="md:col-span-2"
+            >
               <div class="space-y-2">
                 <UTextarea
                   v-model="postMeta.summary"
@@ -827,7 +863,11 @@ const extensions = computed(() => [
               <p class="text-sm font-medium text-highlighted">
                 发布检查
               </p>
-              <UBadge :label="publishReadiness" color="neutral" variant="soft" />
+              <UBadge
+                :label="publishReadiness"
+                color="neutral"
+                variant="soft"
+              />
             </div>
 
             <div class="mt-4 space-y-3">
@@ -837,7 +877,10 @@ const extensions = computed(() => [
                 class="flex items-center gap-2 text-sm"
                 :class="item.ready ? 'text-highlighted' : 'text-toned'"
               >
-                <UIcon :name="item.ready ? 'i-lucide-check-circle-2' : 'i-lucide-circle'" :class="item.ready ? 'text-primary' : 'text-muted'" />
+                <UIcon
+                  :name="item.ready ? 'i-lucide-check-circle-2' : 'i-lucide-circle'"
+                  :class="item.ready ? 'text-primary' : 'text-muted'"
+                />
                 <span>{{ item.label }}</span>
               </div>
             </div>
@@ -859,7 +902,7 @@ const extensions = computed(() => [
       :editor="editor"
       :items="bubbleToolbarItems"
       layout="bubble"
-      :should-show="({ editor, view, state }: any) => {
+      :should-show="({ editor, view, state }: EditorToolbarContext) => {
         if (!isDesktopEditorViewport()) {
           return false
         }
@@ -879,7 +922,7 @@ const extensions = computed(() => [
       :editor="editor"
       :items="getImageToolbarItems(editor)"
       layout="bubble"
-      :should-show="({ editor, view }: any) => {
+      :should-show="({ editor, view }: EditorToolbarViewContext) => {
         if (!isDesktopEditorViewport()) {
           return false
         }
@@ -891,7 +934,7 @@ const extensions = computed(() => [
       :editor="editor"
       :items="getTableToolbarItems(editor)"
       layout="bubble"
-      :should-show="({ editor, view }: any) => {
+      :should-show="({ editor, view }: EditorToolbarViewContext) => {
         if (!isDesktopEditorViewport()) {
           return false
         }
@@ -899,13 +942,26 @@ const extensions = computed(() => [
       }"
     />
 
-    <UEditorEmojiMenu :editor="editor" :items="emojiItems" />
+    <UEditorEmojiMenu
+      :editor="editor"
+      :items="emojiItems"
+    />
 
-    <UEditorMentionMenu :editor="editor" :items="mentionItems" />
+    <UEditorMentionMenu
+      :editor="editor"
+      :items="mentionItems"
+    />
 
-    <UEditorSuggestionMenu :editor="editor" :items="suggestionItems" />
+    <UEditorSuggestionMenu
+      :editor="editor"
+      :items="suggestionItems"
+    />
 
-    <UEditorDragHandle v-slot="{ ui, onClick }" :editor="editor" @node-change="onNodeChange">
+    <UEditorDragHandle
+      v-slot="{ ui, onClick }"
+      :editor="editor"
+      @node-change="onNodeChange"
+    >
       <UButton
         icon="i-lucide-plus"
         color="neutral"

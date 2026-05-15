@@ -1104,7 +1104,10 @@ useSeoMeta({
                 @change="toggleVisiblePosts(($event.target as HTMLInputElement).checked)"
               >
               当前页全选
-              <span v-if="selectedPostIds.length > 0" class="text-muted">
+              <span
+                v-if="selectedPostIds.length > 0"
+                class="text-muted"
+              >
                 已选 {{ selectedPostIds.length }}
               </span>
             </label>
@@ -1208,10 +1211,12 @@ useSeoMeta({
                 >
                 <div class="min-w-0">
                   <div class="flex flex-wrap items-center gap-2">
+                    <!-- eslint-disable vue/no-v-html -->
                     <p
                       class="min-w-0 text-base font-semibold text-highlighted"
                       v-html="renderHighlightedText(item.title)"
                     />
+                    <!-- eslint-enable vue/no-v-html -->
                     <UBadge
                       size="xs"
                       :label="postStatusText(item.status)"
@@ -1425,7 +1430,10 @@ useSeoMeta({
                   @change="toggleVisibleComments(($event.target as HTMLInputElement).checked)"
                 >
                 {{ commentPostId.trim() ? '当前文章' : '全站队列' }} · 共 {{ commentTotal || commentRows.length }} 条评论
-                <span v-if="selectedCommentIds.length > 0" class="text-muted">
+                <span
+                  v-if="selectedCommentIds.length > 0"
+                  class="text-muted"
+                >
                   已选 {{ selectedCommentIds.length }}
                 </span>
               </label>
@@ -1663,7 +1671,10 @@ useSeoMeta({
                     @change="toggleVisibleUsers(($event.target as HTMLInputElement).checked)"
                   >
                   当前页全选
-                  <span v-if="selectedUserIds.length > 0" class="text-muted">
+                  <span
+                    v-if="selectedUserIds.length > 0"
+                    class="text-muted"
+                  >
                     已选 {{ selectedUserIds.length }}
                   </span>
                 </label>
@@ -1895,7 +1906,10 @@ useSeoMeta({
                       @change="toggleVisibleCategories(($event.target as HTMLInputElement).checked)"
                     >
                     全选当前结果
-                    <span v-if="selectedCategoryIds.length > 0" class="text-muted">
+                    <span
+                      v-if="selectedCategoryIds.length > 0"
+                      class="text-muted"
+                    >
                       已选 {{ selectedCategoryIds.length }}
                     </span>
                   </label>
@@ -2019,7 +2033,10 @@ useSeoMeta({
                       @change="toggleVisibleTags(($event.target as HTMLInputElement).checked)"
                     >
                     全选当前结果
-                    <span v-if="selectedTagIds.length > 0" class="text-muted">
+                    <span
+                      v-if="selectedTagIds.length > 0"
+                      class="text-muted"
+                    >
                       已选 {{ selectedTagIds.length }}
                     </span>
                   </label>

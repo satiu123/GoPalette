@@ -38,11 +38,16 @@ async function onSubmit() {
     })
 
     await router.push('/login')
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const typed = error as { message?: unknown, data?: { message?: unknown } }
     toast.add({
       color: 'error',
       title: '注册失败',
-      description: error?.data?.message || error?.message || '请稍后重试'
+      description: typeof typed.data?.message === 'string'
+        ? typed.data.message
+        : typeof typed.message === 'string'
+          ? typed.message
+          : '请稍后重试'
     })
   } finally {
     submitting.value = false
@@ -76,7 +81,10 @@ useSeoMeta({
           class="space-y-4"
           @submit.prevent="onSubmit"
         >
-          <UFormField label="用户名" name="username">
+          <UFormField
+            label="用户名"
+            name="username"
+          >
             <UInput
               v-model="form.username"
               placeholder="请输入用户名"
@@ -84,7 +92,10 @@ useSeoMeta({
             />
           </UFormField>
 
-          <UFormField label="邮箱" name="email">
+          <UFormField
+            label="邮箱"
+            name="email"
+          >
             <UInput
               v-model="form.email"
               type="email"
@@ -93,7 +104,10 @@ useSeoMeta({
             />
           </UFormField>
 
-          <UFormField label="密码" name="password">
+          <UFormField
+            label="密码"
+            name="password"
+          >
             <UInput
               v-model="form.password"
               type="password"
@@ -102,7 +116,10 @@ useSeoMeta({
             />
           </UFormField>
 
-          <UFormField label="确认密码" name="confirmPassword">
+          <UFormField
+            label="确认密码"
+            name="confirmPassword"
+          >
             <UInput
               v-model="form.confirmPassword"
               type="password"

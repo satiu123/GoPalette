@@ -229,8 +229,19 @@ useHead({
 <template>
   <div class="min-h-screen bg-default">
     <AppHeader>
-      <UButton to="/posts" icon="i-lucide-book-open" size="sm" class="sm:hidden" />
-      <UButton to="/posts" icon="i-lucide-book-open" label="浏览文章" size="sm" class="hidden sm:inline-flex" />
+      <UButton
+        to="/posts"
+        icon="i-lucide-book-open"
+        size="sm"
+        class="sm:hidden"
+      />
+      <UButton
+        to="/posts"
+        icon="i-lucide-book-open"
+        label="浏览文章"
+        size="sm"
+        class="hidden sm:inline-flex"
+      />
     </AppHeader>
 
     <main class="mx-auto w-full max-w-6xl px-4 pb-20 pt-10 sm:px-14">
@@ -274,12 +285,22 @@ useHead({
             </div>
           </div>
 
-          <UButton to="/posts" color="neutral" variant="soft" trailing-icon="i-lucide-arrow-right" label="查看全部文章" />
+          <UButton
+            to="/posts"
+            color="neutral"
+            variant="soft"
+            trailing-icon="i-lucide-arrow-right"
+            label="查看全部文章"
+          />
         </div>
       </section>
 
       <section class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <UCard v-for="item in statItems" :key="item.label" :ui="{ body: 'p-4' }">
+        <UCard
+          v-for="item in statItems"
+          :key="item.label"
+          :ui="{ body: 'p-4' }"
+        >
           <p class="text-xs text-toned">
             {{ item.label }}
           </p>
@@ -297,11 +318,17 @@ useHead({
             </h2>
           </template>
 
-          <div v-if="!topPosts.length" class="text-sm text-toned">
+          <div
+            v-if="!topPosts.length"
+            class="text-sm text-toned"
+          >
             这位作者还没有公开文章。
           </div>
 
-          <div v-else class="space-y-3">
+          <div
+            v-else
+            class="space-y-3"
+          >
             <NuxtLink
               v-for="post in topPosts"
               :key="post.id"
@@ -330,11 +357,17 @@ useHead({
             </div>
           </template>
 
-          <div v-if="!authorPosts.length" class="text-sm text-toned">
+          <div
+            v-if="!authorPosts.length"
+            class="text-sm text-toned"
+          >
             暂无可展示文章。
           </div>
 
-          <div v-else class="space-y-3">
+          <div
+            v-else
+            class="space-y-3"
+          >
             <article
               v-for="post in authorPosts"
               :key="post.id"
@@ -342,15 +375,26 @@ useHead({
             >
               <div class="flex flex-wrap items-start justify-between gap-3">
                 <div class="space-y-2">
-                  <NuxtLink :to="`/posts/${post.slug}`" class="text-base font-semibold text-highlighted hover:text-primary">
+                  <NuxtLink
+                    :to="`/posts/${post.slug}`"
+                    class="text-base font-semibold text-highlighted hover:text-primary"
+                  >
                     {{ post.title }}
                   </NuxtLink>
                   <p class="line-clamp-2 text-sm text-toned">
                     {{ post.summary }}
                   </p>
                   <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
-                    <NuxtLink :to="categoryPath(post.category)" class="inline-flex">
-                      <UBadge :label="post.category" color="primary" variant="subtle" class="hover:opacity-90" />
+                    <NuxtLink
+                      :to="categoryPath(post.category)"
+                      class="inline-flex"
+                    >
+                      <UBadge
+                        :label="post.category"
+                        color="primary"
+                        variant="subtle"
+                        class="hover:opacity-90"
+                      />
                     </NuxtLink>
                     <span>{{ post.publishedAt }}</span>
                     <span>·</span>

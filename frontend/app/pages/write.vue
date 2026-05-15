@@ -30,9 +30,15 @@ useSeoMeta({
 <template>
   <div class="min-h-screen">
     <ClientOnly>
-      <component :is="WriteEditorWorkspace" v-if="!checkingAccess && isLoggedIn && isReady" />
+      <component
+        :is="WriteEditorWorkspace"
+        v-if="!checkingAccess && isLoggedIn && isReady"
+      />
 
-      <div v-else class="mx-auto flex min-h-screen w-full max-w-5xl items-start justify-center px-4 py-24 sm:px-8">
+      <div
+        v-else
+        class="mx-auto flex min-h-screen w-full max-w-5xl items-start justify-center px-4 py-24 sm:px-8"
+      >
         <div class="w-full max-w-3xl space-y-6">
           <div class="space-y-3">
             <div class="loading-shimmer h-8 w-40 rounded-full" />

@@ -277,6 +277,14 @@ function commentInitial(item?: CommentInfo | null) {
   return name.trim().slice(0, 1).toUpperCase() || 'U'
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  if (!error || typeof error !== 'object') return fallback
+  const typed = error as { message?: unknown, data?: { message?: unknown } }
+  if (typeof typed.data?.message === 'string') return typed.data.message
+  if (typeof typed.message === 'string') return typed.message
+  return fallback
+}
+
 async function loadComments() {
   if (!post.value?.id) return
 
@@ -348,10 +356,10 @@ async function handleToggleLike() {
       title: result.liked ? '已点赞' : '已取消点赞',
       color: 'success'
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     toast.add({
       title: '操作失败',
-      description: error?.data?.message || error?.message || '请稍后重试',
+      description: getErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -387,10 +395,10 @@ async function submitComment() {
     commentText.value = ''
     toast.add({ title: '评论发布成功', color: 'success' })
     await loadComments()
-  } catch (error: any) {
+  } catch (error: unknown) {
     toast.add({
       title: '评论发布失败',
-      description: error?.data?.message || error?.message || '请稍后重试',
+      description: getErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -446,10 +454,10 @@ async function submitReply() {
     cancelReply()
     toast.add({ title: '回复发布成功', color: 'success' })
     await loadComments()
-  } catch (error: any) {
+  } catch (error: unknown) {
     toast.add({
       title: '回复发布失败',
-      description: error?.data?.message || error?.message || '请稍后重试',
+      description: getErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -465,10 +473,10 @@ async function removeComment(id: string) {
     await deleteComment(id)
     toast.add({ title: '评论已删除', color: 'success' })
     await loadComments()
-  } catch (error: any) {
+  } catch (error: unknown) {
     toast.add({
       title: '删除评论失败',
-      description: error?.data?.message || error?.message || '请稍后重试',
+      description: getErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -528,26 +536,33 @@ const displayedCommentCount = computed(() =>
 
 const ViewerCodeBlockShiki = CodeBlockShiki.extend({
   markdownTokenName: 'code',
-  parseMarkdown: (token: any, helpers: any) => {
+  parseMarkdown: (token, helpers) => {
+    const typedToken = token as {
+      raw?: string
+      codeBlockStyle?: string
+      lang?: string
+      text?: string
+    }
     if (
-      token.raw?.startsWith('```') === false
-      && token.raw?.startsWith('~~~') === false
-      && token.codeBlockStyle !== 'indented'
+      typedToken.raw?.startsWith('```') === false
+      && typedToken.raw?.startsWith('~~~') === false
+      && typedToken.codeBlockStyle !== 'indented'
     ) {
       return []
     }
 
     return helpers.createNode(
       'codeBlock',
-      { language: token.lang || null },
-      token.text ? [helpers.createTextNode(token.text)] : []
+      { language: typedToken.lang || null },
+      typedToken.text ? [helpers.createTextNode(typedToken.text)] : []
     )
   },
-  renderMarkdown: (node: any, helpers: any) => {
-    const language = node.attrs?.language || ''
-    if (!node.content) return `\`\`\`${language}\n\n\`\`\``
+  renderMarkdown: (node, helpers) => {
+    const typedNode = node as { attrs?: { language?: string }, content?: unknown }
+    const language = typedNode.attrs?.language || ''
+    if (!typedNode.content) return `\`\`\`${language}\n\n\`\`\``
 
-    return [`\`\`\`${language}`, helpers.renderChildren(node.content), '```'].join('\n')
+    return [`\`\`\`${language}`, helpers.renderChildren(typedNode.content), '```'].join('\n')
   }
 })
 
@@ -574,20 +589,20 @@ const articleJsonLd = computed(() => {
   return JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
-    headline: post.value.title,
-    description: post.value.summary,
-    image: post.value.cover,
-    datePublished: post.value.createdAt || undefined,
-    dateModified: post.value.createdAt || undefined,
-    author: {
+    'headline': post.value.title,
+    'description': post.value.summary,
+    'image': post.value.cover,
+    'datePublished': post.value.createdAt || undefined,
+    'dateModified': post.value.createdAt || undefined,
+    'author': {
       '@type': 'Person',
-      name: post.value.author,
-      url: post.value.authorId ? buildUrl(`/authors/${post.value.authorId}`) : undefined
+      'name': post.value.author,
+      'url': post.value.authorId ? buildUrl(`/authors/${post.value.authorId}`) : undefined
     },
-    mainEntityOfPage: canonicalUrl.value,
-    publisher: {
+    'mainEntityOfPage': canonicalUrl.value,
+    'publisher': {
       '@type': 'Organization',
-      name: siteName.value
+      'name': siteName.value
     }
   })
 })
@@ -623,112 +638,162 @@ useHead({
 <template>
   <div class="min-h-screen bg-default">
     <AppHeader>
-      <UButton to="/write" icon="i-lucide-square-pen" size="sm" class="sm:hidden" />
-      <UButton to="/write" icon="i-lucide-square-pen" label="继续写作" size="sm" class="hidden sm:inline-flex" />
+      <UButton
+        to="/write"
+        icon="i-lucide-square-pen"
+        size="sm"
+        class="sm:hidden"
+      />
+      <UButton
+        to="/write"
+        icon="i-lucide-square-pen"
+        label="继续写作"
+        size="sm"
+        class="hidden sm:inline-flex"
+      />
     </AppHeader>
 
-    <main v-if="post" class="mx-auto w-full max-w-7xl px-4 pb-20 pt-10 sm:px-8 xl:px-12">
+    <main
+      v-if="post"
+      class="mx-auto w-full max-w-7xl px-4 pb-20 pt-10 sm:px-8 xl:px-12"
+    >
       <div class="grid gap-8 lg:grid-cols-[minmax(0,900px)_minmax(220px,1fr)]">
         <article class="motion-fade-up min-w-0 rounded-2xl border border-default bg-default p-6 sm:p-10">
-        <div class="space-y-5 border-b border-default pb-8">
-          <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
-            <NuxtLink :to="categoryPath(post.category)" class="inline-flex">
-              <UBadge :label="post.category" color="primary" variant="subtle" class="hover:opacity-90" />
-            </NuxtLink>
-            <span>{{ post.publishedAt }}</span>
-            <span>·</span>
-            <span>{{ post.readingMinutes }} 分钟</span>
-            <span>·</span>
-            <span>{{ visibleViewCount }} 阅读</span>
-            <span>·</span>
-            <span>{{ visibleLikeCount }} 点赞</span>
-            <span>·</span>
-            <NuxtLink
-              v-if="post.authorId"
-              :to="`/authors/${post.authorId}`"
-              class="hover:text-primary"
+          <div class="space-y-5 border-b border-default pb-8">
+            <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
+              <NuxtLink
+                :to="categoryPath(post.category)"
+                class="inline-flex"
+              >
+                <UBadge
+                  :label="post.category"
+                  color="primary"
+                  variant="subtle"
+                  class="hover:opacity-90"
+                />
+              </NuxtLink>
+              <span>{{ post.publishedAt }}</span>
+              <span>·</span>
+              <span>{{ post.readingMinutes }} 分钟</span>
+              <span>·</span>
+              <span>{{ visibleViewCount }} 阅读</span>
+              <span>·</span>
+              <span>{{ visibleLikeCount }} 点赞</span>
+              <span>·</span>
+              <NuxtLink
+                v-if="post.authorId"
+                :to="`/authors/${post.authorId}`"
+                class="hover:text-primary"
+              >
+                {{ post.author }}
+              </NuxtLink>
+              <span v-else>{{ post.author }}</span>
+            </div>
+
+            <h1 class="text-3xl font-semibold tracking-tight text-highlighted sm:text-4xl">
+              {{ post.title }}
+            </h1>
+
+            <p class="text-base text-toned sm:text-lg">
+              {{ post.summary }}
+            </p>
+
+            <div class="flex flex-wrap gap-2">
+              <UButton
+                :icon="likedByCurrentUser ? 'i-lucide-heart' : 'i-lucide-heart'"
+                size="sm"
+                :color="likedByCurrentUser ? 'primary' : 'neutral'"
+                :variant="likedByCurrentUser ? 'solid' : 'soft'"
+                :loading="likeLoading"
+                :label="likedByCurrentUser ? `已点赞 ${visibleLikeCount}` : `点赞 ${visibleLikeCount}`"
+                @click="handleToggleLike"
+              />
+              <UButton
+                icon="i-lucide-link"
+                size="sm"
+                color="neutral"
+                variant="soft"
+                label="复制链接"
+                @click="copyArticleLink"
+              />
+              <UButton
+                icon="i-lucide-share-2"
+                size="sm"
+                color="neutral"
+                variant="ghost"
+                label="分享"
+                @click="shareArticle"
+              />
+            </div>
+
+            <img
+              :src="post.cover"
+              :alt="post.title"
+              class="h-60 w-full rounded-xl object-cover"
             >
-              {{ post.author }}
+          </div>
+
+          <div class="mt-8">
+            <p
+              v-if="!post.content?.trim()"
+              class="leading-7 text-toned"
+            >
+              暂无正文内容。
+            </p>
+
+            <div
+              v-else
+              ref="articleContentRef"
+              class="article-viewer min-w-0"
+            >
+              <ClientOnly>
+                <UEditor
+                  :key="post.slug"
+                  :model-value="post.content"
+                  content-type="markdown"
+                  :editable="false"
+                  :extensions="viewerExtensions"
+                  :starter-kit="{ codeBlock: false }"
+                  class="min-h-0"
+                  :ui="{
+                    base: 'p-0',
+                    content: 'max-w-none'
+                  }"
+                  @create="refreshArticleEnhancements"
+                />
+
+                <template #fallback>
+                  <div class="space-y-3">
+                    <div class="loading-shimmer h-4 w-11/12 rounded" />
+                    <div class="loading-shimmer h-4 w-9/12 rounded" />
+                    <div class="loading-shimmer h-24 w-full rounded-xl" />
+                  </div>
+                </template>
+              </ClientOnly>
+            </div>
+          </div>
+
+          <div class="mt-10 flex flex-wrap gap-2 border-t border-default pt-6">
+            <NuxtLink
+              v-for="tag in post.tags"
+              :key="tag"
+              :to="tagPath(tag)"
+              class="inline-flex"
+            >
+              <UBadge
+                :label="`#${tag}`"
+                color="neutral"
+                variant="outline"
+                class="hover:border-primary hover:text-primary"
+              />
             </NuxtLink>
-            <span v-else>{{ post.author }}</span>
           </div>
-
-          <h1 class="text-3xl font-semibold tracking-tight text-highlighted sm:text-4xl">
-            {{ post.title }}
-          </h1>
-
-          <p class="text-base text-toned sm:text-lg">
-            {{ post.summary }}
-          </p>
-
-          <div class="flex flex-wrap gap-2">
-            <UButton
-              :icon="likedByCurrentUser ? 'i-lucide-heart' : 'i-lucide-heart'"
-              size="sm"
-              :color="likedByCurrentUser ? 'primary' : 'neutral'"
-              :variant="likedByCurrentUser ? 'solid' : 'soft'"
-              :loading="likeLoading"
-              :label="likedByCurrentUser ? `已点赞 ${visibleLikeCount}` : `点赞 ${visibleLikeCount}`"
-              @click="handleToggleLike"
-            />
-            <UButton
-              icon="i-lucide-link"
-              size="sm"
-              color="neutral"
-              variant="soft"
-              label="复制链接"
-              @click="copyArticleLink"
-            />
-            <UButton
-              icon="i-lucide-share-2"
-              size="sm"
-              color="neutral"
-              variant="ghost"
-              label="分享"
-              @click="shareArticle"
-            />
-          </div>
-
-          <img :src="post.cover" :alt="post.title" class="h-60 w-full rounded-xl object-cover">
-        </div>
-
-        <div class="mt-8">
-          <p v-if="!post.content?.trim()" class="leading-7 text-toned">
-            暂无正文内容。
-          </p>
-
-          <div v-else ref="articleContentRef" class="article-viewer min-w-0">
-            <ClientOnly>
-              <UEditor :key="post.slug" :model-value="post.content" content-type="markdown" :editable="false"
-                :extensions="viewerExtensions" :starter-kit="{ codeBlock: false }" class="min-h-0" :ui="{
-                  base: 'p-0',
-                  content: 'max-w-none'
-                }" @create="refreshArticleEnhancements" />
-
-              <template #fallback>
-                <div class="space-y-3">
-                  <div class="loading-shimmer h-4 w-11/12 rounded" />
-                  <div class="loading-shimmer h-4 w-9/12 rounded" />
-                  <div class="loading-shimmer h-24 w-full rounded-xl" />
-                </div>
-              </template>
-            </ClientOnly>
-          </div>
-        </div>
-
-        <div class="mt-10 flex flex-wrap gap-2 border-t border-default pt-6">
-          <NuxtLink
-            v-for="tag in post.tags"
-            :key="tag"
-            :to="tagPath(tag)"
-            class="inline-flex"
-          >
-            <UBadge :label="`#${tag}`" color="neutral" variant="outline" class="hover:border-primary hover:text-primary" />
-          </NuxtLink>
-        </div>
         </article>
 
-        <aside v-if="headingItems.length" class="hidden lg:block">
+        <aside
+          v-if="headingItems.length"
+          class="hidden lg:block"
+        >
           <div class="sticky top-24 rounded-2xl border border-default bg-default/70 p-5">
             <p class="text-xs font-medium uppercase tracking-wide text-toned">
               目录
@@ -756,13 +821,23 @@ useHead({
           <h2 class="text-xl font-semibold text-highlighted">
             相关文章
           </h2>
-          <UButton to="/posts" size="xs" color="neutral" variant="ghost" trailing-icon="i-lucide-arrow-right"
-            label="返回列表" />
+          <UButton
+            to="/posts"
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            trailing-icon="i-lucide-arrow-right"
+            label="返回列表"
+          />
         </div>
 
         <div class="grid gap-4 md:grid-cols-3">
-          <NuxtLink v-for="item in relatedPosts" :key="item.id" :to="`/posts/${item.slug}`"
-            class="motion-card motion-panel rounded-xl border border-default bg-default p-4 hover:border-primary/40">
+          <NuxtLink
+            v-for="item in relatedPosts"
+            :key="item.id"
+            :to="`/posts/${item.slug}`"
+            class="motion-card motion-panel rounded-xl border border-default bg-default p-4 hover:border-primary/40"
+          >
             <p class="text-xs text-toned">
               {{ item.publishedAt }}
             </p>
@@ -783,7 +858,12 @@ useHead({
               写下你的想法，也可以直接回复某一条评论。
             </p>
           </div>
-          <UBadge v-if="commentsLoading" label="加载中" color="neutral" variant="soft" />
+          <UBadge
+            v-if="commentsLoading"
+            label="加载中"
+            color="neutral"
+            variant="soft"
+          />
         </div>
 
         <div class="mt-6 rounded-xl border border-default bg-elevated/30 p-4">
@@ -802,13 +882,22 @@ useHead({
 
             <div class="flex items-center gap-3">
               <span>{{ commentText.length }}/500</span>
-              <UButton :loading="submittingComment" label="发表评论" icon="i-lucide-send" @click="submitComment" />
+              <UButton
+                :loading="submittingComment"
+                label="发表评论"
+                icon="i-lucide-send"
+                @click="submitComment"
+              />
             </div>
           </div>
         </div>
 
         <div class="mt-8 space-y-5">
-          <article v-for="item in comments" :key="item.id" class="rounded-xl border border-default bg-default p-4 sm:p-5">
+          <article
+            v-for="item in comments"
+            :key="item.id"
+            class="rounded-xl border border-default bg-default p-4 sm:p-5"
+          >
             <div class="flex gap-3">
               <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
                 {{ commentInitial(item) }}
@@ -826,9 +915,23 @@ useHead({
                   </div>
 
                   <div class="flex items-center gap-1">
-                    <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-message-circle" label="回复" @click="startReply(item)" />
-                    <UButton v-if="canDeleteComment(item)" :loading="deletingCommentId === item.id" size="xs" color="error"
-                      variant="ghost" icon="i-lucide-trash-2" @click="removeComment(item.id)" />
+                    <UButton
+                      size="xs"
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-message-circle"
+                      label="回复"
+                      @click="startReply(item)"
+                    />
+                    <UButton
+                      v-if="canDeleteComment(item)"
+                      :loading="deletingCommentId === item.id"
+                      size="xs"
+                      color="error"
+                      variant="ghost"
+                      icon="i-lucide-trash-2"
+                      @click="removeComment(item.id)"
+                    />
                   </div>
                 </div>
 
@@ -836,22 +939,50 @@ useHead({
                   {{ item.content }}
                 </p>
 
-                <div v-if="replyTarget?.id === item.id" class="mt-4 rounded-xl border border-default bg-elevated/40 p-3">
+                <div
+                  v-if="replyTarget?.id === item.id"
+                  class="mt-4 rounded-xl border border-default bg-elevated/40 p-3"
+                >
                   <p class="mb-2 text-xs text-toned">
                     回复 {{ commentAuthorName(replyTarget) }}
                   </p>
-                  <UTextarea v-model="replyText" :rows="3" :maxlength="500" placeholder="写下回复内容。" class="w-full" />
+                  <UTextarea
+                    v-model="replyText"
+                    :rows="3"
+                    :maxlength="500"
+                    placeholder="写下回复内容。"
+                    class="w-full"
+                  />
                   <div class="mt-3 flex items-center justify-between gap-3 text-xs text-toned">
                     <span>{{ replyText.length }}/500</span>
                     <div class="flex gap-2">
-                      <UButton size="xs" color="neutral" variant="ghost" label="取消" @click="cancelReply" />
-                      <UButton size="xs" :loading="submittingReplyId === item.id" label="发布回复" icon="i-lucide-send" @click="submitReply" />
+                      <UButton
+                        size="xs"
+                        color="neutral"
+                        variant="ghost"
+                        label="取消"
+                        @click="cancelReply"
+                      />
+                      <UButton
+                        size="xs"
+                        :loading="submittingReplyId === item.id"
+                        label="发布回复"
+                        icon="i-lucide-send"
+                        @click="submitReply"
+                      />
                     </div>
                   </div>
                 </div>
 
-                <div v-if="item.replies?.length" class="mt-5 space-y-3 border-l border-default pl-4">
-                  <article v-for="reply in item.replies" :key="reply.id" class="rounded-xl bg-elevated/40 p-4">
+                <div
+                  v-if="item.replies?.length"
+                  class="mt-5 space-y-3 border-l border-default pl-4"
+                >
+                  <article
+                    v-for="reply in item.replies"
+                    :key="reply.id"
+                    class="rounded-xl bg-elevated/40 p-4"
+                  >
                     <div class="flex gap-3">
                       <div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-toned">
                         {{ commentInitial(reply) }}
@@ -862,7 +993,10 @@ useHead({
                           <div>
                             <p class="text-sm font-semibold text-highlighted">
                               {{ commentAuthorName(reply) }}
-                              <span v-if="reply.replyToAuthor?.name" class="font-normal text-toned">
+                              <span
+                                v-if="reply.replyToAuthor?.name"
+                                class="font-normal text-toned"
+                              >
                                 回复 @{{ reply.replyToAuthor.name }}
                               </span>
                             </p>
@@ -872,9 +1006,23 @@ useHead({
                           </div>
 
                           <div class="flex items-center gap-1">
-                            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-message-circle" label="回复" @click="startReply(reply)" />
-                            <UButton v-if="canDeleteComment(reply)" :loading="deletingCommentId === reply.id" size="xs" color="error"
-                              variant="ghost" icon="i-lucide-trash-2" @click="removeComment(reply.id)" />
+                            <UButton
+                              size="xs"
+                              color="neutral"
+                              variant="ghost"
+                              icon="i-lucide-message-circle"
+                              label="回复"
+                              @click="startReply(reply)"
+                            />
+                            <UButton
+                              v-if="canDeleteComment(reply)"
+                              :loading="deletingCommentId === reply.id"
+                              size="xs"
+                              color="error"
+                              variant="ghost"
+                              icon="i-lucide-trash-2"
+                              @click="removeComment(reply.id)"
+                            />
                           </div>
                         </div>
 
@@ -882,16 +1030,37 @@ useHead({
                           {{ reply.content }}
                         </p>
 
-                        <div v-if="replyTarget?.id === reply.id" class="mt-4 rounded-xl border border-default bg-default p-3">
+                        <div
+                          v-if="replyTarget?.id === reply.id"
+                          class="mt-4 rounded-xl border border-default bg-default p-3"
+                        >
                           <p class="mb-2 text-xs text-toned">
                             回复 {{ commentAuthorName(replyTarget) }}
                           </p>
-                          <UTextarea v-model="replyText" :rows="3" :maxlength="500" placeholder="写下回复内容。" class="w-full" />
+                          <UTextarea
+                            v-model="replyText"
+                            :rows="3"
+                            :maxlength="500"
+                            placeholder="写下回复内容。"
+                            class="w-full"
+                          />
                           <div class="mt-3 flex items-center justify-between gap-3 text-xs text-toned">
                             <span>{{ replyText.length }}/500</span>
                             <div class="flex gap-2">
-                              <UButton size="xs" color="neutral" variant="ghost" label="取消" @click="cancelReply" />
-                              <UButton size="xs" :loading="submittingReplyId === reply.id" label="发布回复" icon="i-lucide-send" @click="submitReply" />
+                              <UButton
+                                size="xs"
+                                color="neutral"
+                                variant="ghost"
+                                label="取消"
+                                @click="cancelReply"
+                              />
+                              <UButton
+                                size="xs"
+                                :loading="submittingReplyId === reply.id"
+                                label="发布回复"
+                                icon="i-lucide-send"
+                                @click="submitReply"
+                              />
                             </div>
                           </div>
                         </div>
@@ -903,8 +1072,14 @@ useHead({
             </div>
           </article>
 
-          <UAlert v-if="!commentsLoading && comments.length === 0" title="暂无评论" description="成为第一个发表评论的人。"
-            icon="i-lucide-message-circle" color="neutral" variant="soft" />
+          <UAlert
+            v-if="!commentsLoading && comments.length === 0"
+            title="暂无评论"
+            description="成为第一个发表评论的人。"
+            icon="i-lucide-message-circle"
+            color="neutral"
+            variant="soft"
+          />
         </div>
       </section>
     </main>

@@ -51,7 +51,12 @@ useHead({
 <template>
   <div class="min-h-screen bg-default">
     <AppHeader>
-      <UButton to="/write" icon="i-lucide-pen-line" size="sm" class="sm:hidden" />
+      <UButton
+        to="/write"
+        icon="i-lucide-pen-line"
+        size="sm"
+        class="sm:hidden"
+      />
       <UButton
         to="/write"
         icon="i-lucide-pen-line"
@@ -95,7 +100,10 @@ useHead({
             </div>
           </div>
 
-          <UCard class="motion-card motion-panel" :ui="{ body: 'p-5 sm:p-6' }">
+          <UCard
+            class="motion-card motion-panel"
+            :ui="{ body: 'p-5 sm:p-6' }"
+          >
             <template #header>
               <p class="text-sm font-medium text-toned">
                 站点概览
@@ -146,7 +154,10 @@ useHead({
 
             <div class="space-y-4 p-5">
               <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
-                <NuxtLink :to="categoryPath(post.category)" class="inline-flex">
+                <NuxtLink
+                  :to="categoryPath(post.category)"
+                  class="inline-flex"
+                >
                   <UBadge
                     :label="post.category"
                     color="primary"
@@ -206,7 +217,10 @@ useHead({
               <div class="mb-2 flex items-center gap-2 text-xs text-toned">
                 <span>{{ post.publishedAt }}</span>
                 <span>·</span>
-                <NuxtLink :to="categoryPath(post.category)" class="inline-flex">
+                <NuxtLink
+                  :to="categoryPath(post.category)"
+                  class="inline-flex"
+                >
                   <UBadge
                     :label="post.category"
                     color="primary"

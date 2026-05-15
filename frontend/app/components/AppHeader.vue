@@ -77,7 +77,10 @@ const slots = useSlots()
       </div>
     </template>
 
-    <template v-if="slots.search" #bottom>
+    <template
+      v-if="slots.search"
+      #bottom
+    >
       <div class="border-t border-default bg-default/96 px-4 pb-3 pt-2 shadow-sm backdrop-blur md:hidden">
         <slot name="search" />
       </div>
