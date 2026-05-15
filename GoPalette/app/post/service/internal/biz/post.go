@@ -2,6 +2,7 @@ package biz
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	pb "github.com/satiu123/GoPalette/api/post/v1"
@@ -45,7 +46,9 @@ type PostRepo interface {
 	ListForIndex(ctx context.Context, page, pageSize int64, publishedOnly bool) ([]*Post, int64, error)
 	ListForIndexByCursor(ctx context.Context, cursorID, pageSize int64, publishedOnly bool) ([]*Post, int64, int64, bool, error)
 	IncrCommentCount(ctx context.Context, id int64, delta int64) error
+	RecordView(ctx context.Context, id int64, viewerKey string, window time.Duration) (bool, int64, error)
 	ToggleLike(ctx context.Context, postID, userID int64) (bool, int64, error)
+	GetLikeState(ctx context.Context, postID, userID int64) (bool, int64, error)
 	ListLikedByUser(ctx context.Context, userID, page, pageSize int64) ([]*Post, int64, error)
 }
 
@@ -193,6 +196,28 @@ func (uc *PostUsecase) IncrCommentCount(ctx context.Context, id int64, delta int
 	return uc.repo.IncrCommentCount(ctx, id, delta)
 }
 
+func (uc *PostUsecase) RecordPostView(ctx context.Context, id int64, viewerKey string) (bool, int64, error) {
+	if id <= 0 {
+		return false, 0, pb.ErrorInvalidArgument("%s", "文章ID无效")
+	}
+
+	viewerKey = strings.TrimSpace(viewerKey)
+	if len(viewerKey) < 32 || len(viewerKey) > 128 {
+		return false, 0, pb.ErrorInvalidArgument("%s", "浏览标识无效")
+	}
+
+	post, err := uc.repo.GetByID(ctx, id)
+	if err != nil {
+		return false, 0, pb.ErrorPostNotFound("文章未找到")
+	}
+
+	if post.Status != int32(pb.PostStatus_PUBLISHED) {
+		return false, post.ViewCount, nil
+	}
+
+	return uc.repo.RecordView(ctx, id, viewerKey, 30*time.Minute)
+}
+
 func (uc *PostUsecase) TogglePostLike(ctx context.Context, id int64) (bool, int64, error) {
 	if id <= 0 {
 		return false, 0, pb.ErrorInvalidArgument("%s", "文章ID无效")
@@ -201,14 +226,36 @@ func (uc *PostUsecase) TogglePostLike(ctx context.Context, id int64) (bool, int6
 	if !ok {
 		return false, 0, pb.ErrorUnauthenticated("未认证")
 	}
-	if _, err := uc.repo.GetByID(ctx, id); err != nil {
+	post, err := uc.repo.GetByID(ctx, id)
+	if err != nil {
 		return false, 0, pb.ErrorPostNotFound("文章未找到")
+	}
+	if post.Status != int32(pb.PostStatus_PUBLISHED) {
+		return false, post.LikeCount, pb.ErrorInvalidArgument("%s", "仅已发布文章可点赞")
 	}
 	liked, likeCount, err := uc.repo.ToggleLike(ctx, id, claims.UserID)
 	if err != nil {
 		return false, 0, err
 	}
 	return liked, likeCount, nil
+}
+
+func (uc *PostUsecase) GetPostLikeState(ctx context.Context, id int64) (bool, int64, error) {
+	if id <= 0 {
+		return false, 0, pb.ErrorInvalidArgument("%s", "文章ID无效")
+	}
+	claims, ok := auth.FromContext(ctx)
+	if !ok {
+		return false, 0, pb.ErrorUnauthenticated("未认证")
+	}
+	post, err := uc.repo.GetByID(ctx, id)
+	if err != nil {
+		return false, 0, pb.ErrorPostNotFound("文章未找到")
+	}
+	if post.Status != int32(pb.PostStatus_PUBLISHED) {
+		return false, post.LikeCount, nil
+	}
+	return uc.repo.GetLikeState(ctx, id, claims.UserID)
 }
 
 func (uc *PostUsecase) ListUserLikedPosts(ctx context.Context, userID, page, pageSize int64) ([]*Post, int64, error) {

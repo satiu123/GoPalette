@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/satiu123/GoPalette/pkg/pagination"
@@ -448,6 +449,38 @@ func (r *postRepo) IncrCommentCount(ctx context.Context, id int64, delta int64) 
 		Update("comment_count", gorm.Expr("GREATEST(comment_count + ?, 0)", delta)).Error
 }
 
+func (r *postRepo) RecordView(ctx context.Context, id int64, viewerKey string, window time.Duration) (bool, int64, error) {
+	key := fmt.Sprintf("post:view:%d:%s", id, viewerKey)
+	counted, err := r.data.rdb.SetNX(ctx, key, "1", window).Result()
+	if err != nil {
+		return false, 0, err
+	}
+
+	if counted {
+		result := r.data.db.WithContext(ctx).Model(&Post{}).
+			Where("id = ? AND status = ?", id, 1).
+			Update("view_count", gorm.Expr("view_count + 1"))
+		if result.Error != nil {
+			_ = r.data.rdb.Del(ctx, key).Err()
+			return false, 0, result.Error
+		}
+		if result.RowsAffected == 0 {
+			_ = r.data.rdb.Del(ctx, key).Err()
+			counted = false
+		}
+	}
+
+	var viewCount int64
+	if err := r.data.db.WithContext(ctx).Model(&Post{}).
+		Where("id = ?", id).
+		Select("view_count").
+		Scan(&viewCount).Error; err != nil {
+		return counted, 0, err
+	}
+
+	return counted, viewCount, nil
+}
+
 func (r *postRepo) ToggleLike(ctx context.Context, postID, userID int64) (bool, int64, error) {
 	liked := false
 	var likeCount int64
@@ -483,6 +516,25 @@ func (r *postRepo) ToggleLike(ctx context.Context, postID, userID int64) (bool, 
 		return false, 0, err
 	}
 	return liked, likeCount, nil
+}
+
+func (r *postRepo) GetLikeState(ctx context.Context, postID, userID int64) (bool, int64, error) {
+	var likeCount int64
+	if err := r.data.db.WithContext(ctx).Model(&Post{}).
+		Where("id = ?", postID).
+		Select("like_count").
+		Scan(&likeCount).Error; err != nil {
+		return false, 0, err
+	}
+
+	var total int64
+	if err := r.data.db.WithContext(ctx).Model(&PostLike{}).
+		Where("post_id = ? AND user_id = ?", postID, userID).
+		Count(&total).Error; err != nil {
+		return false, 0, err
+	}
+
+	return total > 0, likeCount, nil
 }
 
 func (r *postRepo) ListLikedByUser(ctx context.Context, userID, page, pageSize int64) ([]*biz.Post, int64, error) {

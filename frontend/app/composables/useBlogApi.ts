@@ -103,6 +103,9 @@ export interface BlogPostItem {
     summary: string
     slug: string
     status: number
+    viewCount?: number
+    likeCount?: number
+    commentCount?: number
     tags: string[]
     category: string
     categoryId: string
@@ -241,6 +244,9 @@ export function normalizePostInfo(post: PostInfoLike): BlogPostItem {
         summary: raw.summary || '暂无摘要',
         slug: raw.slug || '',
         status: toPostStatus(raw.status),
+        viewCount: Number(raw.viewCount || 0),
+        likeCount: Number(raw.likeCount || 0),
+        commentCount: Number(raw.commentCount || 0),
         tags: raw.tags || [],
         category: raw.category?.name || '未分类',
         categoryId: raw.category?.id || '',
@@ -262,6 +268,9 @@ export function normalizePostDetail(detail: PostDetail): BlogPostItem {
         summary: info.summary || '暂无摘要',
         slug: info.slug || '',
         status: toPostStatus(info.status),
+        viewCount: Number(info.viewCount || 0),
+        likeCount: Number(info.likeCount || 0),
+        commentCount: Number(info.commentCount || 0),
         tags: info.tags || [],
         category: info.category?.name || '未分类',
         categoryId: info.category?.id || '',
@@ -377,6 +386,63 @@ export async function fetchPostBySlug(slug: string): Promise<BlogPostItem | null
     if (!post) return null
 
     return normalizePostDetail(post)
+}
+
+export async function recordPostView(id: string): Promise<{ counted: boolean; viewCount?: number }> {
+    if (!id) {
+        return {
+            counted: false
+        }
+    }
+
+    const response = await $fetch<any>(`/api/blog/post-views/${id}`, {
+        method: 'POST',
+        headers: withCsrfHeaders()
+    })
+
+    return {
+        counted: Boolean(response?.counted),
+        viewCount: Number(response?.viewCount || response?.view_count || 0)
+    }
+}
+
+export async function fetchPostLikeState(id: string): Promise<{ liked: boolean; likeCount: number }> {
+    if (!id) {
+        return {
+            liked: false,
+            likeCount: 0
+        }
+    }
+
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>(`/api/blog/post-likes/${id}`, {
+        method: 'GET'
+    })
+
+    return {
+        liked: Boolean(response?.liked),
+        likeCount: Number(response?.likeCount || response?.like_count || 0)
+    }
+}
+
+export async function togglePostLike(id: string): Promise<{ liked: boolean; likeCount: number }> {
+    if (!id) {
+        return {
+            liked: false,
+            likeCount: 0
+        }
+    }
+
+    const { authFetch } = useAuth()
+    const response = await authFetch<any>(`/api/blog/post-likes/${id}`, {
+        method: 'POST',
+        headers: withCsrfHeaders()
+    })
+
+    return {
+        liked: Boolean(response?.liked),
+        likeCount: Number(response?.likeCount || response?.like_count || 0)
+    }
 }
 
 export async function searchPosts(keyword: string, page = 1, pageSize = 20): Promise<{ results: SearchPostItem[]; total: number; totalPages: number }> {

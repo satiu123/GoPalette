@@ -2,7 +2,7 @@
 import { TaskList, TaskItem } from '@tiptap/extension-list'
 import { TableKit } from '@tiptap/extension-table'
 import { CodeBlockShiki } from 'tiptap-extension-code-block-shiki'
-import { POST_STATUS_PUBLISHED, createComment, deleteComment, fetchComments, fetchPostBySlug, fetchPosts } from '~/composables/useBlogApi'
+import { POST_STATUS_PUBLISHED, createComment, deleteComment, fetchComments, fetchPostBySlug, fetchPostLikeState, fetchPosts, recordPostView, togglePostLike } from '~/composables/useBlogApi'
 import type { CommentInfo } from '~/composables/useBlogApi'
 
 const toast = useToast()
@@ -36,6 +36,10 @@ const post = computed(() => postData.value)
 const comments = ref<CommentInfo[]>([])
 const commentsTotal = ref(0)
 const commentsLoading = ref(false)
+const visibleViewCount = ref(post.value?.viewCount || 0)
+const visibleLikeCount = ref(post.value?.likeCount || 0)
+const likedByCurrentUser = ref(false)
+const likeLoading = ref(false)
 const submittingComment = ref(false)
 const deletingCommentId = ref('')
 const commentText = ref('')
@@ -286,6 +290,75 @@ async function loadComments() {
   }
 }
 
+const viewedPostIds = new Set<string>()
+
+async function recordCurrentPostView() {
+  if (!import.meta.client) return
+
+  const current = post.value
+  if (!current?.id || viewedPostIds.has(current.id)) return
+
+  viewedPostIds.add(current.id)
+  visibleViewCount.value = current.viewCount || visibleViewCount.value
+
+  try {
+    const result = await recordPostView(current.id)
+    if (Number.isFinite(result.viewCount) && result.viewCount !== undefined) {
+      visibleViewCount.value = result.viewCount
+    }
+  } catch {
+    // 阅读统计失败不阻断文章浏览。
+  }
+}
+
+async function loadLikeState() {
+  const current = post.value
+  visibleLikeCount.value = current?.likeCount || 0
+  likedByCurrentUser.value = false
+
+  if (!current?.id || !isLoggedIn.value) return
+
+  try {
+    const result = await fetchPostLikeState(current.id)
+    likedByCurrentUser.value = result.liked
+    visibleLikeCount.value = result.likeCount
+  } catch {
+    likedByCurrentUser.value = false
+  }
+}
+
+async function handleToggleLike() {
+  const current = post.value
+  if (!current?.id) return
+
+  if (!isLoggedIn.value) {
+    toast.add({ title: '请先登录后再点赞', color: 'warning' })
+    await navigateTo(`/login?redirect=/posts/${slug.value}`)
+    return
+  }
+
+  if (likeLoading.value) return
+
+  likeLoading.value = true
+  try {
+    const result = await togglePostLike(current.id)
+    likedByCurrentUser.value = result.liked
+    visibleLikeCount.value = result.likeCount
+    toast.add({
+      title: result.liked ? '已点赞' : '已取消点赞',
+      color: 'success'
+    })
+  } catch (error: any) {
+    toast.add({
+      title: '操作失败',
+      description: error?.data?.message || error?.message || '请稍后重试',
+      color: 'error'
+    })
+  } finally {
+    likeLoading.value = false
+  }
+}
+
 async function submitComment() {
   const content = commentText.value.trim()
   if (!content) {
@@ -411,12 +484,18 @@ onMounted(async () => {
   }
 
   await loadComments()
+  await loadLikeState()
+  await recordCurrentPostView()
   await refreshArticleEnhancements()
 })
 
 watch(post, async (value) => {
   if (!value?.id) return
+  visibleViewCount.value = value.viewCount || 0
+  visibleLikeCount.value = value.likeCount || 0
   await loadComments()
+  await loadLikeState()
+  await recordCurrentPostView()
   await refreshArticleEnhancements()
 })
 
@@ -560,6 +639,10 @@ useHead({
             <span>·</span>
             <span>{{ post.readingMinutes }} 分钟</span>
             <span>·</span>
+            <span>{{ visibleViewCount }} 阅读</span>
+            <span>·</span>
+            <span>{{ visibleLikeCount }} 点赞</span>
+            <span>·</span>
             <NuxtLink
               v-if="post.authorId"
               :to="`/authors/${post.authorId}`"
@@ -579,6 +662,15 @@ useHead({
           </p>
 
           <div class="flex flex-wrap gap-2">
+            <UButton
+              :icon="likedByCurrentUser ? 'i-lucide-heart' : 'i-lucide-heart'"
+              size="sm"
+              :color="likedByCurrentUser ? 'primary' : 'neutral'"
+              :variant="likedByCurrentUser ? 'solid' : 'soft'"
+              :loading="likeLoading"
+              :label="likedByCurrentUser ? `已点赞 ${visibleLikeCount}` : `点赞 ${visibleLikeCount}`"
+              @click="handleToggleLike"
+            />
             <UButton
               icon="i-lucide-link"
               size="sm"

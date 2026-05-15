@@ -29,7 +29,9 @@ const (
 	Post_ListTopAuthorPosts_FullMethodName = "/api.post.v1.Post/ListTopAuthorPosts"
 	Post_ListPostsForIndex_FullMethodName  = "/api.post.v1.Post/ListPostsForIndex"
 	Post_IncrCommentCount_FullMethodName   = "/api.post.v1.Post/IncrCommentCount"
+	Post_RecordPostView_FullMethodName     = "/api.post.v1.Post/RecordPostView"
 	Post_TogglePostLike_FullMethodName     = "/api.post.v1.Post/TogglePostLike"
+	Post_GetPostLikeState_FullMethodName   = "/api.post.v1.Post/GetPostLikeState"
 	Post_ListUserLikedPosts_FullMethodName = "/api.post.v1.Post/ListUserLikedPosts"
 )
 
@@ -59,8 +61,12 @@ type PostClient interface {
 	ListPostsForIndex(ctx context.Context, in *ListPostsForIndexRequest, opts ...grpc.CallOption) (*ListPostsForIndexReply, error)
 	// IncrCommentCount 增减文章评论数（用于评论服务回写）
 	IncrCommentCount(ctx context.Context, in *IncrCommentCountRequest, opts ...grpc.CallOption) (*IncrCommentCountReply, error)
+	// RecordPostView 记录文章浏览，服务端按 viewer_key 去重后自增浏览量
+	RecordPostView(ctx context.Context, in *RecordPostViewRequest, opts ...grpc.CallOption) (*RecordPostViewReply, error)
 	// TogglePostLike 点赞/取消点赞
 	TogglePostLike(ctx context.Context, in *TogglePostLikeRequest, opts ...grpc.CallOption) (*TogglePostLikeReply, error)
+	// GetPostLikeState 获取当前用户对文章的点赞状态
+	GetPostLikeState(ctx context.Context, in *GetPostLikeStateRequest, opts ...grpc.CallOption) (*GetPostLikeStateReply, error)
 	// ListUserLikedPosts 获取用户点赞/收藏文章列表
 	ListUserLikedPosts(ctx context.Context, in *ListUserLikedPostsRequest, opts ...grpc.CallOption) (*ListUserLikedPostsReply, error)
 }
@@ -173,10 +179,30 @@ func (c *postClient) IncrCommentCount(ctx context.Context, in *IncrCommentCountR
 	return out, nil
 }
 
+func (c *postClient) RecordPostView(ctx context.Context, in *RecordPostViewRequest, opts ...grpc.CallOption) (*RecordPostViewReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RecordPostViewReply)
+	err := c.cc.Invoke(ctx, Post_RecordPostView_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *postClient) TogglePostLike(ctx context.Context, in *TogglePostLikeRequest, opts ...grpc.CallOption) (*TogglePostLikeReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TogglePostLikeReply)
 	err := c.cc.Invoke(ctx, Post_TogglePostLike_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postClient) GetPostLikeState(ctx context.Context, in *GetPostLikeStateRequest, opts ...grpc.CallOption) (*GetPostLikeStateReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPostLikeStateReply)
+	err := c.cc.Invoke(ctx, Post_GetPostLikeState_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -219,8 +245,12 @@ type PostServer interface {
 	ListPostsForIndex(context.Context, *ListPostsForIndexRequest) (*ListPostsForIndexReply, error)
 	// IncrCommentCount 增减文章评论数（用于评论服务回写）
 	IncrCommentCount(context.Context, *IncrCommentCountRequest) (*IncrCommentCountReply, error)
+	// RecordPostView 记录文章浏览，服务端按 viewer_key 去重后自增浏览量
+	RecordPostView(context.Context, *RecordPostViewRequest) (*RecordPostViewReply, error)
 	// TogglePostLike 点赞/取消点赞
 	TogglePostLike(context.Context, *TogglePostLikeRequest) (*TogglePostLikeReply, error)
+	// GetPostLikeState 获取当前用户对文章的点赞状态
+	GetPostLikeState(context.Context, *GetPostLikeStateRequest) (*GetPostLikeStateReply, error)
 	// ListUserLikedPosts 获取用户点赞/收藏文章列表
 	ListUserLikedPosts(context.Context, *ListUserLikedPostsRequest) (*ListUserLikedPostsReply, error)
 	mustEmbedUnimplementedPostServer()
@@ -263,8 +293,14 @@ func (UnimplementedPostServer) ListPostsForIndex(context.Context, *ListPostsForI
 func (UnimplementedPostServer) IncrCommentCount(context.Context, *IncrCommentCountRequest) (*IncrCommentCountReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method IncrCommentCount not implemented")
 }
+func (UnimplementedPostServer) RecordPostView(context.Context, *RecordPostViewRequest) (*RecordPostViewReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method RecordPostView not implemented")
+}
 func (UnimplementedPostServer) TogglePostLike(context.Context, *TogglePostLikeRequest) (*TogglePostLikeReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method TogglePostLike not implemented")
+}
+func (UnimplementedPostServer) GetPostLikeState(context.Context, *GetPostLikeStateRequest) (*GetPostLikeStateReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPostLikeState not implemented")
 }
 func (UnimplementedPostServer) ListUserLikedPosts(context.Context, *ListUserLikedPostsRequest) (*ListUserLikedPostsReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListUserLikedPosts not implemented")
@@ -470,6 +506,24 @@ func _Post_IncrCommentCount_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Post_RecordPostView_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecordPostViewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServer).RecordPostView(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Post_RecordPostView_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServer).RecordPostView(ctx, req.(*RecordPostViewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Post_TogglePostLike_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TogglePostLikeRequest)
 	if err := dec(in); err != nil {
@@ -484,6 +538,24 @@ func _Post_TogglePostLike_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PostServer).TogglePostLike(ctx, req.(*TogglePostLikeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Post_GetPostLikeState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPostLikeStateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServer).GetPostLikeState(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Post_GetPostLikeState_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServer).GetPostLikeState(ctx, req.(*GetPostLikeStateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -554,8 +626,16 @@ var Post_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Post_IncrCommentCount_Handler,
 		},
 		{
+			MethodName: "RecordPostView",
+			Handler:    _Post_RecordPostView_Handler,
+		},
+		{
 			MethodName: "TogglePostLike",
 			Handler:    _Post_TogglePostLike_Handler,
+		},
+		{
+			MethodName: "GetPostLikeState",
+			Handler:    _Post_GetPostLikeState_Handler,
 		},
 		{
 			MethodName: "ListUserLikedPosts",

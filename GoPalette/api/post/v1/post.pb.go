@@ -1904,6 +1904,110 @@ func (x *IncrCommentCountReply) GetSuccess() bool {
 	return false
 }
 
+type RecordPostViewRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ViewerKey     string                 `protobuf:"bytes,2,opt,name=viewer_key,json=viewerKey,proto3" json:"viewer_key,omitempty"` // 服务端生成的匿名访客/登录用户哈希，不接收明文身份
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecordPostViewRequest) Reset() {
+	*x = RecordPostViewRequest{}
+	mi := &file_post_v1_post_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecordPostViewRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecordPostViewRequest) ProtoMessage() {}
+
+func (x *RecordPostViewRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_post_v1_post_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecordPostViewRequest.ProtoReflect.Descriptor instead.
+func (*RecordPostViewRequest) Descriptor() ([]byte, []int) {
+	return file_post_v1_post_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *RecordPostViewRequest) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *RecordPostViewRequest) GetViewerKey() string {
+	if x != nil {
+		return x.ViewerKey
+	}
+	return ""
+}
+
+type RecordPostViewReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Counted       bool                   `protobuf:"varint,1,opt,name=counted,proto3" json:"counted,omitempty"`                      // 本次是否计入浏览量
+	ViewCount     int64                  `protobuf:"varint,2,opt,name=view_count,json=viewCount,proto3" json:"view_count,omitempty"` // 当前浏览量
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecordPostViewReply) Reset() {
+	*x = RecordPostViewReply{}
+	mi := &file_post_v1_post_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecordPostViewReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecordPostViewReply) ProtoMessage() {}
+
+func (x *RecordPostViewReply) ProtoReflect() protoreflect.Message {
+	mi := &file_post_v1_post_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecordPostViewReply.ProtoReflect.Descriptor instead.
+func (*RecordPostViewReply) Descriptor() ([]byte, []int) {
+	return file_post_v1_post_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *RecordPostViewReply) GetCounted() bool {
+	if x != nil {
+		return x.Counted
+	}
+	return false
+}
+
+func (x *RecordPostViewReply) GetViewCount() int64 {
+	if x != nil {
+		return x.ViewCount
+	}
+	return 0
+}
+
 type TogglePostLikeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -1913,7 +2017,7 @@ type TogglePostLikeRequest struct {
 
 func (x *TogglePostLikeRequest) Reset() {
 	*x = TogglePostLikeRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[28]
+	mi := &file_post_v1_post_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1925,7 +2029,7 @@ func (x *TogglePostLikeRequest) String() string {
 func (*TogglePostLikeRequest) ProtoMessage() {}
 
 func (x *TogglePostLikeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[28]
+	mi := &file_post_v1_post_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1938,7 +2042,7 @@ func (x *TogglePostLikeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TogglePostLikeRequest.ProtoReflect.Descriptor instead.
 func (*TogglePostLikeRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{28}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *TogglePostLikeRequest) GetId() int64 {
@@ -1958,7 +2062,7 @@ type TogglePostLikeReply struct {
 
 func (x *TogglePostLikeReply) Reset() {
 	*x = TogglePostLikeReply{}
-	mi := &file_post_v1_post_proto_msgTypes[29]
+	mi := &file_post_v1_post_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1970,7 +2074,7 @@ func (x *TogglePostLikeReply) String() string {
 func (*TogglePostLikeReply) ProtoMessage() {}
 
 func (x *TogglePostLikeReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[29]
+	mi := &file_post_v1_post_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1983,7 +2087,7 @@ func (x *TogglePostLikeReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TogglePostLikeReply.ProtoReflect.Descriptor instead.
 func (*TogglePostLikeReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{29}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *TogglePostLikeReply) GetLiked() bool {
@@ -1994,6 +2098,102 @@ func (x *TogglePostLikeReply) GetLiked() bool {
 }
 
 func (x *TogglePostLikeReply) GetLikeCount() int64 {
+	if x != nil {
+		return x.LikeCount
+	}
+	return 0
+}
+
+type GetPostLikeStateRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPostLikeStateRequest) Reset() {
+	*x = GetPostLikeStateRequest{}
+	mi := &file_post_v1_post_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPostLikeStateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPostLikeStateRequest) ProtoMessage() {}
+
+func (x *GetPostLikeStateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_post_v1_post_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPostLikeStateRequest.ProtoReflect.Descriptor instead.
+func (*GetPostLikeStateRequest) Descriptor() ([]byte, []int) {
+	return file_post_v1_post_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *GetPostLikeStateRequest) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type GetPostLikeStateReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Liked         bool                   `protobuf:"varint,1,opt,name=liked,proto3" json:"liked,omitempty"`
+	LikeCount     int64                  `protobuf:"varint,2,opt,name=like_count,json=likeCount,proto3" json:"like_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPostLikeStateReply) Reset() {
+	*x = GetPostLikeStateReply{}
+	mi := &file_post_v1_post_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPostLikeStateReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPostLikeStateReply) ProtoMessage() {}
+
+func (x *GetPostLikeStateReply) ProtoReflect() protoreflect.Message {
+	mi := &file_post_v1_post_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPostLikeStateReply.ProtoReflect.Descriptor instead.
+func (*GetPostLikeStateReply) Descriptor() ([]byte, []int) {
+	return file_post_v1_post_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *GetPostLikeStateReply) GetLiked() bool {
+	if x != nil {
+		return x.Liked
+	}
+	return false
+}
+
+func (x *GetPostLikeStateReply) GetLikeCount() int64 {
 	if x != nil {
 		return x.LikeCount
 	}
@@ -2011,7 +2211,7 @@ type ListUserLikedPostsRequest struct {
 
 func (x *ListUserLikedPostsRequest) Reset() {
 	*x = ListUserLikedPostsRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[30]
+	mi := &file_post_v1_post_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2023,7 +2223,7 @@ func (x *ListUserLikedPostsRequest) String() string {
 func (*ListUserLikedPostsRequest) ProtoMessage() {}
 
 func (x *ListUserLikedPostsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[30]
+	mi := &file_post_v1_post_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2036,7 +2236,7 @@ func (x *ListUserLikedPostsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListUserLikedPostsRequest.ProtoReflect.Descriptor instead.
 func (*ListUserLikedPostsRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{30}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *ListUserLikedPostsRequest) GetUserId() int64 {
@@ -2070,7 +2270,7 @@ type ListUserLikedPostsReply struct {
 
 func (x *ListUserLikedPostsReply) Reset() {
 	*x = ListUserLikedPostsReply{}
-	mi := &file_post_v1_post_proto_msgTypes[31]
+	mi := &file_post_v1_post_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2082,7 +2282,7 @@ func (x *ListUserLikedPostsReply) String() string {
 func (*ListUserLikedPostsReply) ProtoMessage() {}
 
 func (x *ListUserLikedPostsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[31]
+	mi := &file_post_v1_post_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2095,7 +2295,7 @@ func (x *ListUserLikedPostsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListUserLikedPostsReply.ProtoReflect.Descriptor instead.
 func (*ListUserLikedPostsReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{31}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *ListUserLikedPostsReply) GetPosts() []*PostInfo {
@@ -2122,7 +2322,7 @@ type ListCategoriesRequest struct {
 
 func (x *ListCategoriesRequest) Reset() {
 	*x = ListCategoriesRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[32]
+	mi := &file_post_v1_post_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2134,7 +2334,7 @@ func (x *ListCategoriesRequest) String() string {
 func (*ListCategoriesRequest) ProtoMessage() {}
 
 func (x *ListCategoriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[32]
+	mi := &file_post_v1_post_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2147,7 +2347,7 @@ func (x *ListCategoriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCategoriesRequest.ProtoReflect.Descriptor instead.
 func (*ListCategoriesRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{32}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *ListCategoriesRequest) GetPage() int64 {
@@ -2175,7 +2375,7 @@ type CreateCategoryRequest struct {
 
 func (x *CreateCategoryRequest) Reset() {
 	*x = CreateCategoryRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[33]
+	mi := &file_post_v1_post_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2187,7 +2387,7 @@ func (x *CreateCategoryRequest) String() string {
 func (*CreateCategoryRequest) ProtoMessage() {}
 
 func (x *CreateCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[33]
+	mi := &file_post_v1_post_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2200,7 +2400,7 @@ func (x *CreateCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCategoryRequest.ProtoReflect.Descriptor instead.
 func (*CreateCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{33}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *CreateCategoryRequest) GetName() string {
@@ -2233,7 +2433,7 @@ type CreateCategoryReply struct {
 
 func (x *CreateCategoryReply) Reset() {
 	*x = CreateCategoryReply{}
-	mi := &file_post_v1_post_proto_msgTypes[34]
+	mi := &file_post_v1_post_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2245,7 +2445,7 @@ func (x *CreateCategoryReply) String() string {
 func (*CreateCategoryReply) ProtoMessage() {}
 
 func (x *CreateCategoryReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[34]
+	mi := &file_post_v1_post_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2258,7 +2458,7 @@ func (x *CreateCategoryReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCategoryReply.ProtoReflect.Descriptor instead.
 func (*CreateCategoryReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{34}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *CreateCategoryReply) GetCategory() *CategoryDetail {
@@ -2281,7 +2481,7 @@ type UpdateCategoryRequest struct {
 
 func (x *UpdateCategoryRequest) Reset() {
 	*x = UpdateCategoryRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[35]
+	mi := &file_post_v1_post_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2293,7 +2493,7 @@ func (x *UpdateCategoryRequest) String() string {
 func (*UpdateCategoryRequest) ProtoMessage() {}
 
 func (x *UpdateCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[35]
+	mi := &file_post_v1_post_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2306,7 +2506,7 @@ func (x *UpdateCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCategoryRequest.ProtoReflect.Descriptor instead.
 func (*UpdateCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{35}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *UpdateCategoryRequest) GetId() int64 {
@@ -2353,7 +2553,7 @@ type UpdateCategoryReply struct {
 
 func (x *UpdateCategoryReply) Reset() {
 	*x = UpdateCategoryReply{}
-	mi := &file_post_v1_post_proto_msgTypes[36]
+	mi := &file_post_v1_post_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2365,7 +2565,7 @@ func (x *UpdateCategoryReply) String() string {
 func (*UpdateCategoryReply) ProtoMessage() {}
 
 func (x *UpdateCategoryReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[36]
+	mi := &file_post_v1_post_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2378,7 +2578,7 @@ func (x *UpdateCategoryReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCategoryReply.ProtoReflect.Descriptor instead.
 func (*UpdateCategoryReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{36}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *UpdateCategoryReply) GetCategory() *CategoryDetail {
@@ -2397,7 +2597,7 @@ type DeleteCategoryRequest struct {
 
 func (x *DeleteCategoryRequest) Reset() {
 	*x = DeleteCategoryRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[37]
+	mi := &file_post_v1_post_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2409,7 +2609,7 @@ func (x *DeleteCategoryRequest) String() string {
 func (*DeleteCategoryRequest) ProtoMessage() {}
 
 func (x *DeleteCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[37]
+	mi := &file_post_v1_post_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2422,7 +2622,7 @@ func (x *DeleteCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCategoryRequest.ProtoReflect.Descriptor instead.
 func (*DeleteCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{37}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *DeleteCategoryRequest) GetId() int64 {
@@ -2441,7 +2641,7 @@ type DeleteCategoryReply struct {
 
 func (x *DeleteCategoryReply) Reset() {
 	*x = DeleteCategoryReply{}
-	mi := &file_post_v1_post_proto_msgTypes[38]
+	mi := &file_post_v1_post_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2453,7 +2653,7 @@ func (x *DeleteCategoryReply) String() string {
 func (*DeleteCategoryReply) ProtoMessage() {}
 
 func (x *DeleteCategoryReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[38]
+	mi := &file_post_v1_post_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2466,7 +2666,7 @@ func (x *DeleteCategoryReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCategoryReply.ProtoReflect.Descriptor instead.
 func (*DeleteCategoryReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{38}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *DeleteCategoryReply) GetSuccess() bool {
@@ -2485,7 +2685,7 @@ type GetCategoryRequest struct {
 
 func (x *GetCategoryRequest) Reset() {
 	*x = GetCategoryRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[39]
+	mi := &file_post_v1_post_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2497,7 +2697,7 @@ func (x *GetCategoryRequest) String() string {
 func (*GetCategoryRequest) ProtoMessage() {}
 
 func (x *GetCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[39]
+	mi := &file_post_v1_post_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2510,7 +2710,7 @@ func (x *GetCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCategoryRequest.ProtoReflect.Descriptor instead.
 func (*GetCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{39}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *GetCategoryRequest) GetId() int64 {
@@ -2529,7 +2729,7 @@ type GetCategoryReply struct {
 
 func (x *GetCategoryReply) Reset() {
 	*x = GetCategoryReply{}
-	mi := &file_post_v1_post_proto_msgTypes[40]
+	mi := &file_post_v1_post_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2541,7 +2741,7 @@ func (x *GetCategoryReply) String() string {
 func (*GetCategoryReply) ProtoMessage() {}
 
 func (x *GetCategoryReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[40]
+	mi := &file_post_v1_post_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2554,7 +2754,7 @@ func (x *GetCategoryReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCategoryReply.ProtoReflect.Descriptor instead.
 func (*GetCategoryReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{40}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *GetCategoryReply) GetCategory() *CategoryDetail {
@@ -2574,7 +2774,7 @@ type ListCategoriesReply struct {
 
 func (x *ListCategoriesReply) Reset() {
 	*x = ListCategoriesReply{}
-	mi := &file_post_v1_post_proto_msgTypes[41]
+	mi := &file_post_v1_post_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2586,7 +2786,7 @@ func (x *ListCategoriesReply) String() string {
 func (*ListCategoriesReply) ProtoMessage() {}
 
 func (x *ListCategoriesReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[41]
+	mi := &file_post_v1_post_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2599,7 +2799,7 @@ func (x *ListCategoriesReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCategoriesReply.ProtoReflect.Descriptor instead.
 func (*ListCategoriesReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{41}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *ListCategoriesReply) GetCategories() []*CategoryInfo {
@@ -2626,7 +2826,7 @@ type ListTagsRequest struct {
 
 func (x *ListTagsRequest) Reset() {
 	*x = ListTagsRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[42]
+	mi := &file_post_v1_post_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2638,7 +2838,7 @@ func (x *ListTagsRequest) String() string {
 func (*ListTagsRequest) ProtoMessage() {}
 
 func (x *ListTagsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[42]
+	mi := &file_post_v1_post_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2651,7 +2851,7 @@ func (x *ListTagsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTagsRequest.ProtoReflect.Descriptor instead.
 func (*ListTagsRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{42}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *ListTagsRequest) GetPage() int64 {
@@ -2678,7 +2878,7 @@ type CreateTagRequest struct {
 
 func (x *CreateTagRequest) Reset() {
 	*x = CreateTagRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[43]
+	mi := &file_post_v1_post_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2690,7 +2890,7 @@ func (x *CreateTagRequest) String() string {
 func (*CreateTagRequest) ProtoMessage() {}
 
 func (x *CreateTagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[43]
+	mi := &file_post_v1_post_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2703,7 +2903,7 @@ func (x *CreateTagRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTagRequest.ProtoReflect.Descriptor instead.
 func (*CreateTagRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{43}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *CreateTagRequest) GetName() string {
@@ -2729,7 +2929,7 @@ type CreateTagReply struct {
 
 func (x *CreateTagReply) Reset() {
 	*x = CreateTagReply{}
-	mi := &file_post_v1_post_proto_msgTypes[44]
+	mi := &file_post_v1_post_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2741,7 +2941,7 @@ func (x *CreateTagReply) String() string {
 func (*CreateTagReply) ProtoMessage() {}
 
 func (x *CreateTagReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[44]
+	mi := &file_post_v1_post_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2754,7 +2954,7 @@ func (x *CreateTagReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTagReply.ProtoReflect.Descriptor instead.
 func (*CreateTagReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{44}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *CreateTagReply) GetTag() *TagDetail {
@@ -2776,7 +2976,7 @@ type UpdateTagRequest struct {
 
 func (x *UpdateTagRequest) Reset() {
 	*x = UpdateTagRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[45]
+	mi := &file_post_v1_post_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2788,7 +2988,7 @@ func (x *UpdateTagRequest) String() string {
 func (*UpdateTagRequest) ProtoMessage() {}
 
 func (x *UpdateTagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[45]
+	mi := &file_post_v1_post_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2801,7 +3001,7 @@ func (x *UpdateTagRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateTagRequest.ProtoReflect.Descriptor instead.
 func (*UpdateTagRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{45}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *UpdateTagRequest) GetId() int64 {
@@ -2841,7 +3041,7 @@ type UpdateTagReply struct {
 
 func (x *UpdateTagReply) Reset() {
 	*x = UpdateTagReply{}
-	mi := &file_post_v1_post_proto_msgTypes[46]
+	mi := &file_post_v1_post_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2853,7 +3053,7 @@ func (x *UpdateTagReply) String() string {
 func (*UpdateTagReply) ProtoMessage() {}
 
 func (x *UpdateTagReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[46]
+	mi := &file_post_v1_post_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2866,7 +3066,7 @@ func (x *UpdateTagReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateTagReply.ProtoReflect.Descriptor instead.
 func (*UpdateTagReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{46}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *UpdateTagReply) GetTag() *TagDetail {
@@ -2885,7 +3085,7 @@ type DeleteTagRequest struct {
 
 func (x *DeleteTagRequest) Reset() {
 	*x = DeleteTagRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[47]
+	mi := &file_post_v1_post_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2897,7 +3097,7 @@ func (x *DeleteTagRequest) String() string {
 func (*DeleteTagRequest) ProtoMessage() {}
 
 func (x *DeleteTagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[47]
+	mi := &file_post_v1_post_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2910,7 +3110,7 @@ func (x *DeleteTagRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTagRequest.ProtoReflect.Descriptor instead.
 func (*DeleteTagRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{47}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *DeleteTagRequest) GetId() int64 {
@@ -2929,7 +3129,7 @@ type DeleteTagReply struct {
 
 func (x *DeleteTagReply) Reset() {
 	*x = DeleteTagReply{}
-	mi := &file_post_v1_post_proto_msgTypes[48]
+	mi := &file_post_v1_post_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2941,7 +3141,7 @@ func (x *DeleteTagReply) String() string {
 func (*DeleteTagReply) ProtoMessage() {}
 
 func (x *DeleteTagReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[48]
+	mi := &file_post_v1_post_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2954,7 +3154,7 @@ func (x *DeleteTagReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTagReply.ProtoReflect.Descriptor instead.
 func (*DeleteTagReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{48}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *DeleteTagReply) GetSuccess() bool {
@@ -2973,7 +3173,7 @@ type GetTagRequest struct {
 
 func (x *GetTagRequest) Reset() {
 	*x = GetTagRequest{}
-	mi := &file_post_v1_post_proto_msgTypes[49]
+	mi := &file_post_v1_post_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2985,7 +3185,7 @@ func (x *GetTagRequest) String() string {
 func (*GetTagRequest) ProtoMessage() {}
 
 func (x *GetTagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[49]
+	mi := &file_post_v1_post_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2998,7 +3198,7 @@ func (x *GetTagRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTagRequest.ProtoReflect.Descriptor instead.
 func (*GetTagRequest) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{49}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *GetTagRequest) GetId() int64 {
@@ -3017,7 +3217,7 @@ type GetTagReply struct {
 
 func (x *GetTagReply) Reset() {
 	*x = GetTagReply{}
-	mi := &file_post_v1_post_proto_msgTypes[50]
+	mi := &file_post_v1_post_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3029,7 +3229,7 @@ func (x *GetTagReply) String() string {
 func (*GetTagReply) ProtoMessage() {}
 
 func (x *GetTagReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[50]
+	mi := &file_post_v1_post_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3042,7 +3242,7 @@ func (x *GetTagReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTagReply.ProtoReflect.Descriptor instead.
 func (*GetTagReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{50}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *GetTagReply) GetTag() *TagDetail {
@@ -3062,7 +3262,7 @@ type ListTagsReply struct {
 
 func (x *ListTagsReply) Reset() {
 	*x = ListTagsReply{}
-	mi := &file_post_v1_post_proto_msgTypes[51]
+	mi := &file_post_v1_post_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3074,7 +3274,7 @@ func (x *ListTagsReply) String() string {
 func (*ListTagsReply) ProtoMessage() {}
 
 func (x *ListTagsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_post_v1_post_proto_msgTypes[51]
+	mi := &file_post_v1_post_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3087,7 +3287,7 @@ func (x *ListTagsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTagsReply.ProtoReflect.Descriptor instead.
 func (*ListTagsReply) Descriptor() ([]byte, []int) {
-	return file_post_v1_post_proto_rawDescGZIP(), []int{51}
+	return file_post_v1_post_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *ListTagsReply) GetTags() []*TagInfo {
@@ -3249,10 +3449,24 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x14\n" +
 	"\x05delta\x18\x02 \x01(\x03R\x05delta\"1\n" +
 	"\x15IncrCommentCountReply\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"'\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"F\n" +
+	"\x15RecordPostViewRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1d\n" +
+	"\n" +
+	"viewer_key\x18\x02 \x01(\tR\tviewerKey\"N\n" +
+	"\x13RecordPostViewReply\x12\x18\n" +
+	"\acounted\x18\x01 \x01(\bR\acounted\x12\x1d\n" +
+	"\n" +
+	"view_count\x18\x02 \x01(\x03R\tviewCount\"'\n" +
 	"\x15TogglePostLikeRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\"J\n" +
 	"\x13TogglePostLikeReply\x12\x14\n" +
+	"\x05liked\x18\x01 \x01(\bR\x05liked\x12\x1d\n" +
+	"\n" +
+	"like_count\x18\x02 \x01(\x03R\tlikeCount\")\n" +
+	"\x17GetPostLikeStateRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\"L\n" +
+	"\x15GetPostLikeStateReply\x12\x14\n" +
 	"\x05liked\x18\x01 \x01(\bR\x05liked\x12\x1d\n" +
 	"\n" +
 	"like_count\x18\x02 \x01(\x03R\tlikeCount\"e\n" +
@@ -3327,7 +3541,7 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\tPUBLISHED\x10\x01\x12\f\n" +
 	"\bARCHIVED\x10\x02\x12\v\n" +
 	"\aPRIVATE\x10\x03\x12\v\n" +
-	"\aOFFLINE\x10\x042\x8f\v\n" +
+	"\aOFFLINE\x10\x042\x88\r\n" +
 	"\x04Post\x12`\n" +
 	"\n" +
 	"CreatePost\x12\x1e.api.post.v1.CreatePostRequest\x1a\x1c.api.post.v1.CreatePostReply\"\x14\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/posts\x12e\n" +
@@ -3342,7 +3556,9 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\x12ListTopAuthorPosts\x12&.api.post.v1.ListTopAuthorPostsRequest\x1a$.api.post.v1.ListTopAuthorPostsReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/users/{author_id}/posts/top\x12_\n" +
 	"\x11ListPostsForIndex\x12%.api.post.v1.ListPostsForIndexRequest\x1a#.api.post.v1.ListPostsForIndexReply\x12\x8a\x01\n" +
 	"\x10IncrCommentCount\x12$.api.post.v1.IncrCommentCountRequest\x1a\".api.post.v1.IncrCommentCountReply\",\x82\xd3\xe4\x93\x02&:\x01*\"!/v1/posts/{id}/comment-count:incr\x12v\n" +
-	"\x0eTogglePostLike\x12\".api.post.v1.TogglePostLikeRequest\x1a .api.post.v1.TogglePostLikeReply\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/posts/{id}/like\x12\x85\x01\n" +
+	"\x0eRecordPostView\x12\".api.post.v1.RecordPostViewRequest\x1a .api.post.v1.RecordPostViewReply\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/posts/{id}/view\x12v\n" +
+	"\x0eTogglePostLike\x12\".api.post.v1.TogglePostLikeRequest\x1a .api.post.v1.TogglePostLikeReply\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/posts/{id}/like\x12\x7f\n" +
+	"\x10GetPostLikeState\x12$.api.post.v1.GetPostLikeStateRequest\x1a\".api.post.v1.GetPostLikeStateReply\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/posts/{id}/like-state\x12\x85\x01\n" +
 	"\x12ListUserLikedPosts\x12&.api.post.v1.ListUserLikedPostsRequest\x1a$.api.post.v1.ListUserLikedPostsReply\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/users/{user_id}/likes2\xc6\x04\n" +
 	"\bCategory\x12q\n" +
 	"\x0eCreateCategory\x12\".api.post.v1.CreateCategoryRequest\x1a .api.post.v1.CreateCategoryReply\"\x19\x82\xd3\xe4\x93\x02\x13:\x01*\"\x0e/v1/categories\x12v\n" +
@@ -3372,7 +3588,7 @@ func file_post_v1_post_proto_rawDescGZIP() []byte {
 }
 
 var file_post_v1_post_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_post_v1_post_proto_msgTypes = make([]protoimpl.MessageInfo, 52)
+var file_post_v1_post_proto_msgTypes = make([]protoimpl.MessageInfo, 56)
 var file_post_v1_post_proto_goTypes = []any{
 	(PostStatus)(0),                   // 0: api.post.v1.PostStatus
 	(*AuthorInfo)(nil),                // 1: api.post.v1.AuthorInfo
@@ -3403,32 +3619,36 @@ var file_post_v1_post_proto_goTypes = []any{
 	(*ListPostsForIndexReply)(nil),    // 26: api.post.v1.ListPostsForIndexReply
 	(*IncrCommentCountRequest)(nil),   // 27: api.post.v1.IncrCommentCountRequest
 	(*IncrCommentCountReply)(nil),     // 28: api.post.v1.IncrCommentCountReply
-	(*TogglePostLikeRequest)(nil),     // 29: api.post.v1.TogglePostLikeRequest
-	(*TogglePostLikeReply)(nil),       // 30: api.post.v1.TogglePostLikeReply
-	(*ListUserLikedPostsRequest)(nil), // 31: api.post.v1.ListUserLikedPostsRequest
-	(*ListUserLikedPostsReply)(nil),   // 32: api.post.v1.ListUserLikedPostsReply
-	(*ListCategoriesRequest)(nil),     // 33: api.post.v1.ListCategoriesRequest
-	(*CreateCategoryRequest)(nil),     // 34: api.post.v1.CreateCategoryRequest
-	(*CreateCategoryReply)(nil),       // 35: api.post.v1.CreateCategoryReply
-	(*UpdateCategoryRequest)(nil),     // 36: api.post.v1.UpdateCategoryRequest
-	(*UpdateCategoryReply)(nil),       // 37: api.post.v1.UpdateCategoryReply
-	(*DeleteCategoryRequest)(nil),     // 38: api.post.v1.DeleteCategoryRequest
-	(*DeleteCategoryReply)(nil),       // 39: api.post.v1.DeleteCategoryReply
-	(*GetCategoryRequest)(nil),        // 40: api.post.v1.GetCategoryRequest
-	(*GetCategoryReply)(nil),          // 41: api.post.v1.GetCategoryReply
-	(*ListCategoriesReply)(nil),       // 42: api.post.v1.ListCategoriesReply
-	(*ListTagsRequest)(nil),           // 43: api.post.v1.ListTagsRequest
-	(*CreateTagRequest)(nil),          // 44: api.post.v1.CreateTagRequest
-	(*CreateTagReply)(nil),            // 45: api.post.v1.CreateTagReply
-	(*UpdateTagRequest)(nil),          // 46: api.post.v1.UpdateTagRequest
-	(*UpdateTagReply)(nil),            // 47: api.post.v1.UpdateTagReply
-	(*DeleteTagRequest)(nil),          // 48: api.post.v1.DeleteTagRequest
-	(*DeleteTagReply)(nil),            // 49: api.post.v1.DeleteTagReply
-	(*GetTagRequest)(nil),             // 50: api.post.v1.GetTagRequest
-	(*GetTagReply)(nil),               // 51: api.post.v1.GetTagReply
-	(*ListTagsReply)(nil),             // 52: api.post.v1.ListTagsReply
-	(*timestamppb.Timestamp)(nil),     // 53: google.protobuf.Timestamp
-	(*fieldmaskpb.FieldMask)(nil),     // 54: google.protobuf.FieldMask
+	(*RecordPostViewRequest)(nil),     // 29: api.post.v1.RecordPostViewRequest
+	(*RecordPostViewReply)(nil),       // 30: api.post.v1.RecordPostViewReply
+	(*TogglePostLikeRequest)(nil),     // 31: api.post.v1.TogglePostLikeRequest
+	(*TogglePostLikeReply)(nil),       // 32: api.post.v1.TogglePostLikeReply
+	(*GetPostLikeStateRequest)(nil),   // 33: api.post.v1.GetPostLikeStateRequest
+	(*GetPostLikeStateReply)(nil),     // 34: api.post.v1.GetPostLikeStateReply
+	(*ListUserLikedPostsRequest)(nil), // 35: api.post.v1.ListUserLikedPostsRequest
+	(*ListUserLikedPostsReply)(nil),   // 36: api.post.v1.ListUserLikedPostsReply
+	(*ListCategoriesRequest)(nil),     // 37: api.post.v1.ListCategoriesRequest
+	(*CreateCategoryRequest)(nil),     // 38: api.post.v1.CreateCategoryRequest
+	(*CreateCategoryReply)(nil),       // 39: api.post.v1.CreateCategoryReply
+	(*UpdateCategoryRequest)(nil),     // 40: api.post.v1.UpdateCategoryRequest
+	(*UpdateCategoryReply)(nil),       // 41: api.post.v1.UpdateCategoryReply
+	(*DeleteCategoryRequest)(nil),     // 42: api.post.v1.DeleteCategoryRequest
+	(*DeleteCategoryReply)(nil),       // 43: api.post.v1.DeleteCategoryReply
+	(*GetCategoryRequest)(nil),        // 44: api.post.v1.GetCategoryRequest
+	(*GetCategoryReply)(nil),          // 45: api.post.v1.GetCategoryReply
+	(*ListCategoriesReply)(nil),       // 46: api.post.v1.ListCategoriesReply
+	(*ListTagsRequest)(nil),           // 47: api.post.v1.ListTagsRequest
+	(*CreateTagRequest)(nil),          // 48: api.post.v1.CreateTagRequest
+	(*CreateTagReply)(nil),            // 49: api.post.v1.CreateTagReply
+	(*UpdateTagRequest)(nil),          // 50: api.post.v1.UpdateTagRequest
+	(*UpdateTagReply)(nil),            // 51: api.post.v1.UpdateTagReply
+	(*DeleteTagRequest)(nil),          // 52: api.post.v1.DeleteTagRequest
+	(*DeleteTagReply)(nil),            // 53: api.post.v1.DeleteTagReply
+	(*GetTagRequest)(nil),             // 54: api.post.v1.GetTagRequest
+	(*GetTagReply)(nil),               // 55: api.post.v1.GetTagReply
+	(*ListTagsReply)(nil),             // 56: api.post.v1.ListTagsReply
+	(*timestamppb.Timestamp)(nil),     // 57: google.protobuf.Timestamp
+	(*fieldmaskpb.FieldMask)(nil),     // 58: google.protobuf.FieldMask
 }
 var file_post_v1_post_proto_depIdxs = []int32{
 	2,  // 0: api.post.v1.CategoryDetail.info:type_name -> api.post.v1.CategoryInfo
@@ -3436,29 +3656,29 @@ var file_post_v1_post_proto_depIdxs = []int32{
 	0,  // 2: api.post.v1.PostInfo.status:type_name -> api.post.v1.PostStatus
 	1,  // 3: api.post.v1.PostInfo.author:type_name -> api.post.v1.AuthorInfo
 	2,  // 4: api.post.v1.PostInfo.category:type_name -> api.post.v1.CategoryInfo
-	53, // 5: api.post.v1.PostInfo.created_at:type_name -> google.protobuf.Timestamp
-	53, // 6: api.post.v1.PostInfo.updated_at:type_name -> google.protobuf.Timestamp
+	57, // 5: api.post.v1.PostInfo.created_at:type_name -> google.protobuf.Timestamp
+	57, // 6: api.post.v1.PostInfo.updated_at:type_name -> google.protobuf.Timestamp
 	6,  // 7: api.post.v1.PostDetail.info:type_name -> api.post.v1.PostInfo
 	0,  // 8: api.post.v1.CreatePostRequest.status:type_name -> api.post.v1.PostStatus
 	7,  // 9: api.post.v1.CreatePostReply.post:type_name -> api.post.v1.PostDetail
 	0,  // 10: api.post.v1.UpdatePostRequest.status:type_name -> api.post.v1.PostStatus
-	54, // 11: api.post.v1.UpdatePostRequest.update_mask:type_name -> google.protobuf.FieldMask
+	58, // 11: api.post.v1.UpdatePostRequest.update_mask:type_name -> google.protobuf.FieldMask
 	7,  // 12: api.post.v1.UpdatePostReply.post:type_name -> api.post.v1.PostDetail
 	7,  // 13: api.post.v1.GetPostReply.post:type_name -> api.post.v1.PostDetail
 	6,  // 14: api.post.v1.ListPostsReply.posts:type_name -> api.post.v1.PostInfo
 	6,  // 15: api.post.v1.ListAuthorPostsReply.posts:type_name -> api.post.v1.PostInfo
 	6,  // 16: api.post.v1.ListTopAuthorPostsReply.posts:type_name -> api.post.v1.PostInfo
-	53, // 17: api.post.v1.PostIndexInfo.created_at:type_name -> google.protobuf.Timestamp
+	57, // 17: api.post.v1.PostIndexInfo.created_at:type_name -> google.protobuf.Timestamp
 	0,  // 18: api.post.v1.PostIndexInfo.status:type_name -> api.post.v1.PostStatus
 	25, // 19: api.post.v1.ListPostsForIndexReply.posts:type_name -> api.post.v1.PostIndexInfo
 	6,  // 20: api.post.v1.ListUserLikedPostsReply.posts:type_name -> api.post.v1.PostInfo
 	3,  // 21: api.post.v1.CreateCategoryReply.category:type_name -> api.post.v1.CategoryDetail
-	54, // 22: api.post.v1.UpdateCategoryRequest.update_mask:type_name -> google.protobuf.FieldMask
+	58, // 22: api.post.v1.UpdateCategoryRequest.update_mask:type_name -> google.protobuf.FieldMask
 	3,  // 23: api.post.v1.UpdateCategoryReply.category:type_name -> api.post.v1.CategoryDetail
 	3,  // 24: api.post.v1.GetCategoryReply.category:type_name -> api.post.v1.CategoryDetail
 	2,  // 25: api.post.v1.ListCategoriesReply.categories:type_name -> api.post.v1.CategoryInfo
 	5,  // 26: api.post.v1.CreateTagReply.tag:type_name -> api.post.v1.TagDetail
-	54, // 27: api.post.v1.UpdateTagRequest.update_mask:type_name -> google.protobuf.FieldMask
+	58, // 27: api.post.v1.UpdateTagRequest.update_mask:type_name -> google.protobuf.FieldMask
 	5,  // 28: api.post.v1.UpdateTagReply.tag:type_name -> api.post.v1.TagDetail
 	5,  // 29: api.post.v1.GetTagReply.tag:type_name -> api.post.v1.TagDetail
 	4,  // 30: api.post.v1.ListTagsReply.tags:type_name -> api.post.v1.TagInfo
@@ -3472,42 +3692,46 @@ var file_post_v1_post_proto_depIdxs = []int32{
 	22, // 38: api.post.v1.Post.ListTopAuthorPosts:input_type -> api.post.v1.ListTopAuthorPostsRequest
 	24, // 39: api.post.v1.Post.ListPostsForIndex:input_type -> api.post.v1.ListPostsForIndexRequest
 	27, // 40: api.post.v1.Post.IncrCommentCount:input_type -> api.post.v1.IncrCommentCountRequest
-	29, // 41: api.post.v1.Post.TogglePostLike:input_type -> api.post.v1.TogglePostLikeRequest
-	31, // 42: api.post.v1.Post.ListUserLikedPosts:input_type -> api.post.v1.ListUserLikedPostsRequest
-	34, // 43: api.post.v1.Category.CreateCategory:input_type -> api.post.v1.CreateCategoryRequest
-	36, // 44: api.post.v1.Category.UpdateCategory:input_type -> api.post.v1.UpdateCategoryRequest
-	38, // 45: api.post.v1.Category.DeleteCategory:input_type -> api.post.v1.DeleteCategoryRequest
-	40, // 46: api.post.v1.Category.GetCategory:input_type -> api.post.v1.GetCategoryRequest
-	33, // 47: api.post.v1.Category.ListCategories:input_type -> api.post.v1.ListCategoriesRequest
-	44, // 48: api.post.v1.Tag.CreateTag:input_type -> api.post.v1.CreateTagRequest
-	46, // 49: api.post.v1.Tag.UpdateTag:input_type -> api.post.v1.UpdateTagRequest
-	48, // 50: api.post.v1.Tag.DeleteTag:input_type -> api.post.v1.DeleteTagRequest
-	50, // 51: api.post.v1.Tag.GetTag:input_type -> api.post.v1.GetTagRequest
-	43, // 52: api.post.v1.Tag.ListTags:input_type -> api.post.v1.ListTagsRequest
-	9,  // 53: api.post.v1.Post.CreatePost:output_type -> api.post.v1.CreatePostReply
-	11, // 54: api.post.v1.Post.UpdatePost:output_type -> api.post.v1.UpdatePostReply
-	13, // 55: api.post.v1.Post.DeletePost:output_type -> api.post.v1.DeletePostReply
-	15, // 56: api.post.v1.Post.GetPost:output_type -> api.post.v1.GetPostReply
-	17, // 57: api.post.v1.Post.ListPosts:output_type -> api.post.v1.ListPostsReply
-	19, // 58: api.post.v1.Post.ListAuthorPosts:output_type -> api.post.v1.ListAuthorPostsReply
-	21, // 59: api.post.v1.Post.GetAuthorPostStats:output_type -> api.post.v1.GetAuthorPostStatsReply
-	23, // 60: api.post.v1.Post.ListTopAuthorPosts:output_type -> api.post.v1.ListTopAuthorPostsReply
-	26, // 61: api.post.v1.Post.ListPostsForIndex:output_type -> api.post.v1.ListPostsForIndexReply
-	28, // 62: api.post.v1.Post.IncrCommentCount:output_type -> api.post.v1.IncrCommentCountReply
-	30, // 63: api.post.v1.Post.TogglePostLike:output_type -> api.post.v1.TogglePostLikeReply
-	32, // 64: api.post.v1.Post.ListUserLikedPosts:output_type -> api.post.v1.ListUserLikedPostsReply
-	35, // 65: api.post.v1.Category.CreateCategory:output_type -> api.post.v1.CreateCategoryReply
-	37, // 66: api.post.v1.Category.UpdateCategory:output_type -> api.post.v1.UpdateCategoryReply
-	39, // 67: api.post.v1.Category.DeleteCategory:output_type -> api.post.v1.DeleteCategoryReply
-	41, // 68: api.post.v1.Category.GetCategory:output_type -> api.post.v1.GetCategoryReply
-	42, // 69: api.post.v1.Category.ListCategories:output_type -> api.post.v1.ListCategoriesReply
-	45, // 70: api.post.v1.Tag.CreateTag:output_type -> api.post.v1.CreateTagReply
-	47, // 71: api.post.v1.Tag.UpdateTag:output_type -> api.post.v1.UpdateTagReply
-	49, // 72: api.post.v1.Tag.DeleteTag:output_type -> api.post.v1.DeleteTagReply
-	51, // 73: api.post.v1.Tag.GetTag:output_type -> api.post.v1.GetTagReply
-	52, // 74: api.post.v1.Tag.ListTags:output_type -> api.post.v1.ListTagsReply
-	53, // [53:75] is the sub-list for method output_type
-	31, // [31:53] is the sub-list for method input_type
+	29, // 41: api.post.v1.Post.RecordPostView:input_type -> api.post.v1.RecordPostViewRequest
+	31, // 42: api.post.v1.Post.TogglePostLike:input_type -> api.post.v1.TogglePostLikeRequest
+	33, // 43: api.post.v1.Post.GetPostLikeState:input_type -> api.post.v1.GetPostLikeStateRequest
+	35, // 44: api.post.v1.Post.ListUserLikedPosts:input_type -> api.post.v1.ListUserLikedPostsRequest
+	38, // 45: api.post.v1.Category.CreateCategory:input_type -> api.post.v1.CreateCategoryRequest
+	40, // 46: api.post.v1.Category.UpdateCategory:input_type -> api.post.v1.UpdateCategoryRequest
+	42, // 47: api.post.v1.Category.DeleteCategory:input_type -> api.post.v1.DeleteCategoryRequest
+	44, // 48: api.post.v1.Category.GetCategory:input_type -> api.post.v1.GetCategoryRequest
+	37, // 49: api.post.v1.Category.ListCategories:input_type -> api.post.v1.ListCategoriesRequest
+	48, // 50: api.post.v1.Tag.CreateTag:input_type -> api.post.v1.CreateTagRequest
+	50, // 51: api.post.v1.Tag.UpdateTag:input_type -> api.post.v1.UpdateTagRequest
+	52, // 52: api.post.v1.Tag.DeleteTag:input_type -> api.post.v1.DeleteTagRequest
+	54, // 53: api.post.v1.Tag.GetTag:input_type -> api.post.v1.GetTagRequest
+	47, // 54: api.post.v1.Tag.ListTags:input_type -> api.post.v1.ListTagsRequest
+	9,  // 55: api.post.v1.Post.CreatePost:output_type -> api.post.v1.CreatePostReply
+	11, // 56: api.post.v1.Post.UpdatePost:output_type -> api.post.v1.UpdatePostReply
+	13, // 57: api.post.v1.Post.DeletePost:output_type -> api.post.v1.DeletePostReply
+	15, // 58: api.post.v1.Post.GetPost:output_type -> api.post.v1.GetPostReply
+	17, // 59: api.post.v1.Post.ListPosts:output_type -> api.post.v1.ListPostsReply
+	19, // 60: api.post.v1.Post.ListAuthorPosts:output_type -> api.post.v1.ListAuthorPostsReply
+	21, // 61: api.post.v1.Post.GetAuthorPostStats:output_type -> api.post.v1.GetAuthorPostStatsReply
+	23, // 62: api.post.v1.Post.ListTopAuthorPosts:output_type -> api.post.v1.ListTopAuthorPostsReply
+	26, // 63: api.post.v1.Post.ListPostsForIndex:output_type -> api.post.v1.ListPostsForIndexReply
+	28, // 64: api.post.v1.Post.IncrCommentCount:output_type -> api.post.v1.IncrCommentCountReply
+	30, // 65: api.post.v1.Post.RecordPostView:output_type -> api.post.v1.RecordPostViewReply
+	32, // 66: api.post.v1.Post.TogglePostLike:output_type -> api.post.v1.TogglePostLikeReply
+	34, // 67: api.post.v1.Post.GetPostLikeState:output_type -> api.post.v1.GetPostLikeStateReply
+	36, // 68: api.post.v1.Post.ListUserLikedPosts:output_type -> api.post.v1.ListUserLikedPostsReply
+	39, // 69: api.post.v1.Category.CreateCategory:output_type -> api.post.v1.CreateCategoryReply
+	41, // 70: api.post.v1.Category.UpdateCategory:output_type -> api.post.v1.UpdateCategoryReply
+	43, // 71: api.post.v1.Category.DeleteCategory:output_type -> api.post.v1.DeleteCategoryReply
+	45, // 72: api.post.v1.Category.GetCategory:output_type -> api.post.v1.GetCategoryReply
+	46, // 73: api.post.v1.Category.ListCategories:output_type -> api.post.v1.ListCategoriesReply
+	49, // 74: api.post.v1.Tag.CreateTag:output_type -> api.post.v1.CreateTagReply
+	51, // 75: api.post.v1.Tag.UpdateTag:output_type -> api.post.v1.UpdateTagReply
+	53, // 76: api.post.v1.Tag.DeleteTag:output_type -> api.post.v1.DeleteTagReply
+	55, // 77: api.post.v1.Tag.GetTag:output_type -> api.post.v1.GetTagReply
+	56, // 78: api.post.v1.Tag.ListTags:output_type -> api.post.v1.ListTagsReply
+	55, // [55:79] is the sub-list for method output_type
+	31, // [31:55] is the sub-list for method input_type
 	31, // [31:31] is the sub-list for extension type_name
 	31, // [31:31] is the sub-list for extension extendee
 	0,  // [0:31] is the sub-list for field type_name
@@ -3528,7 +3752,7 @@ func file_post_v1_post_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_post_v1_post_proto_rawDesc), len(file_post_v1_post_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   52,
+			NumMessages:   56,
 			NumExtensions: 0,
 			NumServices:   3,
 		},

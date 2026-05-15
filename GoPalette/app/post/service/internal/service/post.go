@@ -241,12 +241,31 @@ func (s *PostService) IncrCommentCount(ctx context.Context, req *pb.IncrCommentC
 	return &pb.IncrCommentCountReply{Success: true}, nil
 }
 
+func (s *PostService) RecordPostView(ctx context.Context, req *pb.RecordPostViewRequest) (*pb.RecordPostViewReply, error) {
+	counted, viewCount, err := s.uc.RecordPostView(ctx, req.Id, req.ViewerKey)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.RecordPostViewReply{
+		Counted:   counted,
+		ViewCount: viewCount,
+	}, nil
+}
+
 func (s *PostService) TogglePostLike(ctx context.Context, req *pb.TogglePostLikeRequest) (*pb.TogglePostLikeReply, error) {
 	liked, likeCount, err := s.uc.TogglePostLike(ctx, req.Id)
 	if err != nil {
 		return nil, err
 	}
 	return &pb.TogglePostLikeReply{Liked: liked, LikeCount: likeCount}, nil
+}
+
+func (s *PostService) GetPostLikeState(ctx context.Context, req *pb.GetPostLikeStateRequest) (*pb.GetPostLikeStateReply, error) {
+	liked, likeCount, err := s.uc.GetPostLikeState(ctx, req.Id)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.GetPostLikeStateReply{Liked: liked, LikeCount: likeCount}, nil
 }
 
 func (s *PostService) ListUserLikedPosts(ctx context.Context, req *pb.ListUserLikedPostsRequest) (*pb.ListUserLikedPostsReply, error) {
