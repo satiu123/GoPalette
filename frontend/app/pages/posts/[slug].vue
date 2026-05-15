@@ -169,6 +169,11 @@ function enhanceArticleContent() {
     block.dataset.copyEnhanced = 'true'
     block.classList.add('article-code-block')
 
+    const frame = document.createElement('div')
+    frame.className = 'article-code-frame'
+    block.parentNode?.insertBefore(frame, block)
+    frame.appendChild(block)
+
     const button = document.createElement('button')
     button.type = 'button'
     button.textContent = '复制'
@@ -178,7 +183,7 @@ function enhanceArticleContent() {
       await copyText(code.trim(), '代码已复制')
     })
 
-    block.appendChild(button)
+    frame.appendChild(button)
   }
 }
 

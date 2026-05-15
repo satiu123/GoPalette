@@ -124,6 +124,15 @@ body {
   padding: 0.12rem 0.35rem;
 }
 
+.article-code-frame {
+  margin: 1.6rem 0;
+  position: relative;
+}
+
+.article-code-frame .article-code-block {
+  margin: 0;
+}
+
 .article-viewer .tiptap pre,
 .article-code-block {
   border: 1px solid var(--ui-border);
@@ -157,6 +166,7 @@ body {
   position: absolute;
   right: 0.85rem;
   top: 0.85rem;
+  z-index: 2;
   transition:
     background-color var(--motion-duration-fast) var(--motion-ease-swift),
     color var(--motion-duration-fast) var(--motion-ease-swift),

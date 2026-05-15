@@ -30,6 +30,26 @@ const editorRef = useTemplateRef('editorRef')
 type EditorToolbarContext = { editor: Editor, view: EditorView, state: { selection: Selection } }
 type EditorToolbarViewContext = { editor: Editor, view: EditorView }
 
+const codeLanguageOptions = [
+  { label: '自动识别', value: '__auto__' },
+  { label: 'Plain Text', value: 'text' },
+  { label: 'JavaScript', value: 'js' },
+  { label: 'TypeScript', value: 'ts' },
+  { label: 'Vue', value: 'vue' },
+  { label: 'Go', value: 'go' },
+  { label: 'Python', value: 'py' },
+  { label: 'Bash', value: 'bash' },
+  { label: 'JSON', value: 'json' },
+  { label: 'YAML', value: 'yaml' },
+  { label: 'HTML', value: 'html' },
+  { label: 'CSS', value: 'css' },
+  { label: 'SQL', value: 'sql' }
+]
+
+const codeLanguageToolbarItems = [[{
+  slot: 'codeLanguage' as const
+}]]
+
 const { extension: Completion, handlers: aiHandlers, isLoading: aiLoading, aiReview } = useEditorCompletion(editorRef)
 
 const {
@@ -194,6 +214,79 @@ function plainTextSummary(markdown: string) {
   return text.slice(0, 140)
 }
 
+function inferCodeLanguage(source: string) {
+  const code = source.trim()
+  if (!code) return 'text'
+
+  if (code.startsWith('{') || code.startsWith('[')) {
+    try {
+      JSON.parse(code)
+      return 'json'
+    } catch {
+      // Continue with heuristic checks below.
+    }
+  }
+
+  if (/<template[\s>][\s\S]*<\/template>|<script\s+setup|defineProps\(/i.test(code)) return 'vue'
+  if (/^\s*package\s+\w+/m.test(code) || /\bfunc\s+\w+\s*\(/.test(code) || /\bfmt\.\w+\(/.test(code) || /:=/.test(code)) return 'go'
+  if (/^\s*def\s+\w+\s*\(|^\s*class\s+\w+.*:|^\s*from\s+\w+\s+import\s+|^\s*import\s+\w+|print\(/m.test(code)) return 'py'
+  if (/^\s*(select|insert\s+into|update|delete\s+from|create\s+table)\b/i.test(code)) return 'sql'
+  if (/^#!\/.*\b(sh|bash)\b|^\s*(cd|curl|docker|git|go|npm|pnpm|bun|yarn|export)\b/m.test(code)) return 'bash'
+  if (/<\/?[a-z][\s\S]*>/i.test(code)) return 'html'
+  if (/^\s*[.#]?[\w-]+\s*\{[\s\S]*\}|^\s*(@media|:root)\b|^\s*[\w-]+\s*:\s*[^;]+;/m.test(code)) return 'css'
+  if (/\binterface\s+\w+|^\s*type\s+\w+\s*=|:\s*(string|number|boolean|unknown|Record<)|\bimport\s+type\b/m.test(code)) return 'ts'
+  if (/\b(function|const|let|var)\s+|=>|console\.log|^\s*import\s+.+\s+from\s+/m.test(code)) return 'js'
+  if (/^[\w.-]+:\s+.+$/m.test(code)) return 'yaml'
+
+  return 'text'
+}
+
+function getActiveCodeBlockText(editor: Editor) {
+  const { $from } = editor.state.selection
+  for (let depth = $from.depth; depth > 0; depth -= 1) {
+    const node = $from.node(depth)
+    if (node.type.name === 'codeBlock') {
+      return node.textContent
+    }
+  }
+  return ''
+}
+
+function getActiveCodeLanguage(editor: Editor) {
+  return String(editor.getAttributes('codeBlock').language || '__auto__')
+}
+
+function setActiveCodeLanguage(editor: Editor, value: string) {
+  const language = value === '__auto__'
+    ? inferCodeLanguage(getActiveCodeBlockText(editor))
+    : value
+
+  editor.chain().focus().updateAttributes('codeBlock', { language }).run()
+}
+
+function getCodeLanguageLabel(editor: Editor) {
+  const language = getActiveCodeLanguage(editor)
+  return codeLanguageOptions.find(item => item.value === language)?.label || language
+}
+
+function getCodeLanguageMenuItems(editor: Editor) {
+  return [codeLanguageOptions.map(item => ({
+    label: item.label,
+    icon: item.value === getActiveCodeLanguage(editor) ? 'i-lucide-check' : 'i-lucide-code',
+    onSelect: () => setActiveCodeLanguage(editor, item.value)
+  }))]
+}
+
+function normalizeCodeFenceLanguages(markdown: string) {
+  return markdown.replace(/(^|\n)(```|~~~)([^\n`]*)\n([\s\S]*?)\n\2/g, (match, prefix: string, fence: string, rawInfo: string, code: string) => {
+    const info = rawInfo.trim()
+    if (info) return match
+
+    const language = inferCodeLanguage(code)
+    return `${prefix}${fence}${language}\n${code}\n${fence}`
+  })
+}
+
 function parseTags(tagsText: string) {
   return Array.from(new Set(tagsText
     .split(/[，,\s]+/)
@@ -342,11 +435,12 @@ async function savePost(status: number) {
   isSaving.value = true
 
   try {
+    const markdownContent = normalizeCodeFenceLanguages(content.value)
     const payload = {
       title: postMeta.title.trim(),
-      summary: (postMeta.summary || plainTextSummary(content.value)).trim(),
+      summary: (postMeta.summary || plainTextSummary(markdownContent)).trim(),
       slug: postMeta.slug.trim(),
-      content: content.value,
+      content: markdownContent,
       status,
       categoryId: postMeta.categoryId.trim() || undefined,
       tags: parseTags(postMeta.tagsText)
@@ -865,6 +959,36 @@ const extensions = computed(() => [
         return editor.state.selection instanceof CellSelection && view.hasFocus()
       }"
     />
+
+    <UEditorToolbar
+      :editor="editor"
+      :items="codeLanguageToolbarItems"
+      layout="bubble"
+      :should-show="({ editor, view }: EditorToolbarViewContext) => {
+        if (!isDesktopEditorViewport()) {
+          return false
+        }
+        return editor.isActive('codeBlock') && view.hasFocus()
+      }"
+    >
+      <template #codeLanguage>
+        <div class="flex items-center gap-2 px-1">
+          <UDropdownMenu
+            :items="getCodeLanguageMenuItems(editor)"
+            :content="{ align: 'start', side: 'bottom' }"
+          >
+            <UButton
+              size="xs"
+              color="neutral"
+              variant="soft"
+              icon="i-lucide-square-code"
+              trailing-icon="i-lucide-chevron-down"
+              :label="getCodeLanguageLabel(editor)"
+            />
+          </UDropdownMenu>
+        </div>
+      </template>
+    </UEditorToolbar>
 
     <UEditorEmojiMenu
       :editor="editor"
