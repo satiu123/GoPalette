@@ -8,7 +8,7 @@ import { TableKit } from '@tiptap/extension-table'
 import { CellSelection } from '@tiptap/pm/tables'
 import { CodeBlockShiki } from 'tiptap-extension-code-block-shiki'
 import { ImageUpload } from '~/components/editor/ImageUploadExtension'
-import { createPost, deletePost, fetchPostBySlug, POST_STATUS_DRAFT, POST_STATUS_PRIVATE, POST_STATUS_PUBLISHED, updatePost } from '~/composables/useBlogApi'
+import { createPost, deletePost, fetchManagePostBySlug, POST_STATUS_DRAFT, POST_STATUS_PRIVATE, POST_STATUS_PUBLISHED, updatePost } from '~/composables/useBlogApi'
 
 const route = useRoute()
 const runtimeConfig = useRuntimeConfig()
@@ -516,7 +516,7 @@ async function removeCurrentPost() {
 const editingSlug = computed(() => typeof route.query.slug === 'string' ? route.query.slug : '')
 
 if (editingSlug.value) {
-  const existingPost = await fetchPostBySlug(editingSlug.value)
+  const existingPost = await fetchManagePostBySlug(editingSlug.value)
 
   if (existingPost) {
     postMeta.id = existingPost.id

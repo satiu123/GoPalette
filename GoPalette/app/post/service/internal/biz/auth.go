@@ -52,3 +52,19 @@ func CheckIncludeNonPublishedAccess(ctx context.Context, authorID int64, include
 	}
 	return nil
 }
+
+func CanViewPost(ctx context.Context, post *Post) bool {
+	if post == nil {
+		return false
+	}
+	if post.Status == int32(postPb.PostStatus_PUBLISHED) {
+		return true
+	}
+
+	claims, ok := auth.FromContext(ctx)
+	if !ok {
+		return false
+	}
+
+	return claims.UserID == post.AuthorID || claims.Role == int32(userPb.Role_ADMIN)
+}

@@ -21,7 +21,7 @@ import {
   fetchAdminUsers,
   fetchCommentQueue,
   fetchComments,
-  fetchPosts,
+  fetchManagePosts,
   fetchTags,
   searchPosts,
   updateCategory,
@@ -117,6 +117,27 @@ const newTag = reactive({
 const categoryRename = ref<Record<string, string>>({})
 const tagRename = ref<Record<string, string>>({})
 const taxonomyKeyword = ref('')
+const filterInputsReadonly = ref(true)
+
+function enableFilterInputs() {
+  filterInputsReadonly.value = false
+}
+
+function looksLikeAutofilledAccount(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+}
+
+function clearSuspiciousFilterAutofill() {
+  if (looksLikeAutofilledAccount(postKeyword.value)) {
+    postKeyword.value = ''
+  }
+  if (looksLikeAutofilledAccount(commentPostId.value)) {
+    commentPostId.value = ''
+  }
+  if (looksLikeAutofilledAccount(taxonomyKeyword.value)) {
+    taxonomyKeyword.value = ''
+  }
+}
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (!error || typeof error !== 'object') return fallback
@@ -165,6 +186,10 @@ function togglePostSelected(id: string, checked: boolean) {
 
 function toggleVisiblePosts(checked: boolean) {
   toggleVisibleSelection(selectedPostIds, postRows.value, checked)
+}
+
+function replacePostRow(id: string, patch: Partial<BlogPostItem>) {
+  postRows.value = postRows.value.map(item => item.id === id ? { ...item, ...patch } : item)
 }
 
 function toggleCommentSelected(id: string, checked: boolean) {
@@ -312,7 +337,7 @@ async function loadPosts() {
       return
     }
 
-    const response = await fetchPosts(postPage.value, pageSize)
+    const response = await fetchManagePosts(postPage.value, pageSize)
     postTotal.value = response.total
     postRows.value = response.posts
     selectedPostIds.value = keepExistingSelection(selectedPostIds.value, postRows.value)
@@ -577,7 +602,7 @@ async function setPostStatus(item: BlogPostItem, status: number) {
   if (!item.id || updatingPostId.value) return
   updatingPostId.value = item.id
   try {
-    await updatePost(item.id, {
+    const updated = await updatePost(item.id, {
       title: item.title,
       summary: item.summary,
       slug: item.slug,
@@ -587,8 +612,11 @@ async function setPostStatus(item: BlogPostItem, status: number) {
       tags: item.tags,
       updateMask: 'status'
     })
+    replacePostRow(item.id, {
+      ...(updated || {}),
+      status
+    })
     toast.add({ title: '文章状态已更新', color: 'success' })
-    await loadPosts()
   } catch (error: unknown) {
     toast.add({
       title: '更新文章状态失败',
@@ -607,19 +635,30 @@ async function setSelectedPostStatus(status: number) {
 
   updatingPostId.value = '__batch__'
   try {
-    await Promise.all(items.map(item => updatePost(item.id, {
-      title: item.title,
-      summary: item.summary,
-      slug: item.slug,
-      content: item.content || '',
-      status,
-      categoryId: item.categoryId || undefined,
-      tags: item.tags,
-      updateMask: 'status'
-    })))
+    const updates = await Promise.all(items.map(async (item) => {
+      const updated = await updatePost(item.id, {
+        title: item.title,
+        summary: item.summary,
+        slug: item.slug,
+        content: item.content || '',
+        status,
+        categoryId: item.categoryId || undefined,
+        tags: item.tags,
+        updateMask: 'status'
+      })
+      return {
+        id: item.id,
+        updated
+      }
+    }))
+    updates.forEach(({ id, updated }) => {
+      replacePostRow(id, {
+        ...(updated || {}),
+        status
+      })
+    })
     selectedPostIds.value = []
     toast.add({ title: '选中文章状态已更新', color: 'success' })
-    await loadPosts()
   } catch (error: unknown) {
     toast.add({
       title: '批量更新文章失败',
@@ -941,6 +980,10 @@ watch(userPage, () => {
 
 onMounted(async () => {
   initAuth()
+  clearSuspiciousFilterAutofill()
+  setTimeout(clearSuspiciousFilterAutofill, 100)
+  setTimeout(clearSuspiciousFilterAutofill, 500)
+  setTimeout(clearSuspiciousFilterAutofill, 1000)
 
   if (!isLoggedIn.value) {
     await navigateTo('/login?redirect=/admin')
@@ -1078,8 +1121,19 @@ useSeoMeta({
               >
                 <UInput
                   v-model="postKeyword"
+                  type="search"
+                  name="gopalette-admin-article-query"
+                  autocomplete="new-password"
+                  autocapitalize="none"
+                  autocorrect="off"
+                  spellcheck="false"
+                  :readonly="filterInputsReadonly"
                   placeholder="按标题检索"
                   icon="i-lucide-search"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  @focus="enableFilterInputs"
+                  @pointerdown="enableFilterInputs"
                   @keyup.enter="loadPosts"
                 />
               </UFormField>
@@ -1396,8 +1450,18 @@ useSeoMeta({
               >
                 <UInput
                   v-model="commentPostId"
+                  name="gopalette-admin-comment-post-query"
+                  autocomplete="new-password"
+                  autocapitalize="none"
+                  autocorrect="off"
+                  spellcheck="false"
+                  :readonly="filterInputsReadonly"
                   placeholder="留空查看全站队列"
                   icon="i-lucide-message-circle"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  @focus="enableFilterInputs"
+                  @pointerdown="enableFilterInputs"
                   @keyup.enter="reloadCommentsFromFirstPage"
                 />
               </UFormField>
@@ -1842,9 +1906,20 @@ useSeoMeta({
 
             <UInput
               v-model="taxonomyKeyword"
+              type="search"
+              name="gopalette-admin-taxonomy-query"
+              autocomplete="new-password"
+              autocapitalize="none"
+              autocorrect="off"
+              spellcheck="false"
+              :readonly="filterInputsReadonly"
               class="w-full sm:w-72"
               icon="i-lucide-search"
               placeholder="搜索分类或标签"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              @focus="enableFilterInputs"
+              @pointerdown="enableFilterInputs"
             />
           </div>
 

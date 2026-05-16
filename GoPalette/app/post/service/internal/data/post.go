@@ -161,7 +161,7 @@ func (r *postRepo) GetBySlug(ctx context.Context, slug string) (*biz.Post, error
 	return r.toBizPost(&po), nil
 }
 
-func (r *postRepo) List(ctx context.Context, page, pageSize int64) ([]*biz.Post, int64, error) {
+func (r *postRepo) List(ctx context.Context, page, pageSize int64, publishedOnly bool) ([]*biz.Post, int64, error) {
 	// 初始化分页参数
 	p := pagination.NewPagingParam(page, pageSize)
 
@@ -169,6 +169,9 @@ func (r *postRepo) List(ctx context.Context, page, pageSize int64) ([]*biz.Post,
 	var total int64
 
 	db := r.data.db.WithContext(ctx).Model(&Post{})
+	if publishedOnly {
+		db = db.Where("status = ?", 1)
+	}
 
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err

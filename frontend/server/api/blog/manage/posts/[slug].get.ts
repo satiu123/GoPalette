@@ -1,10 +1,9 @@
-import { gatewayFetch } from '../../../utils/auth'
+import { gatewayFetch } from '../../../../utils/auth'
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<unknown> => {
   const params = getRouterParams(event)
   const pathname = getRequestURL(event).pathname
   const tail = pathname.split('/').filter(Boolean).pop() || ''
-
   const slug = params.slug || decodeURIComponent(tail)
 
   if (!slug) {
@@ -13,6 +12,6 @@ export default defineEventHandler(async (event) => {
 
   return await gatewayFetch(event, `/v1/posts/slug/${slug}`, {
     method: 'GET',
-    auth: 'optional'
+    auth: 'required'
   })
 })

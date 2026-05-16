@@ -6,6 +6,7 @@ import (
 	"time"
 
 	pb "github.com/satiu123/GoPalette/api/post/v1"
+	userPb "github.com/satiu123/GoPalette/api/user/v1"
 	"github.com/satiu123/GoPalette/pkg/auth"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -39,7 +40,7 @@ type PostRepo interface {
 	Delete(context.Context, int64) error
 	GetByID(context.Context, int64) (*Post, error)
 	GetBySlug(context.Context, string) (*Post, error)
-	List(ctx context.Context, page, pageSize int64) ([]*Post, int64, error)
+	List(ctx context.Context, page, pageSize int64, publishedOnly bool) ([]*Post, int64, error)
 	ListByAuthor(ctx context.Context, authorID, page, pageSize int64, publishedOnly bool) ([]*Post, int64, error)
 	GetAuthorStats(ctx context.Context, authorID int64, publishedOnly bool) (*AuthorPostStats, error)
 	ListTopByAuthor(ctx context.Context, authorID, limit int64, publishedOnly bool) ([]*Post, error)
@@ -129,6 +130,9 @@ func (uc *PostUsecase) GetPost(ctx context.Context, id int64, slug string) (*Pos
 	if err != nil {
 		return nil, pb.ErrorPostNotFound("文章未找到")
 	}
+	if !CanViewPost(ctx, post) {
+		return nil, pb.ErrorPostNotFound("文章未找到")
+	}
 	return post, nil
 }
 
@@ -145,7 +149,10 @@ func (uc *PostUsecase) DeletePost(ctx context.Context, id int64) error {
 }
 
 func (uc *PostUsecase) ListPosts(ctx context.Context, page, pageSize int64) ([]*Post, int64, error) {
-	return uc.repo.List(ctx, page, pageSize)
+	if claims, ok := auth.FromContext(ctx); ok && claims.Role == int32(userPb.Role_ADMIN) {
+		return uc.repo.List(ctx, page, pageSize, false)
+	}
+	return uc.repo.List(ctx, page, pageSize, true)
 }
 
 func (uc *PostUsecase) ListAuthorPosts(ctx context.Context, authorID, page, pageSize int64, includeNonPublished bool) ([]*Post, int64, error) {

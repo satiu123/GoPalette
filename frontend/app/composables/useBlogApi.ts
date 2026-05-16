@@ -315,6 +315,25 @@ export async function fetchPosts(page = 1, pageSize = 30): Promise<{ posts: Blog
   }
 }
 
+export async function fetchManagePosts(page = 1, pageSize = 30): Promise<{ posts: BlogPostItem[], total: number }> {
+  const { authFetch } = useAuth()
+  const response = await authFetch<ApiResponse>('/api/blog/manage/posts', {
+    query: {
+      page,
+      pageSize
+    }
+  })
+
+  const sourcePosts = (response?.posts || response?.items || response?.data?.posts || []) as PostInfoLike[]
+  const sourceTotal = response?.total || response?.data?.total || 0
+  const posts = sourcePosts.map((item: PostInfoLike) => normalizePostInfo(item))
+
+  return {
+    posts,
+    total: Number(sourceTotal || 0)
+  }
+}
+
 export async function fetchTags(page = 1, pageSize = 200): Promise<{ tags: Array<{ id: string, name: string }>, total: number }> {
   const response = await $fetch<{ tags?: Array<{ id: string, name: string }>, total?: string }>('/api/blog/tags', {
     query: {
@@ -396,7 +415,34 @@ export async function deleteCategory(id: string): Promise<boolean> {
 }
 
 export async function fetchPostBySlug(slug: string): Promise<BlogPostItem | null> {
-  const response = await $fetch<ApiResponse>(`/api/blog/posts/${slug}`)
+  let response: ApiResponse
+  const requestFetch = import.meta.server ? useRequestFetch() : $fetch
+
+  try {
+    response = await requestFetch<ApiResponse>(`/api/blog/posts/${slug}`)
+  } catch (error: unknown) {
+    const typed = error as { status?: unknown, statusCode?: unknown, response?: { status?: unknown } }
+    const status = Number(typed.status ?? typed.statusCode ?? typed.response?.status ?? 0)
+    if (status === 404) return null
+    throw error
+  }
+
+  const post = response?.post || response?.data?.post || response?.data || response
+  if (!post) return null
+
+  return normalizePostDetail(post)
+}
+
+export async function fetchManagePostBySlug(slug: string): Promise<BlogPostItem | null> {
+  if (import.meta.server) {
+    const requestFetch = useRequestFetch()
+    const response = await requestFetch<ApiResponse>(`/api/blog/manage/posts/${slug}`)
+    const post = response?.post || response?.data?.post || response?.data || response
+    return post ? normalizePostDetail(post) : null
+  }
+
+  const { authFetch } = useAuth()
+  const response = await authFetch<ApiResponse>(`/api/blog/manage/posts/${slug}`)
   const post = response?.post || response?.data?.post || response?.data || response
   if (!post) return null
 

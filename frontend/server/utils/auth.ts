@@ -197,11 +197,11 @@ export async function ensureAccessToken(event: H3Event, options?: { required?: b
 
   const refreshToken = getCookie(event, REFRESH_COOKIE) || ''
   if (!refreshToken) {
-    clearAuthCookies(event)
-    if (required) {
-      throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
+    if (!required) {
+      return ''
     }
-    return ''
+    clearAuthCookies(event)
+    throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
   }
 
   try {

@@ -2,11 +2,11 @@
 import { TaskList, TaskItem } from '@tiptap/extension-list'
 import { TableKit } from '@tiptap/extension-table'
 import { CodeBlockShiki } from 'tiptap-extension-code-block-shiki'
-import { POST_STATUS_PUBLISHED, createComment, deleteComment, fetchComments, fetchPostBySlug, fetchPostLikeState, fetchPosts, recordPostView, togglePostLike } from '~/composables/useBlogApi'
+import { POST_STATUS_PUBLISHED, createComment, deleteComment, fetchComments, fetchManagePostBySlug, fetchPostBySlug, fetchPostLikeState, fetchPosts, recordPostView, togglePostLike } from '~/composables/useBlogApi'
 import type { CommentInfo } from '~/composables/useBlogApi'
 
 const toast = useToast()
-const { initAuth, isLoggedIn, session, user, fetchProfile } = useAuth()
+const { initAuth, isLoggedIn, isAdmin, session, user, fetchProfile } = useAuth()
 const { buildUrl, siteName } = useSiteSeo()
 const { categoryPath, tagPath } = useBlogRoutes()
 const articleContentRef = ref<HTMLElement | null>(null)
@@ -16,9 +16,40 @@ let cleanupArticleProgress: (() => void) | undefined
 const route = useRoute()
 const slug = computed(() => String(route.params.slug || ''))
 
+async function resolvePostBySlug(value: string) {
+  try {
+    const publicPost = await fetchPostBySlug(value)
+    if (publicPost) return publicPost
+  } catch {
+    // 非发布文章会在公开接口表现为 404，继续尝试登录态预览读取。
+  }
+
+  initAuth()
+  if (session.value.userId && !user.value) {
+    await fetchProfile(session.value.userId)
+  }
+
+  if (!session.value.userId) return null
+
+  try {
+    const managePost = await fetchManagePostBySlug(value)
+    if (!managePost) return null
+
+    const currentUserId = String(session.value.userId || user.value?.id || '')
+    const authorId = String(managePost.authorId || '')
+    if (managePost.status === POST_STATUS_PUBLISHED || isAdmin.value || (authorId && authorId === currentUserId)) {
+      return managePost
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
 const { data: postData } = await useAsyncData(
   () => `post-${slug.value}`,
-  () => fetchPostBySlug(slug.value),
+  () => resolvePostBySlug(slug.value),
   {
     watch: [slug]
   }
