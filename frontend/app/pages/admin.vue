@@ -330,7 +330,7 @@ async function loadPosts() {
         author: '未知作者',
         authorId: '',
         publishedAt: item.createdAt || '未知时间',
-        readingMinutes: Math.max(1, Math.ceil(item.summary.length / 300)),
+        readingMinutes: estimateReadingMinutes('', item.summary),
         cover: toCover(item.slug || item.id)
       }))
       selectedPostIds.value = keepExistingSelection(selectedPostIds.value, postRows.value)
@@ -710,6 +710,95 @@ async function removeSelectedPosts() {
   } finally {
     deletingPostId.value = ''
   }
+}
+
+function getAdminPostMenuItems(item: BlogPostItem) {
+  return [
+    {
+      label: '发布',
+      icon: 'i-lucide-send',
+      disabled: item.status === POST_STATUS_PUBLISHED,
+      onSelect: () => setPostStatus(item, POST_STATUS_PUBLISHED)
+    },
+    {
+      label: '转为草稿',
+      icon: 'i-lucide-file-pen-line',
+      disabled: item.status === POST_STATUS_DRAFT,
+      onSelect: () => setPostStatus(item, POST_STATUS_DRAFT)
+    },
+    {
+      label: '设为私密',
+      icon: 'i-lucide-lock',
+      disabled: item.status === POST_STATUS_PRIVATE,
+      onSelect: () => setPostStatus(item, POST_STATUS_PRIVATE)
+    },
+    {
+      label: '归档',
+      icon: 'i-lucide-archive',
+      disabled: item.status === POST_STATUS_ARCHIVED,
+      onSelect: () => setPostStatus(item, POST_STATUS_ARCHIVED)
+    },
+    {
+      label: '下线',
+      icon: 'i-lucide-cloud-off',
+      disabled: item.status === POST_STATUS_OFFLINE,
+      onSelect: () => setPostStatus(item, POST_STATUS_OFFLINE)
+    },
+    {
+      label: '查看评论',
+      icon: 'i-lucide-message-square',
+      onSelect: () => openPostComments(item.id)
+    },
+    {
+      label: '删除',
+      icon: 'i-lucide-trash-2',
+      color: 'error' as const,
+      onSelect: () => removePost(item.id)
+    }
+  ]
+}
+
+function getBatchPostMenuItems() {
+  const disabled = selectedPostIds.value.length === 0
+  return [
+    {
+      label: '发布',
+      icon: 'i-lucide-send',
+      disabled,
+      onSelect: () => setSelectedPostStatus(POST_STATUS_PUBLISHED)
+    },
+    {
+      label: '转为草稿',
+      icon: 'i-lucide-file-pen-line',
+      disabled,
+      onSelect: () => setSelectedPostStatus(POST_STATUS_DRAFT)
+    },
+    {
+      label: '设为私密',
+      icon: 'i-lucide-lock',
+      disabled,
+      onSelect: () => setSelectedPostStatus(POST_STATUS_PRIVATE)
+    },
+    {
+      label: '归档',
+      icon: 'i-lucide-archive',
+      disabled,
+      onSelect: () => setSelectedPostStatus(POST_STATUS_ARCHIVED)
+    },
+    {
+      label: '下线',
+      icon: 'i-lucide-cloud-off',
+      disabled,
+      onSelect: () => setSelectedPostStatus(POST_STATUS_OFFLINE)
+    },
+    {
+      label: '删除',
+      icon: 'i-lucide-trash-2',
+      color: 'error' as const,
+      disabled,
+      onSelect: () => removeSelectedPosts()
+    }
+  ]
 }
 
 async function loadTaxonomy() {
@@ -1107,18 +1196,9 @@ useSeoMeta({
           v-show="activeAdminSection === 'posts'"
           class="rounded-lg border border-default bg-default"
         >
-          <div class="flex flex-wrap items-end justify-between gap-3 border-b border-default p-4 sm:p-5">
-            <div>
-              <h2 class="text-base font-semibold text-highlighted">
-                文章管理
-              </h2>
-            </div>
-
-            <div class="flex w-full flex-wrap items-end gap-2 lg:w-auto">
-              <UFormField
-                label="文章关键词"
-                class="min-w-56 flex-1 lg:w-72 lg:flex-none"
-              >
+          <div class="border-b border-default p-4 sm:p-5">
+            <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+              <UFormField label="搜索文章">
                 <UInput
                   v-model="postKeyword"
                   type="search"
@@ -1128,7 +1208,7 @@ useSeoMeta({
                   autocorrect="off"
                   spellcheck="false"
                   :readonly="filterInputsReadonly"
-                  placeholder="按标题检索"
+                  placeholder="搜索标题、摘要、分类或标签"
                   icon="i-lucide-search"
                   data-lpignore="true"
                   data-1p-ignore="true"
@@ -1139,9 +1219,11 @@ useSeoMeta({
               </UFormField>
 
               <UButton
+                color="neutral"
+                variant="soft"
                 :loading="postLoading"
-                label="查询"
-                icon="i-lucide-filter"
+                label="刷新"
+                icon="i-lucide-refresh-cw"
                 @click="loadPosts"
               />
             </div>
@@ -1167,68 +1249,21 @@ useSeoMeta({
               </span>
             </label>
 
-            <div class="flex flex-wrap items-center gap-2">
-              <UButton
-                size="xs"
-                color="success"
-                variant="soft"
-                icon="i-lucide-send"
-                label="批量发布"
-                :disabled="selectedPostIds.length === 0"
-                :loading="updatingPostId === '__batch__'"
-                @click="setSelectedPostStatus(POST_STATUS_PUBLISHED)"
-              />
+            <UDropdownMenu
+              :items="getBatchPostMenuItems()"
+              :content="{ align: 'end' }"
+              :modal="false"
+            >
               <UButton
                 size="xs"
                 color="neutral"
                 variant="soft"
-                icon="i-lucide-file-pen-line"
-                label="转草稿"
+                icon="i-lucide-list-checks"
+                label="批量操作"
                 :disabled="selectedPostIds.length === 0"
-                :loading="updatingPostId === '__batch__'"
-                @click="setSelectedPostStatus(POST_STATUS_DRAFT)"
+                :loading="updatingPostId === '__batch__' || deletingPostId === '__batch__'"
               />
-              <UButton
-                size="xs"
-                color="warning"
-                variant="soft"
-                icon="i-lucide-archive"
-                label="批量归档"
-                :disabled="selectedPostIds.length === 0"
-                :loading="updatingPostId === '__batch__'"
-                @click="setSelectedPostStatus(POST_STATUS_ARCHIVED)"
-              />
-              <UButton
-                size="xs"
-                color="primary"
-                variant="soft"
-                icon="i-lucide-lock"
-                label="批量私密"
-                :disabled="selectedPostIds.length === 0"
-                :loading="updatingPostId === '__batch__'"
-                @click="setSelectedPostStatus(POST_STATUS_PRIVATE)"
-              />
-              <UButton
-                size="xs"
-                color="error"
-                variant="soft"
-                icon="i-lucide-cloud-off"
-                label="批量下线"
-                :disabled="selectedPostIds.length === 0"
-                :loading="updatingPostId === '__batch__'"
-                @click="setSelectedPostStatus(POST_STATUS_OFFLINE)"
-              />
-              <UButton
-                size="xs"
-                color="error"
-                variant="ghost"
-                icon="i-lucide-trash-2"
-                label="批量删除"
-                :disabled="selectedPostIds.length === 0"
-                :loading="deletingPostId === '__batch__'"
-                @click="removeSelectedPosts"
-              />
-            </div>
+            </UDropdownMenu>
           </div>
 
           <div class="divide-y divide-default">
@@ -1282,14 +1317,7 @@ useSeoMeta({
                   <p class="mt-2 line-clamp-2 text-sm text-toned">
                     {{ item.summary }}
                   </p>
-                  <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
-                    <span class="inline-flex items-center gap-1">
-                      <UIcon
-                        name="i-lucide-hash"
-                        class="size-3.5"
-                      />
-                      {{ item.id }}
-                    </span>
+                  <div class="mt-3 grid gap-2 text-xs text-muted sm:grid-cols-2 xl:grid-cols-4">
                     <span class="inline-flex items-center gap-1">
                       <UIcon
                         name="i-lucide-folder"
@@ -1302,14 +1330,21 @@ useSeoMeta({
                         name="i-lucide-clock-3"
                         class="size-3.5"
                       />
-                      {{ item.publishedAt }}
+                      发布 {{ item.publishedAt }}
                     </span>
                     <span class="inline-flex items-center gap-1">
                       <UIcon
-                        name="i-lucide-tags"
+                        name="i-lucide-clock-3"
                         class="size-3.5"
                       />
-                      {{ item.tags.join(', ') || '-' }}
+                      {{ item.readingMinutes }} 分钟
+                    </span>
+                    <span class="inline-flex items-center gap-1">
+                      <UIcon
+                        name="i-lucide-eye"
+                        class="size-3.5"
+                      />
+                      {{ item.viewCount || 0 }} 阅读 · {{ item.commentCount || 0 }} 评论
                     </span>
                   </div>
                 </div>
@@ -1323,73 +1358,20 @@ useSeoMeta({
                     icon="i-lucide-square-pen"
                     label="编辑"
                   />
-                  <UButton
-                    v-if="item.status !== POST_STATUS_PUBLISHED"
-                    size="xs"
-                    color="success"
-                    variant="soft"
-                    icon="i-lucide-send"
-                    :loading="updatingPostId === item.id"
-                    label="发布"
-                    @click="setPostStatus(item, POST_STATUS_PUBLISHED)"
-                  />
-                  <UButton
-                    v-if="item.status !== POST_STATUS_DRAFT"
-                    size="xs"
-                    color="neutral"
-                    variant="soft"
-                    icon="i-lucide-file-pen-line"
-                    :loading="updatingPostId === item.id"
-                    label="转草稿"
-                    @click="setPostStatus(item, POST_STATUS_DRAFT)"
-                  />
-                  <UButton
-                    v-if="item.status !== POST_STATUS_ARCHIVED"
-                    size="xs"
-                    color="warning"
-                    variant="soft"
-                    icon="i-lucide-archive"
-                    :loading="updatingPostId === item.id"
-                    label="归档"
-                    @click="setPostStatus(item, POST_STATUS_ARCHIVED)"
-                  />
-                  <UButton
-                    v-if="item.status !== POST_STATUS_PRIVATE"
-                    size="xs"
-                    color="primary"
-                    variant="soft"
-                    icon="i-lucide-lock"
-                    :loading="updatingPostId === item.id"
-                    label="私密"
-                    @click="setPostStatus(item, POST_STATUS_PRIVATE)"
-                  />
-                  <UButton
-                    v-if="item.status !== POST_STATUS_OFFLINE"
-                    size="xs"
-                    color="error"
-                    variant="soft"
-                    icon="i-lucide-cloud-off"
-                    :loading="updatingPostId === item.id"
-                    label="下线"
-                    @click="setPostStatus(item, POST_STATUS_OFFLINE)"
-                  />
-                  <UButton
-                    size="xs"
-                    color="neutral"
-                    variant="ghost"
-                    icon="i-lucide-message-square"
-                    label="看评论"
-                    @click="openPostComments(item.id)"
-                  />
-                  <UButton
-                    size="xs"
-                    color="error"
-                    variant="ghost"
-                    icon="i-lucide-trash-2"
-                    :loading="deletingPostId === item.id"
-                    label="删除"
-                    @click="removePost(item.id)"
-                  />
+                  <UDropdownMenu
+                    :items="getAdminPostMenuItems(item)"
+                    :content="{ align: 'end' }"
+                    :modal="false"
+                  >
+                    <UButton
+                      size="xs"
+                      color="neutral"
+                      variant="soft"
+                      icon="i-lucide-ellipsis"
+                      label="更多"
+                      :loading="updatingPostId === item.id || deletingPostId === item.id"
+                    />
+                  </UDropdownMenu>
                 </div>
               </div>
             </article>

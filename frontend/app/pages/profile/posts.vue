@@ -535,6 +535,7 @@ useSeoMeta({
                 <UDropdownMenu
                   :items="getPostMenuItems(item)"
                   :content="{ align: 'end' }"
+                  :modal="false"
                 >
                   <UButton
                     size="xs"

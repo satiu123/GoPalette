@@ -1350,6 +1350,8 @@ components:
                     format: date-time
                 coverUrl:
                     type: string
+                readingMinutes:
+                    type: string
             description: PostInfo 包含了帖子的基本信息
         api.post.v1.RecordPostViewReply:
             type: object

@@ -230,6 +230,7 @@ message PostInfo {
   google.protobuf.Timestamp created_at = 12; // 创建时间
   google.protobuf.Timestamp updated_at = 13; // 更新时间
   string cover_url = 14; // 封面图URL（为空时由客户端使用占位图）
+  int64 reading_minutes = 15; // 按正文估算的阅读分钟数
 
 }
 

@@ -374,23 +374,24 @@ func (x *TagDetail) GetPostCount() int64 {
 
 // PostInfo 包含了帖子的基本信息
 type PostInfo struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`                                         // 帖子ID
-	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`                                    // 帖子标题
-	Summary       string                 `protobuf:"bytes,3,opt,name=summary,proto3" json:"summary,omitempty"`                                // 帖子摘要
-	Slug          string                 `protobuf:"bytes,4,opt,name=slug,proto3" json:"slug,omitempty"`                                      // 帖子URL友好标识
-	Status        PostStatus             `protobuf:"varint,5,opt,name=status,proto3,enum=api.post.v1.PostStatus" json:"status,omitempty"`     // 帖子状态
-	ViewCount     int64                  `protobuf:"varint,6,opt,name=view_count,json=viewCount,proto3" json:"view_count,omitempty"`          // 浏览量
-	LikeCount     int64                  `protobuf:"varint,7,opt,name=like_count,json=likeCount,proto3" json:"like_count,omitempty"`          // 点赞量
-	CommentCount  int64                  `protobuf:"varint,8,opt,name=comment_count,json=commentCount,proto3" json:"comment_count,omitempty"` // 评论量
-	Author        *AuthorInfo            `protobuf:"bytes,9,opt,name=author,proto3" json:"author,omitempty"`                                  // 作者信息
-	Category      *CategoryInfo          `protobuf:"bytes,10,opt,name=category,proto3" json:"category,omitempty"`                             // 分类信息
-	Tags          []string               `protobuf:"bytes,11,rep,name=tags,proto3" json:"tags,omitempty"`                                     // 标签列表
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`          // 创建时间
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`          // 更新时间
-	CoverUrl      string                 `protobuf:"bytes,14,opt,name=cover_url,json=coverUrl,proto3" json:"cover_url,omitempty"`             // 封面图URL（为空时由客户端使用占位图）
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`                                                // 帖子ID
+	Title          string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`                                           // 帖子标题
+	Summary        string                 `protobuf:"bytes,3,opt,name=summary,proto3" json:"summary,omitempty"`                                       // 帖子摘要
+	Slug           string                 `protobuf:"bytes,4,opt,name=slug,proto3" json:"slug,omitempty"`                                             // 帖子URL友好标识
+	Status         PostStatus             `protobuf:"varint,5,opt,name=status,proto3,enum=api.post.v1.PostStatus" json:"status,omitempty"`            // 帖子状态
+	ViewCount      int64                  `protobuf:"varint,6,opt,name=view_count,json=viewCount,proto3" json:"view_count,omitempty"`                 // 浏览量
+	LikeCount      int64                  `protobuf:"varint,7,opt,name=like_count,json=likeCount,proto3" json:"like_count,omitempty"`                 // 点赞量
+	CommentCount   int64                  `protobuf:"varint,8,opt,name=comment_count,json=commentCount,proto3" json:"comment_count,omitempty"`        // 评论量
+	Author         *AuthorInfo            `protobuf:"bytes,9,opt,name=author,proto3" json:"author,omitempty"`                                         // 作者信息
+	Category       *CategoryInfo          `protobuf:"bytes,10,opt,name=category,proto3" json:"category,omitempty"`                                    // 分类信息
+	Tags           []string               `protobuf:"bytes,11,rep,name=tags,proto3" json:"tags,omitempty"`                                            // 标签列表
+	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`                 // 创建时间
+	UpdatedAt      *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`                 // 更新时间
+	CoverUrl       string                 `protobuf:"bytes,14,opt,name=cover_url,json=coverUrl,proto3" json:"cover_url,omitempty"`                    // 封面图URL（为空时由客户端使用占位图）
+	ReadingMinutes int64                  `protobuf:"varint,15,opt,name=reading_minutes,json=readingMinutes,proto3" json:"reading_minutes,omitempty"` // 按正文估算的阅读分钟数
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *PostInfo) Reset() {
@@ -519,6 +520,13 @@ func (x *PostInfo) GetCoverUrl() string {
 		return x.CoverUrl
 	}
 	return ""
+}
+
+func (x *PostInfo) GetReadingMinutes() int64 {
+	if x != nil {
+		return x.ReadingMinutes
+	}
+	return 0
 }
 
 // PostDetail 包含了帖子的详细信息，在PostInfo的基础上增加了正文内容字段content
@@ -3355,7 +3363,7 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\x04info\x18\x01 \x01(\v2\x14.api.post.v1.TagInfoR\x04info\x12\x12\n" +
 	"\x04slug\x18\x02 \x01(\tR\x04slug\x12\x1d\n" +
 	"\n" +
-	"post_count\x18\x03 \x01(\x03R\tpostCount\"\x81\x04\n" +
+	"post_count\x18\x03 \x01(\x03R\tpostCount\"\xaa\x04\n" +
 	"\bPostInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
@@ -3375,7 +3383,8 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"created_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
 	"updated_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x1b\n" +
-	"\tcover_url\x18\x0e \x01(\tR\bcoverUrl\"|\n" +
+	"\tcover_url\x18\x0e \x01(\tR\bcoverUrl\x12'\n" +
+	"\x0freading_minutes\x18\x0f \x01(\x03R\x0ereadingMinutes\"|\n" +
 	"\n" +
 	"PostDetail\x12)\n" +
 	"\x04info\x18\x01 \x01(\v2\x15.api.post.v1.PostInfoR\x04info\x12\x18\n" +

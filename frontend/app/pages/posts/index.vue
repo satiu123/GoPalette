@@ -82,7 +82,7 @@ async function runSearch() {
         category: item.categoryName,
         tags: item.tags,
         publishedAt: toDisplayDate(item.createdAt),
-        readingMinutes: Math.max(1, Math.ceil(item.summary.length / 300)),
+        readingMinutes: estimateReadingMinutes('', item.summary),
         cover: toCover(item.slug || item.id)
       })),
       total: response.total,

@@ -4,6 +4,7 @@ export interface PostInfo {
   summary: string
   slug: string
   coverUrl?: string
+  readingMinutes?: string | number
   status: number
   viewCount?: string
   likeCount?: string
@@ -214,13 +215,6 @@ function formatDate(input?: string) {
   }).format(date)
 }
 
-function estimateReadingMinutes(content: string, summary: string) {
-  const text = `${content} ${summary}`.trim()
-  const words = text.length
-
-  return Math.max(1, Math.ceil(words / 300))
-}
-
 function buildCover(seed: string) {
   const safeSeed = encodeURIComponent(seed || 'gopalette')
   return `/covers/${safeSeed}.svg`
@@ -259,6 +253,7 @@ function unwrapPostInfo(post: PostInfoLike): PostInfo {
 export function normalizePostInfo(post: PostInfoLike): BlogPostItem {
   const raw = unwrapPostInfo(post)
   const coverUrl = String((raw as PostInfo & { cover_url?: string }).coverUrl || (raw as PostInfo & { cover_url?: string }).cover_url || '')
+  const readingMinutes = (raw as PostInfo & { reading_minutes?: string | number }).readingMinutes || (raw as PostInfo & { reading_minutes?: string | number }).reading_minutes
 
   return {
     id: raw.id || '',
@@ -276,7 +271,7 @@ export function normalizePostInfo(post: PostInfoLike): BlogPostItem {
     author: raw.author?.name || '匿名作者',
     authorId: raw.author?.id || '',
     publishedAt: formatDate(raw.createdAt),
-    readingMinutes: estimateReadingMinutes('', raw.summary || ''),
+    readingMinutes: resolveReadingMinutes(readingMinutes, '', raw.summary || ''),
     cover: resolveCover(coverUrl, raw.slug || raw.id || 'gopalette')
   }
 }
@@ -284,6 +279,7 @@ export function normalizePostInfo(post: PostInfoLike): BlogPostItem {
 export function normalizePostDetail(detail: PostDetail): BlogPostItem {
   const info = detail.info || ({} as PostInfo)
   const coverUrl = String((info as PostInfo & { cover_url?: string }).coverUrl || (info as PostInfo & { cover_url?: string }).cover_url || '')
+  const readingMinutes = (info as PostInfo & { reading_minutes?: string | number }).readingMinutes || (info as PostInfo & { reading_minutes?: string | number }).reading_minutes
   const content = detail.content || detail.originalContent || ''
 
   return {
@@ -302,7 +298,7 @@ export function normalizePostDetail(detail: PostDetail): BlogPostItem {
     author: info.author?.name || '匿名作者',
     authorId: info.author?.id || '',
     publishedAt: formatDate(info.createdAt),
-    readingMinutes: estimateReadingMinutes(content, info.summary || ''),
+    readingMinutes: resolveReadingMinutes(readingMinutes, content, info.summary || ''),
     cover: resolveCover(coverUrl, info.slug || info.id || 'gopalette'),
     content,
     createdAt: info.createdAt

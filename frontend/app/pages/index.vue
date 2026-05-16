@@ -16,21 +16,6 @@ const featuredPosts = computed(() => publishedPosts.value.slice(0, 2))
 const latestPosts = computed(() => publishedPosts.value.slice(0, 6))
 const tags = computed(() => (tagsData.value?.tags || []).map(tag => tag.name))
 
-const statItems = computed(() => [
-  {
-    label: '文章总数',
-    value: publishedPosts.value.length
-  },
-  {
-    label: '专题标签',
-    value: tags.value.length
-  },
-  {
-    label: '平均阅读',
-    value: `${Math.max(1, Math.round((publishedPosts.value.reduce((sum, post) => sum + post.readingMinutes, 0)) / Math.max(1, publishedPosts.value.length)))} 分钟`
-  }
-])
-
 useSeoMeta({
   title: 'GoPalette Blog',
   description: 'GoPalette 博客首页，展示最新文章、专题标签与写作入口。',
@@ -67,64 +52,7 @@ useHead({
     </AppHeader>
 
     <main class="mx-auto w-full max-w-6xl px-4 pb-20 pt-10 sm:px-14">
-      <section class="motion-fade-up rounded-2xl border border-default bg-muted/30 p-6 sm:p-10">
-        <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <div class="space-y-5">
-            <UBadge
-              color="primary"
-              variant="subtle"
-              label="GoPalette Blog"
-            />
-
-            <h1 class="max-w-2xl text-3xl font-semibold tracking-tight text-highlighted sm:text-5xl">
-              构建、记录、分享你的工程思考
-            </h1>
-
-            <p class="max-w-2xl text-base text-muted sm:text-lg">
-              在这里整理你的想法、沉淀技术实践，并把它们发布成清晰可读的文章。
-            </p>
-
-            <div class="flex flex-wrap gap-3">
-              <UButton
-                to="/posts"
-                trailing-icon="i-lucide-arrow-right"
-                label="浏览文章"
-              />
-              <UButton
-                to="/write"
-                color="neutral"
-                variant="subtle"
-                icon="i-lucide-square-pen"
-                label="进入编辑器"
-              />
-            </div>
-          </div>
-
-          <UCard
-            class="motion-card motion-panel"
-            :ui="{ body: 'p-5 sm:p-6' }"
-          >
-            <template #header>
-              <p class="text-sm font-medium text-toned">
-                站点概览
-              </p>
-            </template>
-
-            <div class="space-y-4">
-              <div
-                v-for="item in statItems"
-                :key="item.label"
-                class="flex items-center justify-between rounded-lg border border-default px-3 py-2.5"
-              >
-                <span class="text-sm text-toned">{{ item.label }}</span>
-                <span class="text-sm font-semibold text-highlighted">{{ item.value }}</span>
-              </div>
-            </div>
-          </UCard>
-        </div>
-      </section>
-
-      <section class="motion-fade-up motion-delay-1 mt-12">
+      <section class="motion-fade-up motion-delay-1">
         <div class="mb-5 flex items-center justify-between">
           <h2 class="text-xl font-semibold text-highlighted">
             精选文章

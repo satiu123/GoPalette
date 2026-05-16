@@ -42,12 +42,12 @@ func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest)
 	}
 
 	p := &biz.Post{
-		Title:   req.Title,
-		Summary: req.Summary,
-		Content: req.Content,
+		Title:    req.Title,
+		Summary:  req.Summary,
+		Content:  req.Content,
 		CoverURL: req.CoverUrl,
-		Slug:    req.Slug,
-		Status:  int32(req.Status),
+		Slug:     req.Slug,
+		Status:   int32(req.Status),
 
 		AuthorID:   claims.UserID,
 		CategoryID: req.CategoryId,
@@ -64,13 +64,13 @@ func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest)
 }
 func (s *PostService) UpdatePost(ctx context.Context, req *pb.UpdatePostRequest) (*pb.UpdatePostReply, error) {
 	p := &biz.Post{
-		ID:      req.Id,
-		Title:   req.Title,
-		Summary: req.Summary,
-		Content: req.Content,
+		ID:       req.Id,
+		Title:    req.Title,
+		Summary:  req.Summary,
+		Content:  req.Content,
 		CoverURL: req.CoverUrl,
-		Slug:    req.Slug,
-		Status:  int32(req.Status),
+		Slug:     req.Slug,
+		Status:   int32(req.Status),
 
 		CategoryID: req.CategoryId,
 		Tags:       req.Tags,
@@ -325,10 +325,11 @@ func (s *PostService) toPBInfo(p *biz.Post) *pb.PostInfo {
 			Id:   p.CategoryID,
 			Name: strings.ToValidUTF8(p.CategoryName, ""),
 		},
-		Tags:      sanitizeStrings(p.Tags),
-		CreatedAt: timestamppb.New(p.CreatedAt),
-		UpdatedAt: timestamppb.New(p.UpdatedAt),
-		CoverUrl:  strings.ToValidUTF8(p.CoverURL, ""),
+		Tags:           sanitizeStrings(p.Tags),
+		CreatedAt:      timestamppb.New(p.CreatedAt),
+		UpdatedAt:      timestamppb.New(p.UpdatedAt),
+		CoverUrl:       strings.ToValidUTF8(p.CoverURL, ""),
+		ReadingMinutes: estimateReadingMinutes(p.Content, p.Summary),
 	}
 }
 
