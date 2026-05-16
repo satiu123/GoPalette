@@ -2,6 +2,7 @@
 import type { EditorCustomHandlers } from '@nuxt/ui'
 import type { Editor } from '@tiptap/core'
 import type { Selection } from '@tiptap/pm/state'
+import { TextSelection } from '@tiptap/pm/state'
 import type { EditorView } from '@tiptap/pm/view'
 import { TaskList, TaskItem } from '@tiptap/extension-list'
 import { TableKit } from '@tiptap/extension-table'
@@ -9,6 +10,7 @@ import { CellSelection } from '@tiptap/pm/tables'
 import { CodeBlockShiki } from 'tiptap-extension-code-block-shiki'
 import { ImageUpload } from '~/components/editor/ImageUploadExtension'
 import { createPost, deletePost, fetchManagePostBySlug, POST_STATUS_DRAFT, POST_STATUS_PRIVATE, POST_STATUS_PUBLISHED, updatePost } from '~/composables/useBlogApi'
+import { normalizeLooseMarkdownTables } from '~/utils/markdown'
 
 const route = useRoute()
 const runtimeConfig = useRuntimeConfig()
@@ -83,6 +85,34 @@ const customHandlers = {
     isActive: (editor: Editor) => editor.isActive('table'),
     isDisabled: undefined
   },
+  codeBlock: {
+    canExecute: (editor: Editor) => Boolean(editor.state.schema.nodes.codeBlock),
+    execute: (editor: Editor) => {
+      if (editor.isActive('codeBlock')) {
+        return editor.chain().focus().setParagraph()
+      }
+
+      return editor.chain().focus().command(({ state, tr, dispatch }) => {
+        const codeBlockType = state.schema.nodes.codeBlock
+        if (!codeBlockType) return false
+
+        const { from, to, empty } = state.selection
+        const selectedText = empty ? '' : state.doc.textBetween(from, to, '\n')
+        const code = selectedText.replace(/\n$/, '')
+        const language = code.trim() ? inferCodeLanguage(code) : 'text'
+        const contentNode = code ? state.schema.text(code) : undefined
+        const node = codeBlockType.create({ language }, contentNode)
+
+        tr.replaceRangeWith(from, to, node)
+        tr.setSelection(TextSelection.near(tr.doc.resolve(Math.min(from + 1, tr.doc.content.size))))
+
+        dispatch?.(tr.scrollIntoView())
+        return true
+      })
+    },
+    isActive: (editor: Editor) => editor.isActive('codeBlock'),
+    isDisabled: undefined
+  },
   ...aiHandlers
 } satisfies EditorCustomHandlers
 
@@ -154,6 +184,10 @@ const publishChecks = computed(() => [
 
 const readyCheckCount = computed(() => publishChecks.value.filter(item => item.ready).length)
 const publishReadiness = computed(() => `${readyCheckCount.value}/${publishChecks.value.length}`)
+const editorStarterKit = computed(() => ({
+  codeBlock: false as const,
+  ...(collaborationEnabled ? { undoRedo: false as const } : {})
+}))
 
 const content = ref('')
 
@@ -435,7 +469,7 @@ async function savePost(status: number) {
   isSaving.value = true
 
   try {
-    const markdownContent = normalizeCodeFenceLanguages(content.value)
+    const markdownContent = normalizeCodeFenceLanguages(normalizeLooseMarkdownTables(content.value))
     const payload = {
       title: postMeta.title.trim(),
       summary: (postMeta.summary || plainTextSummary(markdownContent)).trim(),
@@ -526,12 +560,40 @@ if (editingSlug.value) {
     slugTouched.value = true
     postMeta.tagsText = existingPost.tags.join(', ')
     postMeta.categoryId = existingPost.categoryId
-    content.value = existingPost.content || content.value
+    content.value = normalizeLooseMarkdownTables(existingPost.content || content.value)
   }
 }
 
+const MarkdownCodeBlockShiki = CodeBlockShiki.extend({
+  markdownTokenName: 'code',
+  parseMarkdown: (token, helpers) => {
+    const typedToken = token as {
+      lang?: string
+      text?: string
+    }
+
+    const text = (typedToken.text || '').replace(/\n+$/, '')
+    return helpers.createNode(
+      'codeBlock',
+      { language: typedToken.lang || null },
+      text ? [helpers.createTextNode(text)] : []
+    )
+  },
+  renderMarkdown: (node, helpers) => {
+    const typedNode = node as { attrs?: { language?: string }, content?: unknown }
+    const language = typedNode.attrs?.language || ''
+    const content = typedNode.content
+      ? helpers.renderChildren(typedNode.content).replace(/\n+$/, '')
+      : ''
+
+    return content
+      ? [`\`\`\`${language}`, content, '```'].join('\n')
+      : `\`\`\`${language}\n\`\`\``
+  }
+})
+
 const extensions = computed(() => [
-  CodeBlockShiki.configure({
+  MarkdownCodeBlockShiki.configure({
     defaultTheme: 'material-theme',
     themes: {
       light: 'material-theme-lighter',
@@ -556,7 +618,7 @@ const extensions = computed(() => [
     :model-value="collaborationEnabled ? undefined : content"
     content-type="markdown"
     :extensions="extensions"
-    :starter-kit="collaborationEnabled ? { undoRedo: false } : undefined"
+    :starter-kit="editorStarterKit"
     :handlers="customHandlers"
     autofocus
     placeholder="Write, type '/' for commands..."
@@ -735,185 +797,177 @@ const extensions = computed(() => [
       </div>
     </div>
 
-    <section class="mx-auto mb-6 mt-16 w-full max-w-5xl md:mt-0">
-      <UCard>
-        <template #header>
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p class="text-sm font-medium text-highlighted">
-                文章信息
-              </p>
-              <p class="mt-1 text-xs text-toned">
-                发布前确认标题、slug、分类、标签与摘要，减少返工。
-              </p>
-            </div>
+    <section class="mx-auto mb-4 mt-16 w-full max-w-5xl md:mt-0">
+      <div class="rounded-lg border border-default bg-default px-4 py-3">
+        <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+          <UFormField
+            label="标题"
+            name="title"
+            required
+          >
+            <UInput
+              v-model="postMeta.title"
+              placeholder="请输入文章标题"
+              @blur="handleTitleBlur"
+            />
+          </UFormField>
 
+          <div class="flex flex-wrap items-center gap-2 md:justify-end">
             <p class="text-xs text-toned">
               {{ wordCount }} 字 · 约 {{ estimatedReadingMinutes }} 分钟
               <span v-if="lastSavedAt"> · 已保存 {{ formatLastSavedAt() }}</span>
             </p>
-          </div>
-        </template>
 
-        <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
-          <div class="grid gap-4 md:grid-cols-2">
-            <UFormField
-              label="标题"
-              name="title"
-              required
-            >
-              <UInput
-                v-model="postMeta.title"
-                placeholder="请输入文章标题"
-                @blur="handleTitleBlur"
-              />
-            </UFormField>
-
-            <UFormField
-              label="Slug"
-              name="slug"
-              required
-            >
-              <div class="flex gap-2">
-                <UInput
-                  v-model="postMeta.slug"
-                  placeholder="article-slug"
-                  class="flex-1"
-                  @input="markSlugTouched"
-                  @blur="normalizeSlug"
+            <details class="group relative">
+              <summary class="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-md border border-default bg-elevated px-2.5 py-1.5 text-xs font-medium text-highlighted hover:bg-muted [&::-webkit-details-marker]:hidden">
+                <UIcon
+                  name="i-lucide-sliders-horizontal"
+                  class="size-3.5"
                 />
-                <UButton
+                <span>属性</span>
+                <UBadge
+                  :label="publishReadiness"
                   color="neutral"
                   variant="soft"
-                  icon="i-lucide-refresh-cw"
-                  label="生成"
-                  @click="generateSlugFromTitle"
+                  size="sm"
                 />
-              </div>
-            </UFormField>
-
-            <UFormField
-              label="分类"
-              name="categoryId"
-              required
-            >
-              <USelectMenu
-                v-model="postMeta.categoryId"
-                :items="categoryOptions"
-                value-key="id"
-                label-key="label"
-                placeholder="搜索并选择分类"
-                icon="i-lucide-folder"
-                :search-input="{ placeholder: '搜索分类名称' }"
-                clear
-              >
-                <template #item-label="{ item }">
-                  <span>{{ item.label }}</span>
-                </template>
-              </USelectMenu>
-              <p class="mt-2 text-xs text-toned">
-                当前：{{ selectedCategoryName }}
-              </p>
-            </UFormField>
-
-            <UFormField
-              label="标签"
-              name="tagsText"
-            >
-              <USelectMenu
-                v-model="selectedTagNames"
-                :items="tagSuggestions"
-                multiple
-                create-item
-                placeholder="搜索或创建标签"
-                icon="i-lucide-tags"
-                :search-input="{ placeholder: '输入标签名，回车创建' }"
-                @create="createTagFromInput"
-              >
-                <template #create-item-label="{ item }">
-                  创建标签 #{{ item }}
-                </template>
-              </USelectMenu>
-              <div class="mt-2 flex flex-wrap gap-2">
-                <UBadge
-                  v-for="tag in selectedTags"
-                  :key="`selected-${tag}`"
-                  color="primary"
-                  variant="subtle"
-                  class="cursor-pointer"
-                  :label="`#${tag} ×`"
-                  @click="removeTag(tag)"
+                <UIcon
+                  name="i-lucide-chevron-down"
+                  class="size-3.5 transition-transform group-open:rotate-180"
                 />
-              </div>
-            </UFormField>
+              </summary>
 
-            <UFormField
-              label="摘要"
-              name="summary"
-              class="md:col-span-2"
-            >
-              <div class="space-y-2">
-                <UTextarea
-                  v-model="postMeta.summary"
-                  :rows="3"
-                  autoresize
-                  placeholder="不填写时将自动从正文提取前 140 字"
-                />
-                <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-toned">
-                  <span>{{ (postMeta.summary || plainTextSummary(content)).length }}/140</span>
-                  <UButton
-                    size="xs"
-                    color="neutral"
-                    variant="ghost"
-                    icon="i-lucide-wand-sparkles"
-                    label="从正文生成摘要"
-                    :loading="generatingSummary"
-                    :disabled="generatingSummary || !content.trim()"
-                    @click="fillSummaryFromContent"
-                  />
+              <div class="absolute right-0 z-40 mt-2 max-h-[calc(100vh-8rem)] w-[min(760px,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-default bg-default p-4 shadow-xl">
+                <div class="grid gap-3 md:grid-cols-2">
+                  <UFormField
+                    label="Slug"
+                    name="slug"
+                    required
+                  >
+                    <div class="flex gap-2">
+                      <UInput
+                        v-model="postMeta.slug"
+                        placeholder="article-slug"
+                        class="flex-1"
+                        @input="markSlugTouched"
+                        @blur="normalizeSlug"
+                      />
+                      <UButton
+                        color="neutral"
+                        variant="soft"
+                        icon="i-lucide-refresh-cw"
+                        label="生成"
+                        @click="generateSlugFromTitle"
+                      />
+                    </div>
+                  </UFormField>
+
+                  <UFormField
+                    label="分类"
+                    name="categoryId"
+                    required
+                  >
+                    <USelectMenu
+                      v-model="postMeta.categoryId"
+                      :items="categoryOptions"
+                      value-key="id"
+                      label-key="label"
+                      placeholder="搜索并选择分类"
+                      icon="i-lucide-folder"
+                      :search-input="{ placeholder: '搜索分类名称' }"
+                      clear
+                    >
+                      <template #item-label="{ item }">
+                        <span>{{ item.label }}</span>
+                      </template>
+                    </USelectMenu>
+                    <p class="mt-2 text-xs text-toned">
+                      当前：{{ selectedCategoryName }}
+                    </p>
+                  </UFormField>
+
+                  <UFormField
+                    label="标签"
+                    name="tagsText"
+                  >
+                    <USelectMenu
+                      v-model="selectedTagNames"
+                      :items="tagSuggestions"
+                      multiple
+                      create-item
+                      placeholder="搜索或创建标签"
+                      icon="i-lucide-tags"
+                      :search-input="{ placeholder: '输入标签名，回车创建' }"
+                      @create="createTagFromInput"
+                    >
+                      <template #create-item-label="{ item }">
+                        创建标签 #{{ item }}
+                      </template>
+                    </USelectMenu>
+                    <div class="mt-2 flex flex-wrap gap-2">
+                      <UBadge
+                        v-for="tag in selectedTags"
+                        :key="`selected-${tag}`"
+                        color="primary"
+                        variant="subtle"
+                        class="cursor-pointer"
+                        :label="`#${tag} ×`"
+                        @click="removeTag(tag)"
+                      />
+                    </div>
+                  </UFormField>
+
+                  <UFormField
+                    label="摘要"
+                    name="summary"
+                    class="md:col-span-2"
+                  >
+                    <div class="space-y-2">
+                      <UTextarea
+                        v-model="postMeta.summary"
+                        :rows="2"
+                        autoresize
+                        placeholder="不填写时将自动从正文提取前 140 字"
+                      />
+                      <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-toned">
+                        <span>{{ (postMeta.summary || plainTextSummary(content)).length }}/140</span>
+                        <UButton
+                          size="xs"
+                          color="neutral"
+                          variant="ghost"
+                          icon="i-lucide-wand-sparkles"
+                          label="从正文生成摘要"
+                          :loading="generatingSummary"
+                          :disabled="generatingSummary || !content.trim()"
+                          @click="fillSummaryFromContent"
+                        />
+                      </div>
+                    </div>
+                  </UFormField>
+                </div>
+
+                <div class="mt-4 border-t border-default pt-3">
+                  <div class="flex flex-wrap gap-2">
+                    <div
+                      v-for="item in publishChecks"
+                      :key="item.label"
+                      class="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs"
+                      :class="item.ready ? 'border-primary/30 bg-primary/10 text-highlighted' : 'border-default bg-elevated text-toned'"
+                    >
+                      <UIcon
+                        :name="item.ready ? 'i-lucide-check-circle-2' : 'i-lucide-circle'"
+                        class="size-3.5"
+                        :class="item.ready ? 'text-primary' : 'text-muted'"
+                      />
+                      <span>{{ item.label }}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </UFormField>
+            </details>
           </div>
-
-          <aside class="rounded-2xl border border-default bg-elevated/40 p-4">
-            <div class="flex items-center justify-between gap-3">
-              <p class="text-sm font-medium text-highlighted">
-                发布检查
-              </p>
-              <UBadge
-                :label="publishReadiness"
-                color="neutral"
-                variant="soft"
-              />
-            </div>
-
-            <div class="mt-4 space-y-3">
-              <div
-                v-for="item in publishChecks"
-                :key="item.label"
-                class="flex items-center gap-2 text-sm"
-                :class="item.ready ? 'text-highlighted' : 'text-toned'"
-              >
-                <UIcon
-                  :name="item.ready ? 'i-lucide-check-circle-2' : 'i-lucide-circle'"
-                  :class="item.ready ? 'text-primary' : 'text-muted'"
-                />
-                <span>{{ item.label }}</span>
-              </div>
-            </div>
-
-            <UAlert
-              class="mt-4"
-              color="neutral"
-              variant="soft"
-              icon="i-lucide-lightbulb"
-              title="小提示"
-              description="发布前先保存草稿，确认详情页预览无误后再公开。"
-            />
-          </aside>
         </div>
-      </UCard>
+      </div>
     </section>
 
     <UEditorToolbar

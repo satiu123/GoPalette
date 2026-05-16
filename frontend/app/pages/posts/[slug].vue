@@ -4,6 +4,7 @@ import { TableKit } from '@tiptap/extension-table'
 import { CodeBlockShiki } from 'tiptap-extension-code-block-shiki'
 import { POST_STATUS_PUBLISHED, createComment, deleteComment, fetchComments, fetchManagePostBySlug, fetchPostBySlug, fetchPostLikeState, fetchPosts, recordPostView, togglePostLike } from '~/composables/useBlogApi'
 import type { CommentInfo } from '~/composables/useBlogApi'
+import { normalizeLooseMarkdownTables } from '~/utils/markdown'
 
 const toast = useToast()
 const { initAuth, isLoggedIn, isAdmin, session, user, fetchProfile } = useAuth()
@@ -63,6 +64,7 @@ if (!postData.value) {
 }
 
 const post = computed(() => postData.value)
+const normalizedPostContent = computed(() => normalizeLooseMarkdownTables(post.value?.content || ''))
 
 const comments = ref<CommentInfo[]>([])
 const commentsTotal = ref(0)
@@ -103,7 +105,7 @@ function toAnchorId(value: string, index: number) {
 }
 
 const headingItems = computed(() => {
-  const source = post.value?.content || ''
+  const source = normalizedPostContent.value
   const seen = new Map<string, number>()
   const headings: HeadingItem[] = []
   let inCodeFence = false
@@ -574,31 +576,28 @@ const ViewerCodeBlockShiki = CodeBlockShiki.extend({
   markdownTokenName: 'code',
   parseMarkdown: (token, helpers) => {
     const typedToken = token as {
-      raw?: string
-      codeBlockStyle?: string
       lang?: string
       text?: string
     }
-    if (
-      typedToken.raw?.startsWith('```') === false
-      && typedToken.raw?.startsWith('~~~') === false
-      && typedToken.codeBlockStyle !== 'indented'
-    ) {
-      return []
-    }
+
+    const text = (typedToken.text || '').replace(/\n+$/, '')
 
     return helpers.createNode(
       'codeBlock',
       { language: typedToken.lang || null },
-      typedToken.text ? [helpers.createTextNode(typedToken.text)] : []
+      text ? [helpers.createTextNode(text)] : []
     )
   },
   renderMarkdown: (node, helpers) => {
     const typedNode = node as { attrs?: { language?: string }, content?: unknown }
     const language = typedNode.attrs?.language || ''
-    if (!typedNode.content) return `\`\`\`${language}\n\n\`\`\``
+    const content = typedNode.content
+      ? helpers.renderChildren(typedNode.content).replace(/\n+$/, '')
+      : ''
 
-    return [`\`\`\`${language}`, helpers.renderChildren(typedNode.content), '```'].join('\n')
+    return content
+      ? [`\`\`\`${language}`, content, '```'].join('\n')
+      : `\`\`\`${language}\n\`\`\``
   }
 })
 
@@ -771,7 +770,7 @@ useHead({
 
           <div class="mt-8">
             <p
-              v-if="!post.content?.trim()"
+              v-if="!normalizedPostContent.trim()"
               class="leading-7 text-toned"
             >
               暂无正文内容。
@@ -785,7 +784,7 @@ useHead({
               <ClientOnly>
                 <UEditor
                   :key="post.slug"
-                  :model-value="post.content"
+                  :model-value="normalizedPostContent"
                   content-type="markdown"
                   :editable="false"
                   :extensions="viewerExtensions"

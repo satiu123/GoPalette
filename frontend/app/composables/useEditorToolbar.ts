@@ -161,7 +161,7 @@ export function useEditorToolbar<T extends EditorCustomHandlers>(_customHandlers
     kind: 'mark',
     mark: 'code',
     icon: 'i-lucide-code',
-    tooltip: { text: 'Code' }
+    tooltip: { text: 'Inline code' }
   }], [{
     slot: 'link' as const,
     icon: 'i-lucide-link'
