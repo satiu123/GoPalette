@@ -830,151 +830,151 @@ const extensions = computed(() => [
         </summary>
 
         <div class="space-y-3 border-t border-default p-2.5 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:rounded-2xl xl:border xl:bg-default xl:p-3 xl:shadow-sm">
-        <section class="rounded-xl border border-default bg-elevated/40 p-3">
-          <p class="text-sm font-medium text-highlighted">
-            分类
-          </p>
-          <USelectMenu
-            v-model="postMeta.categoryId"
-            class="mt-2"
-            :items="categoryOptions"
-            value-key="id"
-            label-key="label"
-            placeholder="搜索并选择分类"
-            icon="i-lucide-folder"
-            :search-input="{ placeholder: '搜索分类名称' }"
-            clear
-          >
-            <template #item-label="{ item }">
-              <span>{{ item.label }}</span>
-            </template>
-          </USelectMenu>
-          <p class="mt-2 text-xs text-toned">
-            当前：{{ selectedCategoryName }}
-          </p>
-        </section>
+          <section class="rounded-xl border border-default bg-elevated/40 p-3">
+            <p class="text-sm font-medium text-highlighted">
+              分类
+            </p>
+            <USelectMenu
+              v-model="postMeta.categoryId"
+              class="mt-2"
+              :items="categoryOptions"
+              value-key="id"
+              label-key="label"
+              placeholder="搜索并选择分类"
+              icon="i-lucide-folder"
+              :search-input="{ placeholder: '搜索分类名称' }"
+              clear
+            >
+              <template #item-label="{ item }">
+                <span>{{ item.label }}</span>
+              </template>
+            </USelectMenu>
+            <p class="mt-2 text-xs text-toned">
+              当前：{{ selectedCategoryName }}
+            </p>
+          </section>
 
-        <section class="rounded-xl border border-default bg-elevated/40 p-3">
-          <p class="text-sm font-medium text-highlighted">
-            标签
-          </p>
-          <USelectMenu
-            v-model="selectedTagNames"
-            class="mt-2"
-            :items="tagSuggestions"
-            multiple
-            create-item
-            placeholder="搜索或创建标签"
-            icon="i-lucide-tags"
-            :search-input="{ placeholder: '输入标签名，回车创建' }"
-            @create="createTagFromInput"
-          >
-            <template #create-item-label="{ item }">
-              创建标签 #{{ item }}
-            </template>
-          </USelectMenu>
-          <div class="mt-2 flex flex-wrap gap-2">
-            <UBadge
-              v-for="tag in selectedTags"
-              :key="`selected-${tag}`"
-              color="primary"
-              variant="subtle"
-              class="cursor-pointer"
-              :label="`#${tag} ×`"
-              @click="removeTag(tag)"
-            />
-          </div>
-        </section>
-
-        <section class="rounded-xl border border-default bg-elevated/40 p-3">
-          <p class="text-sm font-medium text-highlighted">
-            封面图
-          </p>
-          <img
-            :src="effectiveCoverUrl"
-            alt="封面图"
-            class="mt-2 h-32 w-full rounded-lg border border-default object-cover"
-          >
-          <UFileUpload
-            ref="coverUploadRef"
-            class="mt-2"
-            accept="image/*"
-            :preview="false"
-            label="上传封面图"
-            :description="uploadingCover ? '上传中...' : '支持常见图片格式，未上传时自动使用占位图'"
-            @update:model-value="onCoverChange"
-          />
-          <div class="mt-2 flex justify-end">
-            <UButton
-              size="xs"
-              color="neutral"
-              variant="ghost"
-              label="恢复占位图"
-              :disabled="!postMeta.coverUrl.trim()"
-              @click="clearCover"
-            />
-          </div>
-        </section>
-
-        <section class="rounded-xl border border-default bg-elevated/40 p-3">
-          <p class="text-sm font-medium text-highlighted">
-            SEO 设置
-          </p>
-          <UFormField
-            label="Slug"
-            name="slug"
-            required
-            class="mt-2"
-          >
-            <div class="flex gap-2">
-              <UInput
-                v-model="postMeta.slug"
-                placeholder="article-slug"
-                class="flex-1"
-                @input="markSlugTouched"
-                @blur="normalizeSlug"
-              />
-              <UButton
-                color="neutral"
-                variant="soft"
-                icon="i-lucide-refresh-cw"
-                label="生成"
-                @click="generateSlugFromTitle"
+          <section class="rounded-xl border border-default bg-elevated/40 p-3">
+            <p class="text-sm font-medium text-highlighted">
+              标签
+            </p>
+            <USelectMenu
+              v-model="selectedTagNames"
+              class="mt-2"
+              :items="tagSuggestions"
+              multiple
+              create-item
+              placeholder="搜索或创建标签"
+              icon="i-lucide-tags"
+              :search-input="{ placeholder: '输入标签名，回车创建' }"
+              @create="createTagFromInput"
+            >
+              <template #create-item-label="{ item }">
+                创建标签 #{{ item }}
+              </template>
+            </USelectMenu>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <UBadge
+                v-for="tag in selectedTags"
+                :key="`selected-${tag}`"
+                color="primary"
+                variant="subtle"
+                class="cursor-pointer"
+                :label="`#${tag} ×`"
+                @click="removeTag(tag)"
               />
             </div>
-          </UFormField>
-          <p class="mt-2 text-xs text-toned">
-            文章路径：/posts/{{ (postMeta.slug || toSlug(postMeta.title) || 'your-slug').trim() || 'your-slug' }}
-          </p>
-        </section>
+          </section>
 
-        <section class="rounded-xl border border-default bg-elevated/40 p-3">
-          <p class="text-sm font-medium text-highlighted">
-            高级设置
-          </p>
-          <div class="mt-2 flex flex-wrap gap-2">
-            <UButton
-              icon="i-lucide-lock"
-              color="primary"
-              variant="soft"
-              size="sm"
-              :disabled="!canSubmit || isSaving"
-              :loading="isSaving"
-              label="保存为私密"
-              @click="savePrivate"
+          <section class="rounded-xl border border-default bg-elevated/40 p-3">
+            <p class="text-sm font-medium text-highlighted">
+              封面图
+            </p>
+            <img
+              :src="effectiveCoverUrl"
+              alt="封面图"
+              class="mt-2 h-32 w-full rounded-lg border border-default object-cover"
+            >
+            <UFileUpload
+              ref="coverUploadRef"
+              class="mt-2"
+              accept="image/*"
+              :preview="false"
+              label="上传封面图"
+              :description="uploadingCover ? '上传中...' : '支持常见图片格式，未上传时自动使用占位图'"
+              @update:model-value="onCoverChange"
             />
-            <UButton
-              v-if="postMeta.id"
-              icon="i-lucide-trash-2"
-              size="sm"
-              color="error"
-              variant="ghost"
-              :loading="deletingPost"
-              label="删除文章"
-              @click="removeCurrentPost"
-            />
-          </div>
-        </section>
+            <div class="mt-2 flex justify-end">
+              <UButton
+                size="xs"
+                color="neutral"
+                variant="ghost"
+                label="恢复占位图"
+                :disabled="!postMeta.coverUrl.trim()"
+                @click="clearCover"
+              />
+            </div>
+          </section>
+
+          <section class="rounded-xl border border-default bg-elevated/40 p-3">
+            <p class="text-sm font-medium text-highlighted">
+              SEO 设置
+            </p>
+            <UFormField
+              label="Slug"
+              name="slug"
+              required
+              class="mt-2"
+            >
+              <div class="flex gap-2">
+                <UInput
+                  v-model="postMeta.slug"
+                  placeholder="article-slug"
+                  class="flex-1"
+                  @input="markSlugTouched"
+                  @blur="normalizeSlug"
+                />
+                <UButton
+                  color="neutral"
+                  variant="soft"
+                  icon="i-lucide-refresh-cw"
+                  label="生成"
+                  @click="generateSlugFromTitle"
+                />
+              </div>
+            </UFormField>
+            <p class="mt-2 text-xs text-toned">
+              文章路径：/posts/{{ (postMeta.slug || toSlug(postMeta.title) || 'your-slug').trim() || 'your-slug' }}
+            </p>
+          </section>
+
+          <section class="rounded-xl border border-default bg-elevated/40 p-3">
+            <p class="text-sm font-medium text-highlighted">
+              高级设置
+            </p>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <UButton
+                icon="i-lucide-lock"
+                color="primary"
+                variant="soft"
+                size="sm"
+                :disabled="!canSubmit || isSaving"
+                :loading="isSaving"
+                label="保存为私密"
+                @click="savePrivate"
+              />
+              <UButton
+                v-if="postMeta.id"
+                icon="i-lucide-trash-2"
+                size="sm"
+                color="error"
+                variant="ghost"
+                :loading="deletingPost"
+                label="删除文章"
+                @click="removeCurrentPost"
+              />
+            </div>
+          </section>
         </div>
       </details>
     </aside>
