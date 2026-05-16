@@ -229,6 +229,7 @@ message PostInfo {
 
   google.protobuf.Timestamp created_at = 12; // 创建时间
   google.protobuf.Timestamp updated_at = 13; // 更新时间
+  string cover_url = 14; // 封面图URL（为空时由客户端使用占位图）
 
 }
 
@@ -247,6 +248,7 @@ message CreatePostRequest {
   PostStatus      status      = 5; // 帖子状态
   int64           category_id = 6; // 分类ID
   repeated string tags        = 7; // 标签列表
+  string          cover_url   = 8; // 封面图URL
 }
 
 message CreatePostReply {
@@ -264,6 +266,7 @@ message UpdatePostRequest {
   repeated string tags        = 8; // 标签列表
 
   google.protobuf.FieldMask update_mask = 9; // 指定要更新的字段列表，例如 "title,summary,content" 表示只更新标题、摘要和正文内容，其他字段保持不变
+  string          cover_url   = 10; // 封面图URL
 
 }
 

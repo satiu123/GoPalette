@@ -3,6 +3,7 @@ export interface PostInfo {
   title: string
   summary: string
   slug: string
+  coverUrl?: string
   status: number
   viewCount?: string
   likeCount?: string
@@ -115,6 +116,7 @@ export interface BlogPostItem {
   title: string
   summary: string
   slug: string
+  coverUrl?: string
   status: number
   viewCount?: number
   likeCount?: number
@@ -224,6 +226,12 @@ function buildCover(seed: string) {
   return `/covers/${safeSeed}.svg`
 }
 
+function resolveCover(coverUrl: string | undefined, seed: string) {
+  const customCover = String(coverUrl || '').trim()
+  if (customCover) return customCover
+  return buildCover(seed)
+}
+
 type PostInfoLike = PostInfo | { info?: PostInfo } | DataRecord
 
 function withCsrfHeaders(headers?: Record<string, string>) {
@@ -250,12 +258,14 @@ function unwrapPostInfo(post: PostInfoLike): PostInfo {
 
 export function normalizePostInfo(post: PostInfoLike): BlogPostItem {
   const raw = unwrapPostInfo(post)
+  const coverUrl = String((raw as PostInfo & { cover_url?: string }).coverUrl || (raw as PostInfo & { cover_url?: string }).cover_url || '')
 
   return {
     id: raw.id || '',
     title: raw.title || '未命名文章',
     summary: raw.summary || '暂无摘要',
     slug: raw.slug || '',
+    coverUrl,
     status: toPostStatus(raw.status),
     viewCount: Number(raw.viewCount || 0),
     likeCount: Number(raw.likeCount || 0),
@@ -267,12 +277,13 @@ export function normalizePostInfo(post: PostInfoLike): BlogPostItem {
     authorId: raw.author?.id || '',
     publishedAt: formatDate(raw.createdAt),
     readingMinutes: estimateReadingMinutes('', raw.summary || ''),
-    cover: buildCover(raw.slug || raw.id || 'gopalette')
+    cover: resolveCover(coverUrl, raw.slug || raw.id || 'gopalette')
   }
 }
 
 export function normalizePostDetail(detail: PostDetail): BlogPostItem {
   const info = detail.info || ({} as PostInfo)
+  const coverUrl = String((info as PostInfo & { cover_url?: string }).coverUrl || (info as PostInfo & { cover_url?: string }).cover_url || '')
   const content = detail.content || detail.originalContent || ''
 
   return {
@@ -280,6 +291,7 @@ export function normalizePostDetail(detail: PostDetail): BlogPostItem {
     title: info.title || '未命名文章',
     summary: info.summary || '暂无摘要',
     slug: info.slug || '',
+    coverUrl,
     status: toPostStatus(info.status),
     viewCount: Number(info.viewCount || 0),
     likeCount: Number(info.likeCount || 0),
@@ -291,7 +303,7 @@ export function normalizePostDetail(detail: PostDetail): BlogPostItem {
     authorId: info.author?.id || '',
     publishedAt: formatDate(info.createdAt),
     readingMinutes: estimateReadingMinutes(content, info.summary || ''),
-    cover: buildCover(info.slug || info.id || 'gopalette'),
+    cover: resolveCover(coverUrl, info.slug || info.id || 'gopalette'),
     content,
     createdAt: info.createdAt
   }
@@ -687,6 +699,7 @@ export async function createPost(payload: {
   summary: string
   slug: string
   content: string
+  coverUrl?: string
   status: number
   categoryId?: string
   tags?: string[]
@@ -708,6 +721,7 @@ export async function updatePost(id: string, payload: {
   summary: string
   slug: string
   content: string
+  coverUrl?: string
   status: number
   categoryId?: string
   tags?: string[]
@@ -720,7 +734,7 @@ export async function updatePost(id: string, payload: {
     body: {
       id,
       ...payload,
-      updateMask: payload.updateMask || 'title,summary,slug,content,status,categoryId,tags'
+      updateMask: payload.updateMask || 'title,summary,slug,content,coverUrl,status,categoryId,tags'
     }
   })
 

@@ -1168,6 +1168,8 @@ components:
                     type: array
                     items:
                         type: string
+                coverUrl:
+                    type: string
         api.post.v1.CreateTagReply:
             type: object
             properties:
@@ -1346,6 +1348,8 @@ components:
                 updatedAt:
                     type: string
                     format: date-time
+                coverUrl:
+                    type: string
             description: PostInfo 包含了帖子的基本信息
         api.post.v1.RecordPostViewReply:
             type: object
@@ -1438,6 +1442,8 @@ components:
                 updateMask:
                     type: string
                     format: field-mask
+                coverUrl:
+                    type: string
         api.post.v1.UpdateTagReply:
             type: object
             properties:

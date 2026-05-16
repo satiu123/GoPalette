@@ -20,6 +20,7 @@ type Post struct {
 	Summary         string `gorm:"size:255"`
 	Content         string `gorm:"type:text"`
 	OriginalContent string `gorm:"type:text"`
+	CoverURL        string `gorm:"size:1024"`
 	Slug            string `gorm:"size:255;not null;unique"`
 	Status          int32  `gorm:"default:0"`
 
@@ -395,6 +396,7 @@ func (r *postRepo) toBizPost(po *Post) *biz.Post {
 		Summary:         po.Summary,
 		Content:         po.Content,
 		OriginalContent: po.OriginalContent,
+		CoverURL:        po.CoverURL,
 		Slug:            po.Slug,
 		Status:          po.Status,
 
@@ -430,6 +432,7 @@ func (r *postRepo) toDataPost(p *biz.Post) *Post {
 		Summary:         p.Summary,
 		Content:         p.Content,
 		OriginalContent: p.OriginalContent,
+		CoverURL:        p.CoverURL,
 		Slug:            p.Slug,
 		Status:          p.Status,
 		AuthorID:        p.AuthorID,

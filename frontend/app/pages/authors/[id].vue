@@ -122,6 +122,8 @@ function normalizePost(input: DataRecord): BlogPostItem {
   const author = toRecord(input.author)
   const category = toRecord(input.category)
   const createdAt = toText(pick(input, ['createdAt', 'created_at']))
+  const coverUrl = toText(pick(input, ['coverUrl', 'cover_url']))
+  const fallbackCover = `/covers/${encodeURIComponent(toText(pick(input, ['slug', 'id']), 'gopalette'))}.svg`
 
   return {
     id: toText(pick(input, ['id'])),
@@ -136,7 +138,8 @@ function normalizePost(input: DataRecord): BlogPostItem {
     authorId: toText(pick(author, ['id'])),
     publishedAt: formatDate(createdAt),
     readingMinutes: Math.max(1, Math.ceil(toText(pick(input, ['summary'])).length / 300)),
-    cover: `/covers/${encodeURIComponent(toText(pick(input, ['slug', 'id']), 'gopalette'))}.svg`,
+    coverUrl,
+    cover: coverUrl || fallbackCover,
     createdAt
   }
 }

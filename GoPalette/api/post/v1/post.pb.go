@@ -388,6 +388,7 @@ type PostInfo struct {
 	Tags          []string               `protobuf:"bytes,11,rep,name=tags,proto3" json:"tags,omitempty"`                                     // 标签列表
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`          // 创建时间
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`          // 更新时间
+	CoverUrl      string                 `protobuf:"bytes,14,opt,name=cover_url,json=coverUrl,proto3" json:"cover_url,omitempty"`             // 封面图URL（为空时由客户端使用占位图）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -513,6 +514,13 @@ func (x *PostInfo) GetUpdatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *PostInfo) GetCoverUrl() string {
+	if x != nil {
+		return x.CoverUrl
+	}
+	return ""
+}
+
 // PostDetail 包含了帖子的详细信息，在PostInfo的基础上增加了正文内容字段content
 type PostDetail struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
@@ -583,6 +591,7 @@ type CreatePostRequest struct {
 	Status        PostStatus             `protobuf:"varint,5,opt,name=status,proto3,enum=api.post.v1.PostStatus" json:"status,omitempty"` // 帖子状态
 	CategoryId    int64                  `protobuf:"varint,6,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`   // 分类ID
 	Tags          []string               `protobuf:"bytes,7,rep,name=tags,proto3" json:"tags,omitempty"`                                  // 标签列表
+	CoverUrl      string                 `protobuf:"bytes,8,opt,name=cover_url,json=coverUrl,proto3" json:"cover_url,omitempty"`          // 封面图URL
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -666,6 +675,13 @@ func (x *CreatePostRequest) GetTags() []string {
 	return nil
 }
 
+func (x *CreatePostRequest) GetCoverUrl() string {
+	if x != nil {
+		return x.CoverUrl
+	}
+	return ""
+}
+
 type CreatePostReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Post          *PostDetail            `protobuf:"bytes,1,opt,name=post,proto3" json:"post,omitempty"` // 创建成功后返回的帖子详细信息
@@ -721,6 +737,7 @@ type UpdatePostRequest struct {
 	CategoryId    int64                  `protobuf:"varint,7,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`   // 分类ID
 	Tags          []string               `protobuf:"bytes,8,rep,name=tags,proto3" json:"tags,omitempty"`                                  // 标签列表
 	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,9,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`    // 指定要更新的字段列表，例如 "title,summary,content" 表示只更新标题、摘要和正文内容，其他字段保持不变
+	CoverUrl      string                 `protobuf:"bytes,10,opt,name=cover_url,json=coverUrl,proto3" json:"cover_url,omitempty"`         // 封面图URL
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -816,6 +833,13 @@ func (x *UpdatePostRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
 		return x.UpdateMask
 	}
 	return nil
+}
+
+func (x *UpdatePostRequest) GetCoverUrl() string {
+	if x != nil {
+		return x.CoverUrl
+	}
+	return ""
 }
 
 type UpdatePostReply struct {
@@ -3331,7 +3355,7 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\x04info\x18\x01 \x01(\v2\x14.api.post.v1.TagInfoR\x04info\x12\x12\n" +
 	"\x04slug\x18\x02 \x01(\tR\x04slug\x12\x1d\n" +
 	"\n" +
-	"post_count\x18\x03 \x01(\x03R\tpostCount\"\xe4\x03\n" +
+	"post_count\x18\x03 \x01(\x03R\tpostCount\"\x81\x04\n" +
 	"\bPostInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
@@ -3350,12 +3374,13 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"|\n" +
+	"updated_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x1b\n" +
+	"\tcover_url\x18\x0e \x01(\tR\bcoverUrl\"|\n" +
 	"\n" +
 	"PostDetail\x12)\n" +
 	"\x04info\x18\x01 \x01(\v2\x15.api.post.v1.PostInfoR\x04info\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\x12)\n" +
-	"\x10original_content\x18\x03 \x01(\tR\x0foriginalContent\"\xd7\x01\n" +
+	"\x10original_content\x18\x03 \x01(\tR\x0foriginalContent\"\xf4\x01\n" +
 	"\x11CreatePostRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x18\n" +
 	"\asummary\x18\x02 \x01(\tR\asummary\x12\x12\n" +
@@ -3364,9 +3389,10 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\x06status\x18\x05 \x01(\x0e2\x17.api.post.v1.PostStatusR\x06status\x12\x1f\n" +
 	"\vcategory_id\x18\x06 \x01(\x03R\n" +
 	"categoryId\x12\x12\n" +
-	"\x04tags\x18\a \x03(\tR\x04tags\">\n" +
+	"\x04tags\x18\a \x03(\tR\x04tags\x12\x1b\n" +
+	"\tcover_url\x18\b \x01(\tR\bcoverUrl\">\n" +
 	"\x0fCreatePostReply\x12+\n" +
-	"\x04post\x18\x01 \x01(\v2\x17.api.post.v1.PostDetailR\x04post\"\xa4\x02\n" +
+	"\x04post\x18\x01 \x01(\v2\x17.api.post.v1.PostDetailR\x04post\"\xc1\x02\n" +
 	"\x11UpdatePostRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
@@ -3378,7 +3404,9 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"categoryId\x12\x12\n" +
 	"\x04tags\x18\b \x03(\tR\x04tags\x12;\n" +
 	"\vupdate_mask\x18\t \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
-	"updateMask\">\n" +
+	"updateMask\x12\x1b\n" +
+	"\tcover_url\x18\n" +
+	" \x01(\tR\bcoverUrl\">\n" +
 	"\x0fUpdatePostReply\x12+\n" +
 	"\x04post\x18\x01 \x01(\v2\x17.api.post.v1.PostDetailR\x04post\"#\n" +
 	"\x11DeletePostRequest\x12\x0e\n" +

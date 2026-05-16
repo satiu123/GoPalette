@@ -45,6 +45,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest)
 		Title:   req.Title,
 		Summary: req.Summary,
 		Content: req.Content,
+		CoverURL: req.CoverUrl,
 		Slug:    req.Slug,
 		Status:  int32(req.Status),
 
@@ -67,6 +68,7 @@ func (s *PostService) UpdatePost(ctx context.Context, req *pb.UpdatePostRequest)
 		Title:   req.Title,
 		Summary: req.Summary,
 		Content: req.Content,
+		CoverURL: req.CoverUrl,
 		Slug:    req.Slug,
 		Status:  int32(req.Status),
 
@@ -326,6 +328,7 @@ func (s *PostService) toPBInfo(p *biz.Post) *pb.PostInfo {
 		Tags:      sanitizeStrings(p.Tags),
 		CreatedAt: timestamppb.New(p.CreatedAt),
 		UpdatedAt: timestamppb.New(p.UpdatedAt),
+		CoverUrl:  strings.ToValidUTF8(p.CoverURL, ""),
 	}
 }
 

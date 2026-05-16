@@ -695,6 +695,14 @@ useHead({
       <div class="grid gap-8 lg:grid-cols-[minmax(0,900px)_minmax(220px,1fr)]">
         <article class="motion-fade-up min-w-0 rounded-2xl border border-default bg-default p-6 sm:p-10">
           <div class="space-y-5 border-b border-default pb-8">
+            <figure class="overflow-hidden rounded-2xl border border-default bg-muted">
+              <img
+                :src="post.cover"
+                :alt="post.title"
+                class="aspect-[16/9] w-full object-cover"
+              >
+            </figure>
+
             <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
               <NuxtLink
                 :to="categoryPath(post.category)"
@@ -760,12 +768,6 @@ useHead({
                 @click="shareArticle"
               />
             </div>
-
-            <img
-              :src="post.cover"
-              :alt="post.title"
-              class="h-60 w-full rounded-xl object-cover"
-            >
           </div>
 
           <div class="mt-8">

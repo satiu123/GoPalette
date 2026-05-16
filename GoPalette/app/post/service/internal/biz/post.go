@@ -18,6 +18,7 @@ type Post struct {
 	Summary         string
 	Content         string
 	OriginalContent string
+	CoverURL        string
 	Slug            string
 	Status          int32
 

@@ -212,41 +212,56 @@ useHead({
             <article
               v-for="post in latestPosts"
               :key="post.id"
-              class="motion-card motion-panel rounded-xl border border-default bg-default p-4 hover:border-primary/40"
+              class="motion-card motion-panel overflow-hidden rounded-xl border border-default bg-default hover:border-primary/40"
             >
-              <div class="mb-2 flex items-center gap-2 text-xs text-toned">
-                <span>{{ post.publishedAt }}</span>
-                <span>·</span>
+              <div class="grid gap-4 p-4 sm:grid-cols-[160px_minmax(0,1fr)]">
                 <NuxtLink
-                  :to="categoryPath(post.category)"
-                  class="inline-flex"
+                  :to="`/posts/${post.slug}`"
+                  class="block overflow-hidden rounded-lg border border-default bg-muted"
                 >
-                  <UBadge
-                    :label="post.category"
-                    color="primary"
-                    variant="subtle"
-                    class="hover:opacity-90"
-                  />
+                  <img
+                    :src="post.cover"
+                    :alt="post.title"
+                    class="aspect-[16/10] h-full w-full object-cover transition duration-300 hover:scale-105"
+                  >
                 </NuxtLink>
-                <span>·</span>
-                <NuxtLink
-                  v-if="post.authorId"
-                  :to="`/authors/${post.authorId}`"
-                  class="hover:text-primary"
-                >
-                  {{ post.author }}
-                </NuxtLink>
-                <span v-else>{{ post.author }}</span>
+
+                <div class="min-w-0">
+                  <div class="mb-2 flex flex-wrap items-center gap-2 text-xs text-toned">
+                    <span>{{ post.publishedAt }}</span>
+                    <span>·</span>
+                    <NuxtLink
+                      :to="categoryPath(post.category)"
+                      class="inline-flex"
+                    >
+                      <UBadge
+                        :label="post.category"
+                        color="primary"
+                        variant="subtle"
+                        class="hover:opacity-90"
+                      />
+                    </NuxtLink>
+                    <span>·</span>
+                    <NuxtLink
+                      v-if="post.authorId"
+                      :to="`/authors/${post.authorId}`"
+                      class="hover:text-primary"
+                    >
+                      {{ post.author }}
+                    </NuxtLink>
+                    <span v-else>{{ post.author }}</span>
+                  </div>
+                  <NuxtLink
+                    :to="`/posts/${post.slug}`"
+                    class="line-clamp-2 text-base font-semibold text-highlighted hover:text-primary"
+                  >
+                    {{ post.title }}
+                  </NuxtLink>
+                  <p class="mt-2 line-clamp-2 text-sm text-toned">
+                    {{ post.summary }}
+                  </p>
+                </div>
               </div>
-              <NuxtLink
-                :to="`/posts/${post.slug}`"
-                class="block text-base font-semibold text-highlighted hover:text-primary"
-              >
-                {{ post.title }}
-              </NuxtLink>
-              <p class="mt-1 line-clamp-2 text-sm text-toned">
-                {{ post.summary }}
-              </p>
             </article>
           </div>
         </div>
