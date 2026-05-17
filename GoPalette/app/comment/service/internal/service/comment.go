@@ -119,7 +119,7 @@ func (s *CommentService) toPB(c *biz.Comment, author *biz.UserProfile, replyTo *
 		Id:        c.ID,
 		PostId:    c.PostID,
 		UserId:    c.UserID,
-		Content:   c.Content,
+		Content:   biz.SanitizeCommentContent(c.Content),
 		ParentId:  c.ParentID,
 		RootId:    c.RootID,
 		LikeCount: c.LikeCount,

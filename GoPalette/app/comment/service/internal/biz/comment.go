@@ -2,6 +2,7 @@ package biz
 
 import (
 	"context"
+	"html"
 	"strings"
 	"time"
 
@@ -94,6 +95,7 @@ func (uc *CommentUsecase) Create(ctx context.Context, c *Comment) (*Comment, err
 	if c.Content == "" {
 		return nil, pb.ErrorInvalidArgument("%s", "评论内容不能为空")
 	}
+	c.Content = SanitizeCommentContent(c.Content)
 
 	ok, err := uc.rateRepo.AllowCreate(ctx, c.UserID, 3, time.Minute)
 	if err != nil {
@@ -398,4 +400,12 @@ func hasSensitiveWord(content string) bool {
 		}
 	}
 	return false
+}
+
+func SanitizeCommentContent(content string) string {
+	trimmed := strings.TrimSpace(content)
+	if trimmed == "" {
+		return ""
+	}
+	return html.EscapeString(html.UnescapeString(trimmed))
 }

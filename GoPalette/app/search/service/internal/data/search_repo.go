@@ -67,7 +67,7 @@ func (r *searchRepo) SearchPosts(ctx context.Context, query string, offset, limi
 		AttributesToHighlight: []string{"title", "summary"},
 		HighlightPreTag:       "<em>",
 		HighlightPostTag:      "</em>",
-	}	
+	}
 	if category != "" {
 		searchReq.Filter = fmt.Sprintf("category_name = \"%s\"", category)
 	}
@@ -100,6 +100,7 @@ func (r *searchRepo) SearchPosts(ctx context.Context, query string, offset, limi
 				}
 			}
 		}
+		ps.CreatedAt = parseIndexedTime(raw, "created_at", "createdAt")
 		if f, ok := raw["_formatted"].(map[string]any); ok {
 			if t, ok := f["title"].(string); ok {
 				ps.Title = t
@@ -129,6 +130,43 @@ func (r *searchRepo) SearchPosts(ctx context.Context, query string, offset, limi
 		total = int64(len(items))
 	}
 	return items, total, nil
+}
+
+func parseIndexedTime(raw map[string]any, keys ...string) time.Time {
+	for _, key := range keys {
+		value, ok := raw[key]
+		if !ok {
+			continue
+		}
+		if parsed, ok := parseIndexedTimeValue(value); ok {
+			return parsed
+		}
+	}
+	return time.Time{}
+}
+
+func parseIndexedTimeValue(value any) (time.Time, bool) {
+	switch v := value.(type) {
+	case string:
+		if v == "" {
+			return time.Time{}, false
+		}
+		for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
+			if parsed, err := time.Parse(layout, v); err == nil {
+				return parsed, true
+			}
+		}
+	case float64:
+		if v <= 0 {
+			return time.Time{}, false
+		}
+		return time.Unix(int64(v), 0).UTC(), true
+	case json.Number:
+		if unix, err := v.Int64(); err == nil && unix > 0 {
+			return time.Unix(unix, 0).UTC(), true
+		}
+	}
+	return time.Time{}, false
 }
 
 func (r *searchRepo) SyncPost(ctx context.Context, p *biz.SyncPost) error {
