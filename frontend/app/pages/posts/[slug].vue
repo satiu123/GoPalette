@@ -11,6 +11,7 @@ const { initAuth, isLoggedIn, isAdmin, session, user, fetchProfile } = useAuth()
 const { buildUrl, siteName } = useSiteSeo()
 const { categoryPath, tagPath } = useBlogRoutes()
 const articleContentRef = ref<HTMLElement | null>(null)
+const articleTocRef = ref<HTMLElement | null>(null)
 const activeHeadingId = ref('')
 let cleanupArticleProgress: (() => void) | undefined
 
@@ -86,6 +87,8 @@ type HeadingItem = {
   depth: number
 }
 
+const OUTLINE_MAX_DEPTH = 4
+
 function normalizeHeadingText(value: string) {
   return value
     .replace(/[#>*`_~[\]()!-]/g, ' ')
@@ -119,8 +122,11 @@ const headingItems = computed(() => {
 
     if (inCodeFence) continue
 
-    const match = /^(#{2,3})\s+(.+?)\s*#*$/.exec(trimmed)
+    const match = /^(#{1,6})\s+(.+?)\s*#*$/.exec(trimmed)
     if (!match) continue
+
+    const depth = match[1]?.length || 1
+    if (depth > OUTLINE_MAX_DEPTH) continue
 
     const text = normalizeHeadingText(match[2] || '')
     if (!text) continue
@@ -132,7 +138,7 @@ const headingItems = computed(() => {
     headings.push({
       id: count > 0 ? `${baseId}-${count + 1}` : baseId,
       text,
-      depth: match[1]?.length || 2
+      depth
     })
   }
 
@@ -187,7 +193,7 @@ function enhanceArticleContent() {
   const root = articleContentRef.value
   if (!root) return
 
-  const headings = Array.from(root.querySelectorAll<HTMLElement>('h2, h3'))
+  const headings = Array.from(root.querySelectorAll<HTMLElement>('h1, h2, h3, h4'))
   headings.forEach((heading, headingIndex) => {
     const item = headingItems.value[headingIndex]
     if (!item) return
@@ -242,6 +248,24 @@ function setupArticleProgress() {
   }
 
   let frame = 0
+  const scrollActiveTocItemIntoView = () => {
+    const nav = articleTocRef.value
+    if (!nav) return
+
+    const active = nav.querySelector<HTMLElement>('[data-toc-active="true"]')
+    if (!active) return
+
+    const navRect = nav.getBoundingClientRect()
+    const activeRect = active.getBoundingClientRect()
+    if (activeRect.top < navRect.top || activeRect.bottom > navRect.bottom) {
+      active.scrollIntoView({
+        block: 'nearest',
+        inline: 'nearest',
+        behavior: 'smooth'
+      })
+    }
+  }
+
   const updateActiveHeading = () => {
     cancelAnimationFrame(frame)
     frame = requestAnimationFrame(() => {
@@ -251,6 +275,7 @@ function setupArticleProgress() {
         .at(-1)
 
       activeHeadingId.value = current?.id || headingNodes[0]?.id || ''
+      nextTick(scrollActiveTocItemIntoView)
     })
   }
 
@@ -835,16 +860,20 @@ useHead({
             <p class="text-xs font-medium uppercase tracking-wide text-toned">
               目录
             </p>
-            <nav class="mt-4 space-y-1">
+            <nav
+              ref="articleTocRef"
+              class="mt-4 max-h-[calc(100vh-10rem)] space-y-1 overflow-y-auto pr-1"
+            >
               <a
                 v-for="item in headingItems"
                 :key="item.id"
                 :href="`#${item.id}`"
-                class="block rounded-lg px-3 py-2 text-sm transition-colors hover:bg-elevated hover:text-highlighted"
+                class="block truncate rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-elevated hover:text-highlighted"
+                :style="{ paddingLeft: `${0.5 + (item.depth - 1) * 0.75}rem` }"
                 :class="[
-                  item.depth === 3 ? 'ml-3 text-xs' : '',
                   activeHeadingId === item.id ? 'bg-primary/10 text-primary' : 'text-toned'
                 ]"
+                :data-toc-active="activeHeadingId === item.id ? 'true' : undefined"
               >
                 {{ item.text }}
               </a>

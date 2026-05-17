@@ -29,6 +29,7 @@ const appConfig = useAppConfig()
 
 const editorRef = useTemplateRef('editorRef')
 const coverUploadRef = useTemplateRef('coverUploadRef')
+const outlineNavRef = useTemplateRef('outlineNavRef')
 
 type EditorToolbarContext = { editor: Editor, view: EditorView, state: { selection: Selection } }
 type EditorToolbarViewContext = { editor: Editor, view: EditorView }
@@ -141,6 +142,7 @@ const uploadingCover = ref(false)
 const lastSavedAt = ref('')
 const slugTouched = ref(false)
 const settingsPanelOpen = ref(false)
+const activeOutlineIndex = ref(0)
 const upload = useUpload('/api/upload', {
   formKey: 'file',
   multiple: false,
@@ -212,9 +214,10 @@ const fixedToolbarItems = computed(() => [
 
 const content = ref('')
 let removeSettingsPanelListener: (() => void) | undefined
+let removeOutlineScrollListener: (() => void) | undefined
 
 onMounted(() => {
-  const media = window.matchMedia('(min-width: 1280px)')
+  const media = window.matchMedia('(min-width: 1600px)')
   const syncSettingsPanel = () => {
     settingsPanelOpen.value = media.matches
   }
@@ -226,6 +229,27 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   removeSettingsPanelListener?.()
+  removeOutlineScrollListener?.()
+})
+
+onMounted(() => {
+  if (!import.meta.client) return
+
+  let frame = 0
+  const update = () => {
+    cancelAnimationFrame(frame)
+    frame = requestAnimationFrame(syncActiveOutlineToScroll)
+  }
+
+  window.addEventListener('scroll', update, { passive: true })
+  window.addEventListener('resize', update)
+  update()
+
+  removeOutlineScrollListener = () => {
+    cancelAnimationFrame(frame)
+    window.removeEventListener('scroll', update)
+    window.removeEventListener('resize', update)
+  }
 })
 
 function onCreate({ editor }: { editor: Editor }) {
@@ -281,8 +305,12 @@ function normalizeHeadingText(value: string) {
     .trim()
 }
 
+type OutlineItem = { text: string, depth: number }
+
+const OUTLINE_MAX_DEPTH = 4
+
 const outlineItems = computed(() => {
-  const headings: { text: string, depth: number }[] = []
+  const headings: OutlineItem[] = []
   let inCodeFence = false
 
   for (const line of content.value.split('\n')) {
@@ -294,20 +322,119 @@ const outlineItems = computed(() => {
 
     if (inCodeFence) continue
 
-    const match = /^(#{1,3})\s+(.+?)\s*#*$/.exec(trimmed)
+    const match = /^(#{1,6})\s+(.+?)\s*#*$/.exec(trimmed)
     if (!match) continue
+
+    const depth = match[1]?.length || 1
+    if (depth > OUTLINE_MAX_DEPTH) continue
 
     const text = normalizeHeadingText(match[2] || '')
     if (text) {
       headings.push({
         text,
-        depth: match[1]?.length || 1
+        depth
       })
     }
   }
 
-  return headings.slice(0, 12)
+  return headings
 })
+
+watch(activeOutlineIndex, () => {
+  nextTick(scrollActiveOutlineIntoView)
+})
+
+watch(outlineItems, () => {
+  nextTick(() => {
+    syncActiveOutlineToScroll()
+    scrollActiveOutlineIntoView()
+  })
+})
+
+function getEditorOutlineItems(editor: Editor) {
+  const headings: Array<OutlineItem & { pos: number }> = []
+
+  editor.state.doc.descendants((node, pos) => {
+    if (node.type.name !== 'heading') return
+
+    const depth = Number(node.attrs.level || 1)
+    if (depth > OUTLINE_MAX_DEPTH) return
+
+    const text = normalizeHeadingText(node.textContent || '')
+    if (!text) return
+
+    headings.push({ text, depth, pos })
+  })
+
+  return headings
+}
+
+function getOutlineHeadingElements() {
+  return Array.from(document.querySelectorAll<HTMLElement>('.ProseMirror h1, .ProseMirror h2, .ProseMirror h3, .ProseMirror h4'))
+}
+
+function scrollHeadingIntoView(index: number) {
+  const element = getOutlineHeadingElements()[index]
+  if (!element) return
+
+  const stickyOffset = 132
+  const top = window.scrollY + element.getBoundingClientRect().top - stickyOffset
+  window.scrollTo({
+    top: Math.max(0, top),
+    behavior: 'smooth'
+  })
+}
+
+function syncActiveOutlineToScroll() {
+  if (!import.meta.client || outlineItems.value.length === 0) {
+    activeOutlineIndex.value = 0
+    return
+  }
+
+  const headings = getOutlineHeadingElements()
+  if (!headings.length) {
+    activeOutlineIndex.value = 0
+    return
+  }
+
+  const anchorOffset = 132
+  const currentIndex = headings
+    .map((heading, index) => ({ heading, index }))
+    .filter(item => item.heading.getBoundingClientRect().top <= anchorOffset)
+    .at(-1)?.index
+
+  activeOutlineIndex.value = currentIndex ?? 0
+}
+
+function scrollActiveOutlineIntoView() {
+  const nav = outlineNavRef.value
+  if (!nav) return
+
+  const active = nav.querySelector<HTMLElement>('[data-outline-active="true"]')
+  if (!active) return
+
+  const navRect = nav.getBoundingClientRect()
+  const activeRect = active.getBoundingClientRect()
+  if (activeRect.top < navRect.top || activeRect.bottom > navRect.bottom) {
+    active.scrollIntoView({
+      block: 'nearest',
+      inline: 'nearest',
+      behavior: 'smooth'
+    })
+  }
+}
+
+function scrollToOutlineItem(editor: Editor, index: number) {
+  const target = getEditorOutlineItems(editor)[index]
+  if (!target) return
+
+  const position = Math.min(target.pos + 1, editor.state.doc.content.size)
+  const selection = TextSelection.create(editor.state.doc, position)
+
+  editor.view.dispatch(editor.state.tr.setSelection(selection))
+  editor.view.dom.focus({ preventScroll: true })
+  requestAnimationFrame(() => scrollHeadingIntoView(index))
+}
 
 function inferCodeLanguage(source: string) {
   const code = source.trim()
@@ -696,7 +823,7 @@ const extensions = computed(() => [
     placeholder="Write, type '/' for commands..."
     class="min-h-screen"
     :ui="{
-      base: 'px-0 pb-16 pt-4 xl:pt-10',
+      base: 'px-0 pb-16 pt-4 min-[1600px]:pt-10',
       content: 'mx-auto w-full max-w-[920px] px-4 pb-32'
     }"
     @update:model-value="onUpdate"
@@ -743,7 +870,7 @@ const extensions = computed(() => [
     </AppHeader>
 
     <div class="sticky top-[64px] z-40 border-b border-default bg-default/95 shadow-sm backdrop-blur">
-      <div class="mx-auto flex h-12 max-w-[920px] items-center justify-start overflow-x-auto px-2 sm:px-4 xl:justify-center">
+      <div class="write-toolbar-inner mx-auto flex h-12 max-w-[920px] items-center justify-start overflow-x-auto px-2 sm:px-4">
         <UEditorToolbar
           :editor="editor"
           :items="fixedToolbarItems"
@@ -756,7 +883,7 @@ const extensions = computed(() => [
       </div>
     </div>
 
-    <aside class="fixed left-6 top-32 z-30 hidden w-64 xl:block">
+    <aside class="write-outline-panel">
       <div class="min-h-72 rounded-2xl border border-default bg-default/85 p-4 shadow-sm backdrop-blur">
         <div class="flex items-center justify-between">
           <p class="text-sm font-medium text-highlighted">
@@ -770,16 +897,21 @@ const extensions = computed(() => [
 
         <nav
           v-if="outlineItems.length"
-          class="mt-4 space-y-1"
+          ref="outlineNavRef"
+          class="mt-4 max-h-[calc(100vh-13rem)] space-y-1 overflow-y-auto pr-1"
         >
-          <p
+          <button
             v-for="(item, index) in outlineItems"
             :key="`${item.text}-${index}`"
-            class="truncate rounded-md px-2 py-1.5 text-sm text-toned"
-            :class="item.depth > 1 ? 'ml-3' : ''"
+            type="button"
+            class="block w-full truncate rounded-md px-2 py-1.5 text-left text-sm text-toned transition hover:bg-elevated hover:text-highlighted"
+            :class="activeOutlineIndex === index ? 'bg-primary/10 text-primary' : ''"
+            :style="{ paddingLeft: `${0.5 + (item.depth - 1) * 0.75}rem` }"
+            :data-outline-active="activeOutlineIndex === index ? 'true' : undefined"
+            @click="scrollToOutlineItem(editor, index)"
           >
             {{ item.text }}
-          </p>
+          </button>
         </nav>
 
         <p
@@ -791,7 +923,7 @@ const extensions = computed(() => [
       </div>
     </aside>
 
-    <section class="mx-auto w-full max-w-[920px] px-3 pb-2 pt-6 sm:px-4 xl:pt-10">
+    <section class="mx-auto w-full max-w-[920px] px-3 pb-2 pt-6 sm:px-4 min-[1600px]:pt-10">
       <UInput
         v-model="postMeta.title"
         placeholder="请输入标题（建议30字以内）"
@@ -806,13 +938,13 @@ const extensions = computed(() => [
       </p>
     </section>
 
-    <aside class="mx-auto mb-2 w-full max-w-[1180px] px-3 sm:px-4 xl:fixed xl:right-6 xl:top-32 xl:z-30 xl:mb-0 xl:w-80 xl:px-0">
+    <aside class="write-settings-panel">
       <details
-        class="rounded-xl border border-default bg-default shadow-sm xl:contents"
+        class="write-settings-details rounded-xl border border-default bg-default shadow-sm"
         :open="settingsPanelOpen"
         @toggle="settingsPanelOpen = ($event.target as HTMLDetailsElement).open"
       >
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium text-highlighted xl:hidden [&::-webkit-details-marker]:hidden">
+        <summary class="write-settings-summary flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium text-highlighted [&::-webkit-details-marker]:hidden">
           <span class="inline-flex items-center gap-2">
             <UIcon
               name="i-lucide-sliders-horizontal"
@@ -829,7 +961,7 @@ const extensions = computed(() => [
           </span>
         </summary>
 
-        <div class="space-y-3 border-t border-default p-2.5 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:rounded-2xl xl:border xl:bg-default xl:p-3 xl:shadow-sm">
+        <div class="write-settings-content space-y-3 border-t border-default p-2.5">
           <section class="rounded-xl border border-default bg-elevated/40 p-3">
             <p class="text-sm font-medium text-highlighted">
               分类
@@ -1190,3 +1322,66 @@ const extensions = computed(() => [
     </UEditorDragHandle>
   </UEditor>
 </template>
+
+<style scoped>
+.write-outline-panel {
+  display: none;
+}
+
+.write-settings-panel {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto 0.5rem;
+  padding-inline: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .write-settings-panel {
+    padding-inline: 1rem;
+  }
+}
+
+@media (min-width: 1600px) {
+  .write-toolbar-inner {
+    justify-content: center;
+  }
+
+  .write-outline-panel {
+    position: fixed;
+    left: 1.5rem;
+    top: 8rem;
+    z-index: 30;
+    display: block;
+    width: 240px;
+  }
+
+  .write-settings-panel {
+    position: fixed;
+    right: 1.5rem;
+    top: 8rem;
+    z-index: 30;
+    width: 300px;
+    max-width: none;
+    margin: 0;
+    padding-inline: 0;
+  }
+
+  .write-settings-details {
+    display: contents;
+  }
+
+  .write-settings-summary {
+    display: none;
+  }
+
+  .write-settings-content {
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    border: 1px solid var(--ui-border);
+    border-radius: 1rem;
+    background: var(--ui-bg);
+    padding: 0.75rem;
+    box-shadow: var(--ui-shadow-sm);
+  }
+}
+</style>
