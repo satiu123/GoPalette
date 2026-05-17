@@ -200,45 +200,26 @@ body {
   font-weight: 600;
 }
 
+.motion-fade-up,
+.motion-delay-1,
+.motion-delay-2,
+.motion-delay-3 {
+  animation: motion-fade var(--motion-duration-fast) var(--motion-ease-standard) both;
+}
+
 .page-enter-active,
 .page-leave-active {
-  transition:
-    opacity var(--motion-duration-base) var(--motion-ease-standard),
-    transform var(--motion-duration-base) var(--motion-ease-standard);
-  will-change: opacity, transform;
+  transition: opacity 120ms var(--motion-ease-standard);
 }
 
-.page-enter-from {
-  opacity: 0;
-  transform: translate3d(0, 10px, 0);
-}
-
+.page-enter-from,
 .page-leave-to {
   opacity: 0;
-  transform: translate3d(0, -6px, 0);
 }
 
 .page-enter-to,
 .page-leave-from {
   opacity: 1;
-  transform: translate3d(0, 0, 0);
-}
-
-.motion-fade-up {
-  animation: motion-fade-up var(--motion-duration-slow) var(--motion-ease-standard) both;
-  will-change: opacity, transform;
-}
-
-.motion-delay-1 {
-  animation-delay: 70ms;
-}
-
-.motion-delay-2 {
-  animation-delay: 140ms;
-}
-
-.motion-delay-3 {
-  animation-delay: 210ms;
 }
 
 .motion-card {
@@ -290,15 +271,13 @@ body {
   animation: loading-shimmer 1.2s linear infinite;
 }
 
-@keyframes motion-fade-up {
+@keyframes motion-fade {
   from {
     opacity: 0;
-    transform: translate3d(0, 12px, 0);
   }
 
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
   }
 }
 
