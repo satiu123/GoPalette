@@ -14,6 +14,5 @@ data:
 registry:
   etcd:
     endpoints:
-      - "etcd:2379"
+      - "${ETCD_ENDPOINT:etcd:2379}"
     timeout: 5s
-

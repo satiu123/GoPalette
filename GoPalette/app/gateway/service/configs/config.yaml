@@ -1,0 +1,105 @@
+# This is a gateway config.
+name: helloworld
+version: v1
+middlewares:
+  - name: tracing
+    options:
+      '@type': type.googleapis.com/gateway.middleware.tracing.v1.Tracing
+      httpEndpoint: 'jaeger:4318'
+  - name: logging
+  - name: authmetadata
+  - name: transcoder
+  - name: cors
+    options:
+      '@type': type.googleapis.com/gateway.middleware.cors.v1.Cors
+      allowCredentials: true
+      allowOrigins:
+        - .google.com
+      allowMethods:
+        - GET
+        - POST
+        - OPTIONS
+  - name: streamrecorder
+endpoints:
+  - path: /v1/users
+    timeout: 2s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///user.service'
+
+  - path: /v1/users/*
+    timeout: 2s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///user.service'
+
+  - path: /v1/posts
+    timeout: 2s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///post.service'
+
+  - path: /v1/posts/*
+    timeout: 2s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///post.service'
+    middlewares:
+      - name: circuitbreaker
+        options:
+          '@type': type.googleapis.com/gateway.middleware.circuitbreaker.v1.CircuitBreaker
+          successRatio: {"success":0.8, "request":"1", "bucket":"10", "window":"3s"}
+
+  - path: /v1/tags
+    timeout: 2s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///post.service'
+
+  - path: /v1/tags/*
+    timeout: 2s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///post.service'
+
+  - path: /v1/categories
+    timeout: 2s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///post.service'
+
+  - path: /v1/categories/*
+    timeout: 2s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///post.service'
+
+  - path: /v1/comments
+    timeout: 3s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///comment.service'
+
+  - path: /v1/comments/*
+    timeout: 3s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///comment.service'
+
+  - path: /v1/search/*
+    timeout: 5s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///search.service'
+
+  - path: /v1/profiles/*
+    timeout: 3s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///bff.service'
+
+  - path: /v1/blog/posts
+    timeout: 3s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///bff.service'

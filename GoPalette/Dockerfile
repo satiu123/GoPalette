@@ -32,6 +32,7 @@ RUN --mount=type=cache,id=gopalette-go-mod,target=/go/pkg/mod,sharing=locked \
 # 使用 alpine 作为最终运行环境
 FROM alpine:latest
 
+ARG APP_RELATIVE_PATH
 ARG HTTP_PORT
 ARG GRPC_PORT
 
@@ -40,11 +41,11 @@ RUN sed -i 's|https://dl-cdn.alpinelinux.org/alpine|https://mirrors.tuna.tsinghu
     && apk --no-cache add ca-certificates tzdata
 
 COPY --from=builder /src/bin/server /app/server
+COPY --from=builder /src/${APP_RELATIVE_PATH}/configs /data/conf
 
 WORKDIR /app
 
 EXPOSE ${HTTP_PORT}
 EXPOSE ${GRPC_PORT}
-VOLUME /data/conf
 
 CMD ["./server", "-conf", "/data/conf"]

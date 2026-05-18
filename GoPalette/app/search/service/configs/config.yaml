@@ -7,14 +7,14 @@ server:
     timeout: 10s
 data:
   meilisearch:
-    endpoint: http://meilisearch:7700
-    api_key: "BCSk29xyDFe0-Oa5g0SrqJWfAFbeRK36LVymcHin_fg"
-    index_name: posts
+    endpoint: ${MEILISEARCH_ENDPOINT:http://meilisearch:7700}
+    api_key: "${MEILISEARCH_MASTER_KEY:BCSk29xyDFe0-Oa5g0SrqJWfAFbeRK36LVymcHin_fg}"
+    index_name: ${MEILISEARCH_INDEX_NAME:posts}
   clients:
     post_endpoint: discovery:///post.service
     timeout: 30s
 registry:
   etcd:
     endpoints:
-      - "etcd:2379"
+      - "${ETCD_ENDPOINT:etcd:2379}"
     timeout: 5s

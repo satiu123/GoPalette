@@ -8,10 +8,10 @@ server:
 data:
   database:
     driver: mysql
-    source: root:GP123@tcp(mariadb:3306)/gopalette?parseTime=True&loc=Local
+    source: root:${MYSQL_ROOT_PASSWORD:GP123}@tcp(${MYSQL_HOST:mariadb}:${MYSQL_PORT:3306})/${MYSQL_DATABASE:gopalette}?parseTime=True&loc=Local
   redis:
-    addr: redis:6379
-    password: "GP123"
+    addr: ${REDIS_ADDR:redis:6379}
+    password: "${REDIS_PASSWORD:GP123}"
     read_timeout: 0.2s
     write_timeout: 0.2s
   clients:
@@ -21,11 +21,11 @@ data:
 registry:
   etcd:
     endpoints:
-      - "etcd:2379"
+      - "${ETCD_ENDPOINT:etcd:2379}"
     timeout: 5s
 auth:
-  jwt_access_secret: "GPA"
-  jwt_refresh_secret: "GPR"
+  jwt_access_secret: "${JWT_ACCESS_SECRET:GPA}"
+  jwt_refresh_secret: "${JWT_REFRESH_SECRET:GPR}"
   jwt_access_expire: 900s
   jwt_refresh_expire: 604800s
   issuer: "GoPalette"

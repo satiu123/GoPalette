@@ -1,6 +1,6 @@
 services:
   nginx:
-    image: ${IMAGE_NAMESPACE:-satiu}/gopalette-nginx:${IMAGE_TAG:-latest}
+    image: ${IMAGE_NAMESPACE:?请设置 IMAGE_NAMESPACE，例如 satiu}/gopalette-nginx:${IMAGE_TAG:?请设置 IMAGE_TAG，例如 latest}
     restart: always
     depends_on:
       - frontend
@@ -8,31 +8,30 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - "${NGINX_CERT_DIR:-/etc/letsencrypt}:/etc/nginx/certs:ro"
+      - "${NGINX_CERT_DIR:?请设置 NGINX_CERT_DIR，例如 /etc/letsencrypt}:/etc/nginx/certs:ro"
 
   frontend:
-    image: ${IMAGE_NAMESPACE:-satiu}/gopalette-frontend:${IMAGE_TAG:-latest}
+    image: ${IMAGE_NAMESPACE:?请设置 IMAGE_NAMESPACE，例如 satiu}/gopalette-frontend:${IMAGE_TAG:?请设置 IMAGE_TAG，例如 latest}
     restart: always
     environment:
       NUXT_GATEWAY_BASE: "http://gateway:8080"
-      NUXT_PUBLIC_SITE_URL: "${NUXT_PUBLIC_SITE_URL:-https://satiuu.com}"
-      NUXT_PUBLIC_SITE_NAME: "${NUXT_PUBLIC_SITE_NAME:-GoPalette Blog}"
-      NITRO_CSURF_HTTPS: "${NITRO_CSURF_HTTPS:-true}"
-      NITRO_CSURF_COOKIE_KEY: "${NITRO_CSURF_COOKIE_KEY:-csrf}"
-      NITRO_CSURF_COOKIE_SECURE: "${NITRO_CSURF_COOKIE_SECURE:-true}"
-      NITRO_AUTH_COOKIE_SECURE: "${NITRO_AUTH_COOKIE_SECURE:-true}"
+      NUXT_PUBLIC_SITE_URL: "${NUXT_PUBLIC_SITE_URL:?请设置 NUXT_PUBLIC_SITE_URL，例如 https://example.com}"
+      NUXT_PUBLIC_SITE_NAME: "${NUXT_PUBLIC_SITE_NAME:?请设置 NUXT_PUBLIC_SITE_NAME，例如 GoPalette Blog}"
+      NITRO_CSURF_HTTPS: "${NITRO_CSURF_HTTPS:?请设置 NITRO_CSURF_HTTPS，例如 true}"
+      NITRO_CSURF_COOKIE_KEY: "${NITRO_CSURF_COOKIE_KEY:?请设置 NITRO_CSURF_COOKIE_KEY，例如 csrf}"
+      NITRO_CSURF_COOKIE_SECURE: "${NITRO_CSURF_COOKIE_SECURE:?请设置 NITRO_CSURF_COOKIE_SECURE，例如 true}"
+      NITRO_AUTH_COOKIE_SECURE: "${NITRO_AUTH_COOKIE_SECURE:?请设置 NITRO_AUTH_COOKIE_SECURE，例如 true}"
     depends_on:
       - gateway
     ports:
       - "3001:3000"
 
   gateway:
-    image: ${IMAGE_NAMESPACE:-satiu}/gopalette-gateway:${IMAGE_TAG:-latest}
+    image: ${IMAGE_NAMESPACE:?请设置 IMAGE_NAMESPACE，例如 satiu}/gopalette-gateway:${IMAGE_TAG:?请设置 IMAGE_TAG，例如 latest}
     command: [ "./server", "-conf", "/data/conf/config.yaml", "-discovery.dsn", "etcd:2379" ]
     environment:
+      JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:?请设置 JWT_ACCESS_SECRET}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
-    volumes:
-      - ./app/gateway/service/cmd/server/config.yaml:/data/conf/config.yaml:ro
     restart: always
     depends_on:
       - user
@@ -45,62 +44,57 @@ services:
       - "8080:8080"
 
   user:
-    image: ${IMAGE_NAMESPACE:-satiu}/gopalette-user:${IMAGE_TAG:-latest}
+    image: ${IMAGE_NAMESPACE:?请设置 IMAGE_NAMESPACE，例如 satiu}/gopalette-user:${IMAGE_TAG:?请设置 IMAGE_TAG，例如 latest}
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
-      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
+      REDIS_PASSWORD: "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
+      JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:?请设置 JWT_ACCESS_SECRET}"
+      JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:?请设置 JWT_REFRESH_SECRET}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
-    volumes:
-      - ./app/user/service/configs:/data/conf:ro
     depends_on:
       - mariadb
       - redis
 
   post:
-    image: ${IMAGE_NAMESPACE:-satiu}/gopalette-post:${IMAGE_TAG:-latest}
+    image: ${IMAGE_NAMESPACE:?请设置 IMAGE_NAMESPACE，例如 satiu}/gopalette-post:${IMAGE_TAG:?请设置 IMAGE_TAG，例如 latest}
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
-      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
+      REDIS_PASSWORD: "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
+      JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:?请设置 JWT_ACCESS_SECRET}"
+      JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:?请设置 JWT_REFRESH_SECRET}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
-    volumes:
-      - ./app/post/service/configs:/data/conf:ro
     depends_on:
       - mariadb
       - redis
 
   comment:
-    image: ${IMAGE_NAMESPACE:-satiu}/gopalette-comment:${IMAGE_TAG:-latest}
+    image: ${IMAGE_NAMESPACE:?请设置 IMAGE_NAMESPACE，例如 satiu}/gopalette-comment:${IMAGE_TAG:?请设置 IMAGE_TAG，例如 latest}
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
-      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
+      REDIS_PASSWORD: "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
+      JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:?请设置 JWT_ACCESS_SECRET}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
-    volumes:
-      - ./app/comment/service/configs:/data/conf:ro
     depends_on:
       - mariadb
       - redis
 
   search:
-    image: ${IMAGE_NAMESPACE:-satiu}/gopalette-search:${IMAGE_TAG:-latest}
+    image: ${IMAGE_NAMESPACE:?请设置 IMAGE_NAMESPACE，例如 satiu}/gopalette-search:${IMAGE_TAG:?请设置 IMAGE_TAG，例如 latest}
     restart: always
     environment:
-      MEILISEARCH_MASTER_KEY: "${MEILISEARCH_MASTER_KEY}"
+      MEILISEARCH_MASTER_KEY: "${MEILISEARCH_MASTER_KEY:?请设置 MEILISEARCH_MASTER_KEY}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
-    volumes:
-      - ./app/search/service/configs:/data/conf:ro
     depends_on:
       - meilisearch
 
   bff:
-    image: ${IMAGE_NAMESPACE:-satiu}/gopalette-bff:${IMAGE_TAG:-latest}
+    image: ${IMAGE_NAMESPACE:?请设置 IMAGE_NAMESPACE，例如 satiu}/gopalette-bff:${IMAGE_TAG:?请设置 IMAGE_TAG，例如 latest}
     restart: always
     environment:
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
-    volumes:
-      - ./app/bff/service/configs:/data/conf:ro
     depends_on:
       - user
       - post
@@ -113,10 +107,10 @@ services:
       - mariadb_data:/var/lib/mysql
     restart: always
     environment:
-      MARIADB_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      MARIADB_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
       MARIADB_DATABASE: "gopalette"
     healthcheck:
-      test: [ "CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}" ]
+      test: [ "CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -126,9 +120,9 @@ services:
   redis:
     image: redis:trixie
     restart: always
-    command: redis-server --appendonly yes --requirepass "${REDIS_PASSWORD}"
+    command: redis-server --appendonly yes --requirepass "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
     healthcheck:
-      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -149,7 +143,7 @@ services:
   meilisearch:
     image: getmeili/meilisearch:v1.42.1
     restart: always
-    command: meilisearch --master-key="${MEILISEARCH_MASTER_KEY}"
+    command: meilisearch --master-key="${MEILISEARCH_MASTER_KEY:?请设置 MEILISEARCH_MASTER_KEY}"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:7700/health" ]
       interval: 10s
