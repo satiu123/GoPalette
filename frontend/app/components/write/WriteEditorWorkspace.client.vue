@@ -30,6 +30,7 @@ const appConfig = useAppConfig()
 const editorRef = useTemplateRef('editorRef')
 const coverUploadRef = useTemplateRef('coverUploadRef')
 const outlineNavRef = useTemplateRef('outlineNavRef')
+const titleInputRef = useTemplateRef<HTMLTextAreaElement>('titleInputRef')
 
 type EditorToolbarContext = { editor: Editor, view: EditorView, state: { selection: Selection } }
 type EditorToolbarViewContext = { editor: Editor, view: EditorView }
@@ -143,6 +144,8 @@ const isGeneratingSlug = ref(false)
 const lastSavedAt = ref('')
 const settingsPanelOpen = ref(false)
 const activeOutlineIndex = ref(0)
+const savedContentSnapshot = ref('')
+const savedTitleSnapshot = ref('')
 const upload = useUpload('/api/upload', {
   formKey: 'file',
   multiple: false,
@@ -270,6 +273,18 @@ function onCreate({ editor }: { editor: Editor }) {
 function onUpdate(value: string) {
   content.value = value
 }
+
+function resizeTitleInput() {
+  const el = titleInputRef.value
+  if (!el) return
+
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight}px`
+}
+
+watch(() => postMeta.title, () => {
+  void nextTick(resizeTitleInput)
+})
 
 function isDesktopEditorViewport() {
   return globalThis.window?.matchMedia('(min-width: 768px)').matches ?? true
@@ -582,6 +597,20 @@ async function generateSummaryFromContent(markdownContent: string) {
   }
 }
 
+async function resolveSummaryForSave(markdownContent: string) {
+  const currentTitle = postMeta.title.trim()
+  const currentSummary = postMeta.summary.trim()
+  const contentChanged = markdownContent.trim() !== savedContentSnapshot.value.trim()
+  const titleChanged = currentTitle !== savedTitleSnapshot.value.trim()
+
+  if (currentSummary && postMeta.id && !contentChanged && !titleChanged) {
+    return currentSummary
+  }
+
+  const generatedSummary = await generateSummaryFromContent(markdownContent)
+  return (generatedSummary || currentSummary || plainTextSummary(markdownContent)).trim()
+}
+
 async function generateSlug(markdownContent: string) {
   const title = postMeta.title.trim()
   if (!title) return ''
@@ -681,10 +710,10 @@ async function savePost(status: number) {
   try {
     const markdownContent = normalizeCodeFenceLanguages(normalizeLooseMarkdownTables(content.value))
     await ensureSafeSlug(markdownContent)
-    const generatedSummary = await generateSummaryFromContent(markdownContent)
+    const summary = await resolveSummaryForSave(markdownContent)
     const payload = {
       title: postMeta.title.trim(),
-      summary: (generatedSummary || plainTextSummary(markdownContent)).trim(),
+      summary,
       slug: postMeta.slug.trim(),
       content: markdownContent,
       coverUrl: postMeta.coverUrl.trim() || undefined,
@@ -707,6 +736,8 @@ async function savePost(status: number) {
     postMeta.coverUrl = saved.coverUrl || ''
     postMeta.tagsText = saved.tags.join(', ')
     postMeta.categoryId = saved.categoryId || postMeta.categoryId
+    savedTitleSnapshot.value = postMeta.title.trim()
+    savedContentSnapshot.value = markdownContent
     lastSavedAt.value = new Date().toISOString()
 
     toast.add({
@@ -775,6 +806,8 @@ if (editingSlug.value) {
     postMeta.tagsText = existingPost.tags.join(', ')
     postMeta.categoryId = existingPost.categoryId
     content.value = normalizeLooseMarkdownTables(existingPost.content || content.value)
+    savedTitleSnapshot.value = postMeta.title.trim()
+    savedContentSnapshot.value = normalizeCodeFenceLanguages(normalizeLooseMarkdownTables(content.value))
   }
 }
 
@@ -939,13 +972,13 @@ const extensions = computed(() => [
     </aside>
 
     <section class="mx-auto w-full max-w-[920px] px-3 pb-2 pt-6 sm:px-4 min-[1600px]:pt-10">
-      <UInput
+      <textarea
+        ref="titleInputRef"
         v-model="postMeta.title"
         placeholder="请输入标题（建议30字以内）"
-        variant="none"
-        size="xl"
         class="write-title-input"
-        :ui="{ base: 'px-0 text-3xl font-semibold leading-tight text-highlighted placeholder:text-muted sm:text-4xl' }"
+        rows="1"
+        @input="resizeTitleInput"
       />
       <p class="mt-4 text-sm text-toned">
         {{ wordCount }} 字 · 约 {{ estimatedReadingMinutes }} 分钟
@@ -1315,6 +1348,32 @@ const extensions = computed(() => [
 </template>
 
 <style scoped>
+.write-title-input {
+  display: block;
+  width: 100%;
+  min-height: 3rem;
+  resize: none;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--ui-text-highlighted);
+  font-size: 1.875rem;
+  font-weight: 600;
+  line-height: 1.18;
+  outline: none;
+}
+
+.write-title-input::placeholder {
+  color: var(--ui-text-muted);
+}
+
+@media (min-width: 640px) {
+  .write-title-input {
+    font-size: 2.25rem;
+  }
+}
+
 .write-outline-panel {
   display: none;
 }
