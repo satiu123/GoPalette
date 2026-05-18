@@ -139,8 +139,8 @@ const selectedTags = computed(() => parseTags(postMeta.tagsText))
 const isSaving = ref(false)
 const deletingPost = ref(false)
 const uploadingCover = ref(false)
+const isGeneratingSlug = ref(false)
 const lastSavedAt = ref('')
-const slugTouched = ref(false)
 const settingsPanelOpen = ref(false)
 const activeOutlineIndex = ref(0)
 const upload = useUpload('/api/upload', {
@@ -174,7 +174,7 @@ const effectiveCoverUrl = computed(() => {
 })
 
 const publishStatusText = computed(() => {
-  if (isSaving.value) return '正在保存...'
+  if (isSaving.value) return isGeneratingSlug.value ? '正在生成路径...' : '正在保存...'
   if (lastSavedAt.value) return `草稿已保存 ${formatLastSavedAt()}`
   return '尚未保存'
 })
@@ -199,7 +199,6 @@ const estimatedReadingMinutes = computed(() => Math.max(1, Math.ceil(wordCount.v
 const publishChecks = computed(() => [
   { label: '标题', ready: Boolean(postMeta.title.trim()) },
   { label: '正文', ready: Boolean(content.value.trim()) },
-  { label: 'Slug', ready: Boolean((postMeta.slug || toSlug(postMeta.title)).trim()) },
   { label: '分类', ready: Boolean(postMeta.categoryId.trim()) }
 ])
 
@@ -284,9 +283,17 @@ function toSlug(value: string) {
   return value
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9\u4e00-\u9fa5\s-]/g, '')
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9\s-]/g, ' ')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+    .replace(/-+$/g, '')
+}
+
+function isSafeSlug(value: string) {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value.trim())
 }
 
 function plainTextSummary(markdown: string) {
@@ -575,6 +582,29 @@ async function generateSummaryFromContent(markdownContent: string) {
   }
 }
 
+async function generateSlug(markdownContent: string) {
+  const title = postMeta.title.trim()
+  if (!title) return ''
+
+  isGeneratingSlug.value = true
+  try {
+    const response = await $fetch<{ slug?: string }>('/api/blog/slug', {
+      method: 'POST',
+      headers: withCsrfHeaders(),
+      body: {
+        title,
+        content: markdownContent.trim()
+      }
+    })
+    return toSlug(response.slug || '')
+  } catch {
+    const fallback = toSlug(title)
+    return fallback || `post-${Date.now().toString(36)}`
+  } finally {
+    isGeneratingSlug.value = false
+  }
+}
+
 function formatLastSavedAt() {
   if (!lastSavedAt.value) return ''
 
@@ -585,26 +615,13 @@ function formatLastSavedAt() {
   }).format(new Date(lastSavedAt.value))
 }
 
-function normalizeSlug() {
-  postMeta.slug = toSlug(postMeta.slug)
-}
+async function ensureSafeSlug(markdownContent: string) {
+  if (isSafeSlug(postMeta.slug)) {
+    postMeta.slug = toSlug(postMeta.slug)
+    return
+  }
 
-function generateSlugFromTitle() {
-  postMeta.slug = toSlug(postMeta.title)
-  slugTouched.value = false
-}
-
-function markSlugTouched() {
-  slugTouched.value = true
-}
-
-function fillSlugIfNeeded() {
-  if (postMeta.slug.trim() || slugTouched.value) return
-  generateSlugFromTitle()
-}
-
-function handleTitleBlur() {
-  fillSlugIfNeeded()
+  postMeta.slug = await generateSlug(markdownContent)
 }
 
 async function onCoverChange() {
@@ -645,8 +662,6 @@ function goBack() {
 async function savePost(status: number) {
   if (!canSubmit.value || isSaving.value) return
 
-  fillSlugIfNeeded()
-
   if (status === POST_STATUS_PUBLISHED && !canPublish.value) {
     const missing = publishChecks.value
       .filter(item => !item.ready)
@@ -665,6 +680,7 @@ async function savePost(status: number) {
 
   try {
     const markdownContent = normalizeCodeFenceLanguages(normalizeLooseMarkdownTables(content.value))
+    await ensureSafeSlug(markdownContent)
     const generatedSummary = await generateSummaryFromContent(markdownContent)
     const payload = {
       title: postMeta.title.trim(),
@@ -756,7 +772,6 @@ if (editingSlug.value) {
     postMeta.summary = existingPost.summary
     postMeta.slug = existingPost.slug
     postMeta.coverUrl = existingPost.coverUrl || ''
-    slugTouched.value = true
     postMeta.tagsText = existingPost.tags.join(', ')
     postMeta.categoryId = existingPost.categoryId
     content.value = normalizeLooseMarkdownTables(existingPost.content || content.value)
@@ -931,7 +946,6 @@ const extensions = computed(() => [
         size="xl"
         class="write-title-input"
         :ui="{ base: 'px-0 text-3xl font-semibold leading-tight text-highlighted placeholder:text-muted sm:text-4xl' }"
-        @blur="handleTitleBlur"
       />
       <p class="mt-4 text-sm text-toned">
         {{ wordCount }} 字 · 约 {{ estimatedReadingMinutes }} 分钟
@@ -1050,33 +1064,10 @@ const extensions = computed(() => [
 
           <section class="rounded-xl border border-default bg-elevated/40 p-3">
             <p class="text-sm font-medium text-highlighted">
-              SEO 设置
+              文章路径
             </p>
-            <UFormField
-              label="Slug"
-              name="slug"
-              required
-              class="mt-2"
-            >
-              <div class="flex gap-2">
-                <UInput
-                  v-model="postMeta.slug"
-                  placeholder="article-slug"
-                  class="flex-1"
-                  @input="markSlugTouched"
-                  @blur="normalizeSlug"
-                />
-                <UButton
-                  color="neutral"
-                  variant="soft"
-                  icon="i-lucide-refresh-cw"
-                  label="生成"
-                  @click="generateSlugFromTitle"
-                />
-              </div>
-            </UFormField>
-            <p class="mt-2 text-xs text-toned">
-              文章路径：/posts/{{ (postMeta.slug || toSlug(postMeta.title) || 'your-slug').trim() || 'your-slug' }}
+            <p class="mt-2 break-all rounded-lg border border-default bg-default px-3 py-2 text-xs text-toned">
+              /posts/{{ postMeta.slug || '保存时自动生成英文路径' }}
             </p>
           </section>
 
