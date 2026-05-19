@@ -360,6 +360,9 @@ func (s *PostService) enqueueSearchIndexUpdate(action string, p *biz.Post) {
 		return
 	}
 	if pb.PostStatus(p.Status) != pb.PostStatus_PUBLISHED {
+		if action == "create" {
+			return
+		}
 		s.enqueueSearchIndexDelete(action, p.ID)
 		return
 	}

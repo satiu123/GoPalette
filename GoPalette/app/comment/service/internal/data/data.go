@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/satiu123/GoPalette/app/comment/service/internal/conf"
+	dbpool "github.com/satiu123/GoPalette/pkg/db"
 
 	postv1 "github.com/satiu123/GoPalette/api/post/v1"
 	userv1 "github.com/satiu123/GoPalette/api/user/v1"
@@ -76,6 +77,11 @@ func NewData(c *conf.Data, logger log.Logger, pc postv1.PostClient, uc userv1.Us
 	if err != nil {
 		helper.Errorf("无法连接数据库: %v", err)
 		return nil, nil, err
+	}
+	if sqlDB, err := db.DB(); err == nil {
+		dbpool.ConfigurePool(sqlDB)
+	} else {
+		helper.Errorf("failed to get sqlDB: %v", err)
 	}
 	if err := db.AutoMigrate(&Comment{}); err != nil {
 		helper.Errorf("自动迁移评论表失败: %v", err)

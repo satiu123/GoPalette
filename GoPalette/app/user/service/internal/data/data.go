@@ -5,6 +5,7 @@ import (
 
 	"github.com/euskadi31/wire"
 	"github.com/satiu123/GoPalette/app/user/service/internal/conf"
+	dbpool "github.com/satiu123/GoPalette/pkg/db"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-redis/redis/extra/redisotel"
@@ -40,6 +41,11 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 	if err != nil {
 		log.Errorf("无法连接数据库: %v", err)
 		return nil, nil, err
+	}
+	if sqlDB, err := db.DB(); err == nil {
+		dbpool.ConfigurePool(sqlDB)
+	} else {
+		log.Errorf("failed to get sqlDB: %v", err)
 	}
 
 	// 自动迁移数据库结构

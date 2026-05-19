@@ -94,7 +94,9 @@ func (r *postRepo) Create(ctx context.Context, p *biz.Post) (*biz.Post, error) {
 	if err != nil {
 		return nil, err
 	}
-	return r.GetByID(ctx, int64(po.ID))
+	readCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
+	defer cancel()
+	return r.GetByID(readCtx, int64(po.ID))
 }
 
 func (r *postRepo) Update(ctx context.Context, p *biz.Post, fields []string) (*biz.Post, error) {

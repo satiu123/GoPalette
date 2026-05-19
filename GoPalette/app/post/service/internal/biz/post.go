@@ -101,7 +101,7 @@ func (uc *PostUsecase) CreatePost(ctx context.Context, p *Post) (*Post, error) {
 			p.Summary = p.Content
 		}
 	}
-	uc.logger.WithContext(ctx).Infof("%s 正在创建文章: %s", p.AuthorID, p.Title)
+	uc.logger.WithContext(ctx).Infof("%d 正在创建文章: %s", p.AuthorID, p.Title)
 	return uc.repo.Create(ctx, p)
 }
 

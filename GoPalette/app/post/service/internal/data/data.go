@@ -3,10 +3,14 @@ package data
 import (
 	"context"
 	"errors"
+	stdlog "log"
+	"os"
+	"time"
 
 	"github.com/euskadi31/wire"
 	searchv1 "github.com/satiu123/GoPalette/api/search/v1"
 	userv1 "github.com/satiu123/GoPalette/api/user/v1"
+	dbpool "github.com/satiu123/GoPalette/pkg/db"
 
 	"github.com/satiu123/GoPalette/app/post/service/internal/conf"
 
@@ -18,6 +22,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	gormlogger "gorm.io/gorm/logger"
 )
 
 // ProviderSet is data providers.
@@ -72,10 +77,25 @@ func NewData(c *conf.Data, logger log.Logger, uc userv1.UserClient, sc searchv1.
 		return nil, nil, errors.New("缺少 data.redis 配置")
 	}
 
-	db, err := gorm.Open(mysql.Open(c.Database.Source), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(c.Database.Source), &gorm.Config{
+		Logger: gormlogger.New(
+			stdlog.New(os.Stdout, "\r\n", stdlog.LstdFlags),
+			gormlogger.Config{
+				SlowThreshold:             200 * time.Millisecond,
+				LogLevel:                  gormlogger.Warn,
+				IgnoreRecordNotFoundError: true,
+				Colorful:                  true,
+			},
+		),
+	})
 	if err != nil {
 		log.Errorf("无法连接数据库: %v", err)
 		return nil, nil, err
+	}
+	if sqlDB, err := db.DB(); err == nil {
+		dbpool.ConfigurePool(sqlDB)
+	} else {
+		log.Errorf("failed to get sqlDB: %v", err)
 	}
 
 	// 自动迁移数据库结构

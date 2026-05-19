@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	pb "github.com/satiu123/GoPalette/api/search/v1"
@@ -36,6 +37,9 @@ func NewSearchRepo(data *Data, logger log.Logger) biz.SearchRepo {
 }
 
 func initIndexSettings(d *Data) error {
+	if err := ensureIndex(d); err != nil {
+		return err
+	}
 	index := d.meili.Index(d.indexName)
 	if _, err := index.UpdateSearchableAttributes(&[]string{"title", "summary", "content", "tags"}); err != nil {
 		return err
@@ -56,6 +60,33 @@ func initIndexSettings(d *Data) error {
 		"created_at:desc",
 	})
 	return err
+}
+
+func ensureIndex(d *Data) error {
+	if _, err := d.meili.GetIndex(d.indexName); err == nil {
+		return nil
+	} else if !isMeiliIndexNotFound(err) {
+		return err
+	}
+
+	if _, err := d.meili.CreateIndex(&meilisearch.IndexConfig{Uid: d.indexName, PrimaryKey: "id"}); err != nil && !isMeiliIndexAlreadyExists(err) {
+		return err
+	}
+	return nil
+}
+
+func isMeiliIndexNotFound(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "index_not_found")
+}
+
+func isMeiliIndexAlreadyExists(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "index_already_exists")
 }
 
 func (r *searchRepo) SearchPosts(ctx context.Context, query string, offset, limit int64, category string) ([]*biz.PostSearch, int64, error) {
