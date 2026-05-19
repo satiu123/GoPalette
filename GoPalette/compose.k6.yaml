@@ -8,8 +8,8 @@ services:
     depends_on:
       - frontend
     ports:
-      - "80:80"
-      - "443:443"
+      - "180:80"
+      - "1443:443"
     volumes:
       - "${NGINX_CERT_DIR:-/etc/nginx/certs}:/etc/nginx/certs:ro"
 
@@ -21,17 +21,17 @@ services:
     restart: always
     environment:
       NUXT_GATEWAY_BASE: "http://gateway:8080"
-      NUXT_PUBLIC_SITE_URL: "${NUXT_PUBLIC_SITE_URL:-http://localhost}"
-      NUXT_PUBLIC_SITE_NAME: "${NUXT_PUBLIC_SITE_NAME:-GoPalette Blog}"
-      NITRO_CSURF_HTTPS: "${NITRO_CSURF_HTTPS:-true}"
-      NITRO_CSURF_COOKIE_KEY: "${NITRO_CSURF_COOKIE_KEY:-csrf}"
-      NITRO_CSURF_COOKIE_SECURE: "${NITRO_CSURF_COOKIE_SECURE:-true}"
-      NITRO_AUTH_COOKIE_SECURE: "${NITRO_AUTH_COOKIE_SECURE:-true}"
+      NUXT_PUBLIC_SITE_URL: "${NUXT_PUBLIC_SITE_URL:-http://localhost:13001}"
+      NUXT_PUBLIC_SITE_NAME: "${NUXT_PUBLIC_SITE_NAME:-GoPalette Blog K6}"
+      NITRO_CSURF_HTTPS: "${NITRO_CSURF_HTTPS:-false}"
+      NITRO_CSURF_COOKIE_KEY: "${NITRO_CSURF_COOKIE_KEY:-csrf_k6}"
+      NITRO_CSURF_COOKIE_SECURE: "${NITRO_CSURF_COOKIE_SECURE:-false}"
+      NITRO_AUTH_COOKIE_SECURE: "${NITRO_AUTH_COOKIE_SECURE:-false}"
       NUXT_DEEPSEEK_API_KEY: "${NUXT_DEEPSEEK_API_KEY}"
     depends_on:
       - gateway
     ports:
-      - "3001:3000"
+      - "13001:3000"
 
   gateway:
     build:
@@ -46,7 +46,8 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
     restart: always
     ports:
-      - "8080:8080"
+      - "18080:8080"
+
   user:
     build:
       context: .
@@ -57,6 +58,9 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-gopalette_k6}"
+      MYSQL_MAX_OPEN_CONNS: "${MYSQL_MAX_OPEN_CONNS:-80}"
+      MYSQL_MAX_IDLE_CONNS: "${MYSQL_MAX_IDLE_CONNS:-40}"
       REDIS_PASSWORD: "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
       JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:?请设置 JWT_ACCESS_SECRET}"
       JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:?请设置 JWT_REFRESH_SECRET}"
@@ -64,6 +68,7 @@ services:
     depends_on:
       - mariadb
       - redis
+
   post:
     build:
       context: .
@@ -73,6 +78,9 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-gopalette_k6}"
+      MYSQL_MAX_OPEN_CONNS: "${MYSQL_MAX_OPEN_CONNS:-80}"
+      MYSQL_MAX_IDLE_CONNS: "${MYSQL_MAX_IDLE_CONNS:-40}"
       REDIS_PASSWORD: "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
       JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:?请设置 JWT_ACCESS_SECRET}"
       JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:?请设置 JWT_REFRESH_SECRET}"
@@ -80,6 +88,7 @@ services:
     depends_on:
       - mariadb
       - redis
+
   comment:
     build:
       context: .
@@ -89,12 +98,16 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-gopalette_k6}"
+      MYSQL_MAX_OPEN_CONNS: "${MYSQL_MAX_OPEN_CONNS:-80}"
+      MYSQL_MAX_IDLE_CONNS: "${MYSQL_MAX_IDLE_CONNS:-40}"
       REDIS_PASSWORD: "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
       JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:?请设置 JWT_ACCESS_SECRET}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
     depends_on:
       - mariadb
       - redis
+
   search:
     build:
       context: .
@@ -107,6 +120,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
     depends_on:
       - meilisearch
+
   bff:
     build:
       context: .
@@ -121,21 +135,53 @@ services:
       - post
       - comment
       - etcd
+
+  seed-k6-data:
+    image: mariadb
+    restart: "no"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      post:
+        condition: service_started
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-gopalette_k6}"
+      K6_CATEGORY_NAME: "${K6_CATEGORY_NAME:-K6 Load Test}"
+      K6_CATEGORY_SLUG: "${K6_CATEGORY_SLUG:-k6-load-test}"
+    command:
+      - /bin/sh
+      - -c
+      - |
+        until mariadb -hmariadb -uroot -p"$${MYSQL_ROOT_PASSWORD}" "$${MYSQL_DATABASE}" -e "SHOW TABLES LIKE 'categories'" | grep -q categories; do
+          echo "waiting for post service to migrate categories table..."
+          sleep 2
+        done
+        mariadb -hmariadb -uroot -p"$${MYSQL_ROOT_PASSWORD}" "$${MYSQL_DATABASE}" -e "
+          INSERT INTO categories (name, slug, description, post_count, created_at, updated_at)
+          VALUES ('$${K6_CATEGORY_NAME}', '$${K6_CATEGORY_SLUG}', 'Category reserved for isolated k6 write tests', 0, NOW(), NOW())
+          ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at);
+        "
+
   mariadb:
     image: mariadb
+    command:
+      - mariadbd
+      - --max-connections=${MARIADB_MAX_CONNECTIONS:-600}
+      - --innodb-buffer-pool-size=${MARIADB_INNODB_BUFFER_POOL_SIZE:-512M}
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - mariadb_k6_data:/var/lib/mysql
     restart: always
     environment:
       MARIADB_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
-      MARIADB_DATABASE: "gopalette"
+      MARIADB_DATABASE: "${MYSQL_DATABASE:-gopalette_k6}"
     healthcheck:
       test: [ "CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}" ]
       interval: 10s
       timeout: 5s
       retries: 10
     ports:
-      - "3306:3306"
+      - "13306:3306"
 
   redis:
     image: redis:trixie
@@ -147,17 +193,21 @@ services:
       timeout: 5s
       retries: 10
     ports:
-      - "6379:6379"
+      - "16379:6379"
+    volumes:
+      - redis_k6_data:/data
+
   jaeger:
     image: jaegertracing/jaeger:2.17.0
     restart: always
     ports:
-      - "16686:16686"
-      - "16687:16687"
-      - "4317:4317"
-      - "4318:4318"
+      - "16696:16686"
+      - "16697:16687"
+      - "14317:4317"
+      - "14318:4318"
     environment:
       - LOG_LEVEL=debug
+
   meilisearch:
     image: getmeili/meilisearch:v1.42.1
     restart: always
@@ -168,14 +218,15 @@ services:
       timeout: 5s
       retries: 10
     ports:
-      - "7700:7700"
+      - "17700:7700"
     volumes:
-      - /meili_data:/meili_data
+      - meilisearch_k6_data:/meili_data
+
   etcd:
     image: quay.io/coreos/etcd:v3.6.10
     restart: always
     volumes:
-      - /etcd_data:/etcd_data
+      - etcd_k6_data:/etcd-data
     command:
       - /usr/local/bin/etcd
       - --name=s1
@@ -190,10 +241,10 @@ services:
       - --log-level=info
       - --logger=zap
       - --log-outputs=stderr
-
     ports:
-      - "2379:2379" # 客户端通信端口
-      - "2380:2380" # 集群通信端口
+      - "12379:2379"
+      - "12380:2380"
+
   prometheus:
     image: prom/prometheus:v3
     restart: always
@@ -205,12 +256,13 @@ services:
       - --enable-feature=native-histograms
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
+      - prometheus_k6_data:/prometheus
     depends_on:
       - cadvisor
       - node-exporter
     ports:
-      - "9091:9090"
+      - "19091:9090"
+
   grafana:
     image: grafana/grafana:13.0.1
     restart: always
@@ -219,13 +271,14 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
-      - grafana_data:/var/lib/grafana
+      - grafana_k6_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
     ports:
-      - "3000:3000"
+      - "13000:3000"
+
   cadvisor:
     image: ghcr.io/google/cadvisor:0.56.2
     restart: always
@@ -235,7 +288,8 @@ services:
       - /sys:/sys:ro
       - /var/lib/docker:/var/lib/docker:ro
     ports:
-      - "8081:8080"
+      - "18081:8080"
+
   node-exporter:
     image: prom/node-exporter:v1.8.2
     restart: always
@@ -245,9 +299,12 @@ services:
     volumes:
       - /:/host:ro,rslave
     ports:
-      - "9100:9100"
+      - "19100:9100"
 
 volumes:
-  prometheus_data:
-  grafana_data:
-  mariadb_data:
+  mariadb_k6_data:
+  redis_k6_data:
+  meilisearch_k6_data:
+  etcd_k6_data:
+  prometheus_k6_data:
+  grafana_k6_data:
