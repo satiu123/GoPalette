@@ -1,14 +1,14 @@
 services:
-  nginx:
-    image: ${IMAGE_NAMESPACE:?请设置 IMAGE_NAMESPACE，例如 satiu}/gopalette-nginx:${IMAGE_TAG:?请设置 IMAGE_TAG，例如 latest}
-    restart: always
-    depends_on:
-      - frontend
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - "${NGINX_CERT_DIR:?请设置 NGINX_CERT_DIR，例如 /etc/letsencrypt}:/etc/nginx/certs:ro"
+  # nginx:
+  #   image: ${IMAGE_NAMESPACE:?请设置 IMAGE_NAMESPACE，例如 satiu}/gopalette-nginx:${IMAGE_TAG:?请设置 IMAGE_TAG，例如 latest}
+  #   restart: always
+  #   depends_on:
+  #     - frontend
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - "${NGINX_CERT_DIR:?请设置 NGINX_CERT_DIR，例如 /etc/letsencrypt}:/etc/nginx/certs:ro"
 
   frontend:
     image: ${IMAGE_NAMESPACE:?请设置 IMAGE_NAMESPACE，例如 satiu}/gopalette-frontend:${IMAGE_TAG:?请设置 IMAGE_TAG，例如 latest}

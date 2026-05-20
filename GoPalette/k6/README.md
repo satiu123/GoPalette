@@ -78,6 +78,39 @@ k6 run k6/post-write.js \
   -e MAX_VUS=1000
 ```
 
+## 固定 RPS 写文章
+
+`post-write-fixed.js` 适合逐档基准测试。每次只测一个固定 RPS，测完清空压测数据库后再跑下一档。
+
+```bash
+K6_PROMETHEUS_RW_SERVER_URL=http://localhost:19091/api/v1/write \
+K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM=true \
+k6 run -o experimental-prometheus-rw k6/post-write-fixed.js \
+  -e GATEWAY_BASE=http://localhost:18080 \
+  -e RATE=500 \
+  -e DURATION=3m \
+  -e ACCOUNT_COUNT=100 \
+  -e PRE_ALLOCATED_VUS=300 \
+  -e MAX_VUS=1500
+```
+
+五个档位只需要替换 `RATE`：
+
+```bash
+for rps in 500 800 1000 1500 2000; do
+  K6_PROMETHEUS_RW_SERVER_URL=http://localhost:19091/api/v1/write \
+  K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM=true \
+  k6 run -o experimental-prometheus-rw k6/post-write-fixed.js \
+    -e GATEWAY_BASE=http://localhost:18080 \
+    -e RATE=$rps \
+    -e DURATION=3m \
+    -e ACCOUNT_COUNT=100 \
+    -e PRE_ALLOCATED_VUS=500 \
+    -e MAX_VUS=2500
+
+done
+```
+
 ## 高并发写评论
 
 `comment-write.js` 只压 `POST /v1/comments`。脚本同样会自动注册并登录压测账号；`POST_IDS` 未设置时，会先从文章列表取文章 ID，若没有可用文章则自动创建一篇发布状态的种子文章。

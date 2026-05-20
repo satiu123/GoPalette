@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-kratos/kratos/v2/log"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Post struct {
@@ -77,26 +78,93 @@ func (PostLike) TableName() string { return "post_likes" }
 func (r *postRepo) Create(ctx context.Context, p *biz.Post) (*biz.Post, error) {
 	po := r.toDataPost(p)
 	err := r.data.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// 处理标签,如果标签不存在则创建
-		var tags []Tag
-		for _, tagName := range p.Tags {
-			var tag Tag
-			if err := tx.Where(Tag{Name: tagName}).FirstOrCreate(&tag, Tag{Name: tagName, Slug: tagName}).Error; err != nil {
-				return err
-			}
-			tags = append(tags, tag)
+		tags, err := r.findOrCreateTags(tx, p.Tags)
+		if err != nil {
+			return err
 		}
 		po.Tags = tags
 
-		// 创建文章
-		return tx.Create(po).Error
+		if err := tx.Omit("Tags.*").Create(po).Error; err != nil {
+			return err
+		}
+
+		if po.CategoryID == 0 {
+			return nil
+		}
+		var category Category
+		err = tx.Select("id", "name").First(&category, po.CategoryID).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		po.Category = category
+		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	readCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
-	defer cancel()
-	return r.GetByID(readCtx, int64(po.ID))
+	return r.toBizPost(po), nil
+}
+
+func (r *postRepo) findOrCreateTags(tx *gorm.DB, tagNames []string) ([]Tag, error) {
+	if len(tagNames) == 0 {
+		return nil, nil
+	}
+
+	names := make([]string, 0, len(tagNames))
+	seen := make(map[string]struct{}, len(tagNames))
+	for _, name := range tagNames {
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		names = append(names, name)
+	}
+
+	var existing []Tag
+	if err := tx.Where("name IN ?", names).Find(&existing).Error; err != nil {
+		return nil, err
+	}
+
+	tagsByName := make(map[string]Tag, len(names))
+	for _, tag := range existing {
+		tagsByName[tag.Name] = tag
+	}
+
+	missing := make([]Tag, 0, len(names)-len(existing))
+	missingNames := make([]string, 0, len(names)-len(existing))
+	for _, name := range names {
+		if _, ok := tagsByName[name]; ok {
+			continue
+		}
+		missing = append(missing, Tag{Name: name, Slug: name})
+		missingNames = append(missingNames, name)
+	}
+	if len(missing) > 0 {
+		if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&missing).Error; err != nil {
+			return nil, err
+		}
+
+		var created []Tag
+		if err := tx.Where("name IN ?", missingNames).Find(&created).Error; err != nil {
+			return nil, err
+		}
+		for _, tag := range created {
+			tagsByName[tag.Name] = tag
+		}
+	}
+
+	tags := make([]Tag, 0, len(names))
+	for _, name := range names {
+		tag, ok := tagsByName[name]
+		if !ok {
+			return nil, fmt.Errorf("tag %q not found after create", name)
+		}
+		tags = append(tags, tag)
+	}
+	return tags, nil
 }
 
 func (r *postRepo) Update(ctx context.Context, p *biz.Post, fields []string) (*biz.Post, error) {
@@ -137,6 +205,20 @@ func (r *postRepo) Update(ctx context.Context, p *biz.Post, fields []string) (*b
 
 func (r *postRepo) Delete(ctx context.Context, id int64) error {
 	return r.data.db.WithContext(ctx).Delete(&Post{}, id).Error
+}
+
+func (r *postRepo) SlugExists(ctx context.Context, slug string) (bool, error) {
+	var id uint
+	err := r.data.db.WithContext(ctx).
+		Model(&Post{}).
+		Select("id").
+		Where("slug = ?", slug).
+		Limit(1).
+		Take(&id).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 func (r *postRepo) GetByID(ctx context.Context, id int64) (*biz.Post, error) {

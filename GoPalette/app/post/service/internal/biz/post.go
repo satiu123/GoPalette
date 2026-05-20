@@ -39,6 +39,7 @@ type PostRepo interface {
 	Create(context.Context, *Post) (*Post, error)
 	Update(context.Context, *Post, []string) (*Post, error)
 	Delete(context.Context, int64) error
+	SlugExists(context.Context, string) (bool, error)
 	GetByID(context.Context, int64) (*Post, error)
 	GetBySlug(context.Context, string) (*Post, error)
 	List(ctx context.Context, page, pageSize int64, publishedOnly bool) ([]*Post, int64, error)
@@ -88,8 +89,11 @@ func (uc *PostUsecase) CreatePost(ctx context.Context, p *Post) (*Post, error) {
 	if p.Slug == "" {
 		return nil, pb.ErrorInvalidArgument("%s", "Slug 不能为空")
 	}
-	exist, _ := uc.repo.GetBySlug(ctx, p.Slug)
-	if exist != nil {
+	exists, err := uc.repo.SlugExists(ctx, p.Slug)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
 		return nil, pb.ErrorSlugConflict("Slug %s 已存在", p.Slug)
 	}
 
