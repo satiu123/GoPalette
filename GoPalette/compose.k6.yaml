@@ -183,6 +183,20 @@ services:
     ports:
       - "13306:3306"
 
+  mariadb-exporter:
+    image: prom/mysqld-exporter:v0.15.1
+    restart: always
+    command:
+      - --mysqld.address=mariadb:3306
+      - --mysqld.username=root
+    environment:
+      MYSQLD_EXPORTER_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    ports:
+      - "19104:9104"
+
   redis:
     image: redis:trixie
     restart: always
@@ -260,6 +274,7 @@ services:
     depends_on:
       - cadvisor
       - node-exporter
+      - mariadb-exporter
     ports:
       - "19091:9090"
 

@@ -23,6 +23,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
+	gormtracing "gorm.io/plugin/opentelemetry/tracing"
 )
 
 // ProviderSet is data providers.
@@ -90,6 +91,10 @@ func NewData(c *conf.Data, logger log.Logger, uc userv1.UserClient, sc searchv1.
 	})
 	if err != nil {
 		log.Errorf("无法连接数据库: %v", err)
+		return nil, nil, err
+	}
+	if err := db.Use(gormtracing.NewPlugin()); err != nil {
+		log.Errorf("failed to enable gorm tracing: %v", err)
 		return nil, nil, err
 	}
 	if sqlDB, err := db.DB(); err == nil {

@@ -1,7 +1,7 @@
 FROM golang:1.25 AS builder
 
 ARG APP_RELATIVE_PATH
-ARG GOPROXY=https://proxy.golang.org,direct
+ARG GOPROXY=https://goproxy.cn,direct
 
 WORKDIR /src
 

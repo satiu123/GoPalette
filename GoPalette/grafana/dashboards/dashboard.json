@@ -1,0 +1,2585 @@
+{
+    "apiVersion": "dashboard.grafana.app/v2",
+    "kind": "Dashboard",
+    "metadata": {
+        "name": "gopalette-troubleshooting",
+        "namespace": "default",
+        "uid": "d0fbb54e-0327-4536-a9f7-2b365bbd2d02",
+        "resourceVersion": "1779238614544987",
+        "generation": 2,
+        "creationTimestamp": "2026-05-20T00:42:08Z",
+        "labels": {
+            "grafana.app/deprecatedInternalID": "3256802025324544"
+        },
+        "annotations": {
+            "grafana.app/createdBy": "user:dfmi1136paj28d",
+            "grafana.app/folder": "efmi1170qoiyoa",
+            "grafana.app/message": "Add MariaDB exporter panels",
+            "grafana.app/updatedBy": "user:dfmi1136paj28d",
+            "grafana.app/updatedTimestamp": "2026-05-20T00:56:54Z",
+            "grafana.app/folderTitle": "GoPalette",
+            "grafana.app/folderUrl": "/dashboards/f/efmi1170qoiyoa/gopalette"
+        }
+    },
+    "spec": {
+        "annotations": [
+            {
+                "kind": "AnnotationQuery",
+                "spec": {
+                    "query": {
+                        "kind": "DataQuery",
+                        "group": "grafana",
+                        "version": "v0",
+                        "datasource": {
+                            "name": "-- Grafana --"
+                        },
+                        "spec": {}
+                    },
+                    "enable": true,
+                    "hide": true,
+                    "iconColor": "rgba(0, 211, 255, 1)",
+                    "name": "Annotations & Alerts",
+                    "builtIn": true,
+                    "legacyOptions": {
+                        "type": "dashboard"
+                    }
+                }
+            }
+        ],
+        "cursorSync": "Off",
+        "editable": true,
+        "elements": {
+            "panel-1": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 1,
+                    "title": "排障路径",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "text",
+                        "version": "",
+                        "spec": {
+                            "options": {
+                                "content": "### GoPalette Troubleshooting\n从上到下排查：全局 RED -> 服务/接口 -> 网关路由 -> Go runtime/容器资源 -> k6 压测信号。配合右上角时间范围去 Jaeger 查询慢 trace。",
+                                "mode": "markdown"
+                            },
+                            "fieldConfig": {
+                                "defaults": {},
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-10": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 10,
+                    "title": "Top Operations p95",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "topk(10, histogram_quantile(0.95, sum(rate(server_requests_seconds_bucket_bucket{otel_scope_name=~\"$service\",operation=~\"$operation\"}[$__rate_interval])) by (le, operation)))",
+                                                "legendFormat": "{{operation}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "s"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-11": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 11,
+                    "title": "Top Operations Error Rate",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "topk(10, sum(rate(server_requests_code_total{otel_scope_name=~\"$service\",operation=~\"$operation\",code!~\"2..\"}[$__rate_interval])) by (operation) / clamp_min(sum(rate(server_requests_code_total{otel_scope_name=~\"$service\",operation=~\"$operation\"}[$__rate_interval])) by (operation), 0.001))",
+                                                "legendFormat": "{{operation}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "percentunit"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-12": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 12,
+                    "title": "Gateway RPS by Route",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "sum(rate(go_gateway_requests_code_total{path=~\"$gateway_path\"}[$__rate_interval])) by (method,path,code)",
+                                                "legendFormat": "{{method}} {{path}} {{code}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "reqps"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-13": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 13,
+                    "title": "Gateway Error Rate by Route",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "sum(rate(go_gateway_requests_code_total{path=~\"$gateway_path\",code!~\"2..\"}[$__rate_interval])) by (method,path) / clamp_min(sum(rate(go_gateway_requests_code_total{path=~\"$gateway_path\"}[$__rate_interval])) by (method,path), 0.001)",
+                                                "legendFormat": "{{method}} {{path}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "percentunit"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-14": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 14,
+                    "title": "Gateway p95/p99 by Route",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "histogram_quantile(0.95, sum(rate(go_gateway_requests_duration_seconds_bucket{path=~\"$gateway_path\"}[$__rate_interval])) by (le, method, path))",
+                                                "legendFormat": "p95 {{method}} {{path}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                },
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "histogram_quantile(0.99, sum(rate(go_gateway_requests_duration_seconds_bucket{path=~\"$gateway_path\"}[$__rate_interval])) by (le, method, path))",
+                                                "legendFormat": "p99 {{method}} {{path}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "B",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "s"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-15": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 15,
+                    "title": "Go Runtime: Goroutines",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "go_goroutines{job=\"gopalette-services\", instance=~\"$instance\"}",
+                                                "legendFormat": "{{instance}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "short"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-16": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 16,
+                    "title": "Go Runtime: Heap Alloc",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "go_memstats_heap_alloc_bytes{job=\"gopalette-services\", instance=~\"$instance\"}",
+                                                "legendFormat": "{{instance}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "bytes"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-17": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 17,
+                    "title": "Go Runtime: GC Pause Avg",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "rate(go_gc_duration_seconds_sum{job=\"gopalette-services\", instance=~\"$instance\"}[$__rate_interval]) / clamp_min(rate(go_gc_duration_seconds_count{job=\"gopalette-services\", instance=~\"$instance\"}[$__rate_interval]), 0.001)",
+                                                "legendFormat": "{{instance}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "s"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-18": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 18,
+                    "title": "Process CPU",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "rate(process_cpu_seconds_total{job=\"gopalette-services\", instance=~\"$instance\"}[$__rate_interval])",
+                                                "legendFormat": "{{instance}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "cores"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-19": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 19,
+                    "title": "Container CPU by Service",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "sum(rate(container_cpu_usage_seconds_total{job=\"cadvisor\",cpu=\"total\",container_label_com_docker_compose_service=~\"gateway|user|post|comment|search|bff|mariadb|redis|meilisearch|frontend\"}[$__rate_interval])) by (container_label_com_docker_compose_project, container_label_com_docker_compose_service)",
+                                                "legendFormat": "{{container_label_com_docker_compose_project}}/{{container_label_com_docker_compose_service}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "cores"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-2": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 2,
+                    "title": "Service RPS",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "sum(rate(server_requests_code_total{otel_scope_name=~\"$service\",operation=~\"$operation\"}[$__rate_interval]))",
+                                                "legendFormat": "rps",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "stat",
+                        "version": "",
+                        "spec": {
+                            "options": {
+                                "colorMode": "value",
+                                "graphMode": "area",
+                                "justifyMode": "auto",
+                                "orientation": "auto",
+                                "reduceOptions": {
+                                    "calcs": [
+                                        "lastNotNull"
+                                    ],
+                                    "fields": "",
+                                    "values": false
+                                },
+                                "showPercentChange": false,
+                                "textMode": "auto",
+                                "wideLayout": true
+                            },
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "reqps",
+                                    "decimals": 2
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-20": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 20,
+                    "title": "Container Memory Working Set",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "sum(container_memory_working_set_bytes{job=\"cadvisor\",container_label_com_docker_compose_service=~\"gateway|user|post|comment|search|bff|mariadb|redis|meilisearch|frontend\"}) by (container_label_com_docker_compose_project, container_label_com_docker_compose_service)",
+                                                "legendFormat": "{{container_label_com_docker_compose_project}}/{{container_label_com_docker_compose_service}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "bytes"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-21": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 21,
+                    "title": "Container OOM Events",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "increase(container_oom_events_total{job=\"cadvisor\",container_label_com_docker_compose_service=~\"gateway|user|post|comment|search|bff|mariadb|redis|meilisearch|frontend\"}[$__rate_interval])",
+                                                "legendFormat": "{{container_label_com_docker_compose_project}}/{{container_label_com_docker_compose_service}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "short"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-22": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 22,
+                    "title": "k6: Actual RPS / Dropped Iterations",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "sum(rate(k6_http_reqs_total{workload=~\"$workload\"}[$__rate_interval])) by (workload,target_rps)",
+                                                "legendFormat": "rps {{workload}} {{target_rps}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                },
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "sum(rate(k6_dropped_iterations_total{workload=~\"$workload\"}[$__rate_interval])) by (workload,target_rps)",
+                                                "legendFormat": "dropped/s {{workload}} {{target_rps}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "B",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "short"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-23": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 23,
+                    "title": "k6: Request Duration",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "histogram_quantile(0.95, sum(rate(k6_http_req_duration_seconds_bucket{workload=~\"$workload\"}[$__rate_interval])) by (le, workload, target_rps))",
+                                                "legendFormat": "p95 {{workload}} {{target_rps}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                },
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "histogram_quantile(0.99, sum(rate(k6_http_req_duration_seconds_bucket{workload=~\"$workload\"}[$__rate_interval])) by (le, workload, target_rps))",
+                                                "legendFormat": "p99 {{workload}} {{target_rps}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "B",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "s"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-24": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 24,
+                    "title": "k6: Failure Rate",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "avg(k6_http_req_failed_rate{workload=~\"$workload\"}) by (workload,target_rps)",
+                                                "legendFormat": "{{workload}} {{target_rps}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "percentunit"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-25": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 25,
+                    "title": "Jaeger 下钻",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "text",
+                        "version": "",
+                        "spec": {
+                            "options": {
+                                "content": "打开 Jaeger: [http://localhost:16696](http://localhost:16696)。使用当前 Grafana 时间窗口，选择服务和 Operation，设置 Min Duration 如 `500ms` / `1s` 来找慢 trace。",
+                                "mode": "markdown"
+                            },
+                            "fieldConfig": {
+                                "defaults": {},
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-26": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 26,
+                    "title": "MariaDB Connections / Running Threads",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "mysql_global_status_threads_connected{job=\"mariadb-exporter\"}",
+                                                "legendFormat": "connected",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                },
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "mysql_global_status_threads_running{job=\"mariadb-exporter\"}",
+                                                "legendFormat": "running",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "B",
+                                        "hidden": false
+                                    }
+                                },
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "mysql_global_variables_max_connections{job=\"mariadb-exporter\"}",
+                                                "legendFormat": "max_connections",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "C",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "short"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-27": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 27,
+                    "title": "MariaDB QPS / Slow Queries",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "rate(mysql_global_status_queries{job=\"mariadb-exporter\"}[$__rate_interval])",
+                                                "legendFormat": "queries/s",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                },
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "rate(mysql_global_status_slow_queries{job=\"mariadb-exporter\"}[$__rate_interval])",
+                                                "legendFormat": "slow/s",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "B",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "ops"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-28": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 28,
+                    "title": "MariaDB InnoDB Row Lock Waits",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "rate(mysql_global_status_innodb_row_lock_waits{job=\"mariadb-exporter\"}[$__rate_interval])",
+                                                "legendFormat": "lock waits/s",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                },
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "rate(mysql_global_status_innodb_row_lock_time{job=\"mariadb-exporter\"}[$__rate_interval]) / 1000",
+                                                "legendFormat": "lock wait time/s",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "B",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "short"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-29": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 29,
+                    "title": "MariaDB Buffer Pool Read Pressure",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "rate(mysql_global_status_innodb_buffer_pool_reads{job=\"mariadb-exporter\"}[$__rate_interval])",
+                                                "legendFormat": "disk reads/s",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                },
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "rate(mysql_global_status_innodb_buffer_pool_read_requests{job=\"mariadb-exporter\"}[$__rate_interval])",
+                                                "legendFormat": "read requests/s",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "B",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "ops"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-3": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 3,
+                    "title": "Service Error Rate",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "sum(rate(server_requests_code_total{otel_scope_name=~\"$service\",operation=~\"$operation\",code!~\"2..\"}[$__rate_interval])) / clamp_min(sum(rate(server_requests_code_total{otel_scope_name=~\"$service\",operation=~\"$operation\"}[$__rate_interval])), 0.001)",
+                                                "legendFormat": "error",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "stat",
+                        "version": "",
+                        "spec": {
+                            "options": {
+                                "colorMode": "value",
+                                "graphMode": "area",
+                                "justifyMode": "auto",
+                                "orientation": "auto",
+                                "reduceOptions": {
+                                    "calcs": [
+                                        "lastNotNull"
+                                    ],
+                                    "fields": "",
+                                    "values": false
+                                },
+                                "showPercentChange": false,
+                                "textMode": "auto",
+                                "wideLayout": true
+                            },
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "percentunit",
+                                    "decimals": 3,
+                                    "thresholds": {
+                                        "mode": "absolute",
+                                        "steps": [
+                                            {
+                                                "value": null,
+                                                "color": "green"
+                                            },
+                                            {
+                                                "value": 0.01,
+                                                "color": "orange"
+                                            },
+                                            {
+                                                "value": 0.05,
+                                                "color": "red"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-30": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 30,
+                    "title": "MariaDB Network / Temp Tables",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "rate(mysql_global_status_bytes_received{job=\"mariadb-exporter\"}[$__rate_interval])",
+                                                "legendFormat": "rx bytes/s",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                },
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "rate(mysql_global_status_bytes_sent{job=\"mariadb-exporter\"}[$__rate_interval])",
+                                                "legendFormat": "tx bytes/s",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "B",
+                                        "hidden": false
+                                    }
+                                },
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "rate(mysql_global_status_created_tmp_disk_tables{job=\"mariadb-exporter\"}[$__rate_interval])",
+                                                "legendFormat": "tmp disk tables/s",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "C",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "short"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-31": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 31,
+                    "title": "MariaDB Up",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "up{job=\"mariadb-exporter\"}",
+                                                "legendFormat": "up",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "stat",
+                        "version": "",
+                        "spec": {
+                            "options": {
+                                "colorMode": "value",
+                                "graphMode": "area",
+                                "justifyMode": "auto",
+                                "orientation": "auto",
+                                "reduceOptions": {
+                                    "calcs": [
+                                        "lastNotNull"
+                                    ],
+                                    "fields": "",
+                                    "values": false
+                                },
+                                "showPercentChange": false,
+                                "textMode": "auto",
+                                "wideLayout": true
+                            },
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "short",
+                                    "thresholds": {
+                                        "mode": "absolute",
+                                        "steps": [
+                                            {
+                                                "value": null,
+                                                "color": "red"
+                                            },
+                                            {
+                                                "value": 1,
+                                                "color": "green"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-4": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 4,
+                    "title": "Service p95",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "histogram_quantile(0.95, sum(rate(server_requests_seconds_bucket_bucket{otel_scope_name=~\"$service\",operation=~\"$operation\"}[$__rate_interval])) by (le))",
+                                                "legendFormat": "p95",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "stat",
+                        "version": "",
+                        "spec": {
+                            "options": {
+                                "colorMode": "value",
+                                "graphMode": "area",
+                                "justifyMode": "auto",
+                                "orientation": "auto",
+                                "reduceOptions": {
+                                    "calcs": [
+                                        "lastNotNull"
+                                    ],
+                                    "fields": "",
+                                    "values": false
+                                },
+                                "showPercentChange": false,
+                                "textMode": "auto",
+                                "wideLayout": true
+                            },
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "s",
+                                    "decimals": 3,
+                                    "thresholds": {
+                                        "mode": "absolute",
+                                        "steps": [
+                                            {
+                                                "value": null,
+                                                "color": "green"
+                                            },
+                                            {
+                                                "value": 0.3,
+                                                "color": "orange"
+                                            },
+                                            {
+                                                "value": 1,
+                                                "color": "red"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-5": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 5,
+                    "title": "Service p99",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "histogram_quantile(0.99, sum(rate(server_requests_seconds_bucket_bucket{otel_scope_name=~\"$service\",operation=~\"$operation\"}[$__rate_interval])) by (le))",
+                                                "legendFormat": "p99",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "stat",
+                        "version": "",
+                        "spec": {
+                            "options": {
+                                "colorMode": "value",
+                                "graphMode": "area",
+                                "justifyMode": "auto",
+                                "orientation": "auto",
+                                "reduceOptions": {
+                                    "calcs": [
+                                        "lastNotNull"
+                                    ],
+                                    "fields": "",
+                                    "values": false
+                                },
+                                "showPercentChange": false,
+                                "textMode": "auto",
+                                "wideLayout": true
+                            },
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "s",
+                                    "decimals": 3,
+                                    "thresholds": {
+                                        "mode": "absolute",
+                                        "steps": [
+                                            {
+                                                "value": null,
+                                                "color": "green"
+                                            },
+                                            {
+                                                "value": 1,
+                                                "color": "orange"
+                                            },
+                                            {
+                                                "value": 3,
+                                                "color": "red"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-6": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 6,
+                    "title": "RPS by Service",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "sum(rate(server_requests_code_total{otel_scope_name=~\"$service\",operation=~\"$operation\"}[$__rate_interval])) by (otel_scope_name)",
+                                                "legendFormat": "{{otel_scope_name}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "reqps"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-7": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 7,
+                    "title": "Error Rate by Service",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "sum(rate(server_requests_code_total{otel_scope_name=~\"$service\",operation=~\"$operation\",code!~\"2..\"}[$__rate_interval])) by (otel_scope_name) / clamp_min(sum(rate(server_requests_code_total{otel_scope_name=~\"$service\",operation=~\"$operation\"}[$__rate_interval])) by (otel_scope_name), 0.001)",
+                                                "legendFormat": "{{otel_scope_name}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "percentunit"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-8": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 8,
+                    "title": "p95/p99 by Service",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "histogram_quantile(0.95, sum(rate(server_requests_seconds_bucket_bucket{otel_scope_name=~\"$service\",operation=~\"$operation\"}[$__rate_interval])) by (le, otel_scope_name))",
+                                                "legendFormat": "p95 {{otel_scope_name}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                },
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "histogram_quantile(0.99, sum(rate(server_requests_seconds_bucket_bucket{otel_scope_name=~\"$service\",operation=~\"$operation\"}[$__rate_interval])) by (le, otel_scope_name))",
+                                                "legendFormat": "p99 {{otel_scope_name}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "B",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "s"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-9": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 9,
+                    "title": "Top Operations by RPS",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "prometheus",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "prometheus"
+                                            },
+                                            "spec": {
+                                                "expr": "topk(10, sum(rate(server_requests_code_total{otel_scope_name=~\"$service\",operation=~\"$operation\"}[$__rate_interval])) by (operation))",
+                                                "legendFormat": "{{operation}}",
+                                                "range": true
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "timeseries",
+                        "version": "",
+                        "spec": {
+                            "options": {},
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "reqps"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "layout": {
+            "kind": "GridLayout",
+            "spec": {
+                "items": [
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 0,
+                            "y": 0,
+                            "width": 24,
+                            "height": 3,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-1"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 0,
+                            "y": 3,
+                            "width": 6,
+                            "height": 4,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-2"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 6,
+                            "y": 3,
+                            "width": 6,
+                            "height": 4,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-3"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 12,
+                            "y": 3,
+                            "width": 6,
+                            "height": 4,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-4"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 18,
+                            "y": 3,
+                            "width": 6,
+                            "height": 4,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-5"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 0,
+                            "y": 7,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-6"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 8,
+                            "y": 7,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-7"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 16,
+                            "y": 7,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-8"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 0,
+                            "y": 14,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-9"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 8,
+                            "y": 14,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-10"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 16,
+                            "y": 14,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-11"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 0,
+                            "y": 21,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-12"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 8,
+                            "y": 21,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-13"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 16,
+                            "y": 21,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-14"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 0,
+                            "y": 28,
+                            "width": 6,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-15"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 6,
+                            "y": 28,
+                            "width": 6,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-16"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 12,
+                            "y": 28,
+                            "width": 6,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-17"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 18,
+                            "y": 28,
+                            "width": 6,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-18"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 0,
+                            "y": 35,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-19"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 8,
+                            "y": 35,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-20"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 16,
+                            "y": 35,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-21"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 0,
+                            "y": 42,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-22"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 8,
+                            "y": 42,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-23"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 16,
+                            "y": 42,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-24"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 0,
+                            "y": 49,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-26"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 8,
+                            "y": 49,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-27"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 16,
+                            "y": 49,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-28"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 0,
+                            "y": 56,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-29"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 8,
+                            "y": 56,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-30"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 16,
+                            "y": 56,
+                            "width": 8,
+                            "height": 7,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-31"
+                            }
+                        }
+                    },
+                    {
+                        "kind": "GridLayoutItem",
+                        "spec": {
+                            "x": 0,
+                            "y": 63,
+                            "width": 24,
+                            "height": 3,
+                            "element": {
+                                "kind": "ElementReference",
+                                "name": "panel-25"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "links": [],
+        "liveNow": false,
+        "preload": false,
+        "tags": [
+            "gopalette",
+            "troubleshooting",
+            "observability"
+        ],
+        "timeSettings": {
+            "timezone": "browser",
+            "from": "now-1h",
+            "to": "now",
+            "autoRefresh": "10s",
+            "autoRefreshIntervals": [
+                "5s",
+                "10s",
+                "30s",
+                "1m",
+                "5m",
+                "15m",
+                "30m",
+                "1h",
+                "2h",
+                "1d"
+            ],
+            "hideTimepicker": false,
+            "fiscalYearStartMonth": 0
+        },
+        "title": "GoPalette Troubleshooting",
+        "variables": [
+            {
+                "kind": "QueryVariable",
+                "spec": {
+                    "name": "service",
+                    "current": {
+                        "text": "All",
+                        "value": "$__all"
+                    },
+                    "hide": "dontHide",
+                    "refresh": "onDashboardLoad",
+                    "skipUrlSync": false,
+                    "query": {
+                        "kind": "DataQuery",
+                        "group": "prometheus",
+                        "version": "v0",
+                        "datasource": {
+                            "name": "prometheus"
+                        },
+                        "spec": {
+                            "__legacyStringValue": "label_values(server_requests_code_total, otel_scope_name)"
+                        }
+                    },
+                    "regex": "",
+                    "sort": "disabled",
+                    "options": [],
+                    "multi": true,
+                    "includeAll": true,
+                    "allValue": ".*",
+                    "allowCustomValue": true
+                }
+            },
+            {
+                "kind": "QueryVariable",
+                "spec": {
+                    "name": "operation",
+                    "current": {
+                        "text": "All",
+                        "value": "$__all"
+                    },
+                    "hide": "dontHide",
+                    "refresh": "onDashboardLoad",
+                    "skipUrlSync": false,
+                    "query": {
+                        "kind": "DataQuery",
+                        "group": "prometheus",
+                        "version": "v0",
+                        "datasource": {
+                            "name": "prometheus"
+                        },
+                        "spec": {
+                            "__legacyStringValue": "label_values(server_requests_code_total{otel_scope_name=~\"$service\"}, operation)"
+                        }
+                    },
+                    "regex": "",
+                    "sort": "disabled",
+                    "options": [],
+                    "multi": true,
+                    "includeAll": true,
+                    "allValue": ".*",
+                    "allowCustomValue": true
+                }
+            },
+            {
+                "kind": "QueryVariable",
+                "spec": {
+                    "name": "gateway_path",
+                    "current": {
+                        "text": "All",
+                        "value": "$__all"
+                    },
+                    "hide": "dontHide",
+                    "refresh": "onDashboardLoad",
+                    "skipUrlSync": false,
+                    "query": {
+                        "kind": "DataQuery",
+                        "group": "prometheus",
+                        "version": "v0",
+                        "datasource": {
+                            "name": "prometheus"
+                        },
+                        "spec": {
+                            "__legacyStringValue": "label_values(go_gateway_requests_code_total, path)"
+                        }
+                    },
+                    "regex": "",
+                    "sort": "disabled",
+                    "options": [],
+                    "multi": true,
+                    "includeAll": true,
+                    "allValue": ".*",
+                    "allowCustomValue": true
+                }
+            },
+            {
+                "kind": "QueryVariable",
+                "spec": {
+                    "name": "instance",
+                    "current": {
+                        "text": "All",
+                        "value": "$__all"
+                    },
+                    "hide": "dontHide",
+                    "refresh": "onDashboardLoad",
+                    "skipUrlSync": false,
+                    "query": {
+                        "kind": "DataQuery",
+                        "group": "prometheus",
+                        "version": "v0",
+                        "datasource": {
+                            "name": "prometheus"
+                        },
+                        "spec": {
+                            "__legacyStringValue": "label_values(up{job=\"gopalette-services\"}, instance)"
+                        }
+                    },
+                    "regex": "",
+                    "sort": "disabled",
+                    "options": [],
+                    "multi": true,
+                    "includeAll": true,
+                    "allValue": ".*",
+                    "allowCustomValue": true
+                }
+            },
+            {
+                "kind": "QueryVariable",
+                "spec": {
+                    "name": "workload",
+                    "current": {
+                        "text": "All",
+                        "value": "$__all"
+                    },
+                    "hide": "dontHide",
+                    "refresh": "onDashboardLoad",
+                    "skipUrlSync": false,
+                    "query": {
+                        "kind": "DataQuery",
+                        "group": "prometheus",
+                        "version": "v0",
+                        "datasource": {
+                            "name": "prometheus"
+                        },
+                        "spec": {
+                            "__legacyStringValue": "label_values(k6_http_reqs_total, workload)"
+                        }
+                    },
+                    "regex": "",
+                    "sort": "disabled",
+                    "options": [],
+                    "multi": true,
+                    "includeAll": true,
+                    "allValue": ".*",
+                    "allowCustomValue": true
+                }
+            }
+        ]
+    }
+}
