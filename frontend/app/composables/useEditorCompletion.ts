@@ -61,8 +61,18 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
     return storage?.completion
   }
 
+  function isCjkCharacter(char: string) {
+    return /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uac00-\ud7af]/.test(char)
+  }
+
   function shouldPrefixInlineSpace(textBefore: string, text: string) {
     if (!textBefore || /\s/.test(textBefore) || /^\s/.test(text)) return false
+
+    const beforeChar = textBefore.slice(-1)
+    const firstChar = text.trimStart().slice(0, 1)
+    if (!beforeChar || !firstChar) return false
+    if (isCjkCharacter(beforeChar) || isCjkCharacter(firstChar)) return false
+
     return !/^(#{1,6}\s|[-*+]\s|\d+\.\s|>\s|```|~~~|\|)/.test(text)
   }
 
