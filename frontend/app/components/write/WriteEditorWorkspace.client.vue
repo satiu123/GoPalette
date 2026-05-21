@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EditorCustomHandlers } from '@nuxt/ui'
-import type { Editor } from '@tiptap/core'
+import { Extension, type Editor } from '@tiptap/core'
+import { Markdown } from '@tiptap/markdown'
 import type { Selection } from '@tiptap/pm/state'
 import { TextSelection } from '@tiptap/pm/state'
 import type { EditorView } from '@tiptap/pm/view'
@@ -54,6 +55,8 @@ const codeLanguageOptions = [
 const codeLanguageToolbarItems = [[{
   slot: 'codeLanguage' as const
 }]]
+
+const editorRuntimeContentType = 'noop' as unknown as 'markdown'
 
 const { extension: Completion, handlers: aiHandlers, isLoading: aiLoading, aiReview } = useEditorCompletion(editorRef)
 
@@ -146,6 +149,8 @@ const settingsPanelOpen = ref(false)
 const activeOutlineIndex = ref(0)
 const savedContentSnapshot = ref('')
 const savedTitleSnapshot = ref('')
+const editorPlainText = ref('')
+const outlineItems = ref<OutlineItem[]>([])
 const upload = useUpload('/api/upload', {
   formKey: 'file',
   multiple: false,
@@ -153,7 +158,7 @@ const upload = useUpload('/api/upload', {
 })
 
 const canSubmit = computed(() => {
-  return Boolean(postMeta.title.trim() && content.value.trim())
+  return Boolean(postMeta.title.trim() && editorPlainText.value.trim())
 })
 
 const canPublish = computed(() => publishChecks.value.every(item => item.ready))
@@ -190,8 +195,7 @@ const selectedTagNames = computed<string[]>({
 })
 
 const wordCount = computed(() => {
-  return content.value
-    .replace(/```[\s\S]*?```/g, ' ')
+  return editorPlainText.value
     .replace(/[#>*`_~[\]()!-]/g, ' ')
     .replace(/\s+/g, '')
     .length
@@ -201,7 +205,7 @@ const estimatedReadingMinutes = computed(() => Math.max(1, Math.ceil(wordCount.v
 
 const publishChecks = computed(() => [
   { label: '标题', ready: Boolean(postMeta.title.trim()) },
-  { label: '正文', ready: Boolean(content.value.trim()) },
+  { label: '正文', ready: Boolean(editorPlainText.value.trim()) },
   { label: '分类', ready: Boolean(postMeta.categoryId.trim()) }
 ])
 
@@ -217,6 +221,8 @@ const fixedToolbarItems = computed(() => [
 const content = ref('')
 let removeSettingsPanelListener: (() => void) | undefined
 let removeOutlineScrollListener: (() => void) | undefined
+let derivedStateTimer: ReturnType<typeof setTimeout> | undefined
+let pendingDerivedStateEditor: Editor | undefined
 
 onMounted(() => {
   const media = window.matchMedia('(min-width: 1600px)')
@@ -232,6 +238,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   removeSettingsPanelListener?.()
   removeOutlineScrollListener?.()
+  if (derivedStateTimer) {
+    clearTimeout(derivedStateTimer)
+  }
 })
 
 onMounted(() => {
@@ -255,23 +264,60 @@ onMounted(() => {
 })
 
 function onCreate({ editor }: { editor: Editor }) {
-  if (!collaborationEnabled) return
+  if (collaborationEnabled) {
+    const storageKey = `editor-initialized-${room.value}`
 
-  const storageKey = `editor-initialized-${room.value}`
-
-  if (sessionStorage.getItem(storageKey)) return
-
-  setTimeout(() => {
-    const text = editor.state.doc.textContent.trim()
-    if (!text) {
-      editor.commands.setContent(content.value, { contentType: 'markdown' })
+    if (!sessionStorage.getItem(storageKey)) {
+      setTimeout(() => {
+        const text = editor.state.doc.textContent.trim()
+        if (!text) {
+          editor.commands.setContent(content.value, { contentType: 'markdown' })
+        }
+        sessionStorage.setItem(storageKey, 'true')
+        scheduleEditorDerivedStateSync(editor, true)
+      }, 500)
     }
-    sessionStorage.setItem(storageKey, 'true')
-  }, 500)
+
+    scheduleEditorDerivedStateSync(editor, true)
+    return
+  }
+
+  if (content.value.trim()) {
+    editor.commands.setContent(content.value, { contentType: 'markdown' })
+  }
+  scheduleEditorDerivedStateSync(editor, true)
 }
 
-function onUpdate(value: string) {
-  content.value = value
+function scheduleEditorDerivedStateSync(editor: Editor, immediate = false) {
+  pendingDerivedStateEditor = editor
+
+  if (immediate) {
+    if (derivedStateTimer) {
+      clearTimeout(derivedStateTimer)
+      derivedStateTimer = undefined
+    }
+    syncEditorDerivedState(editor)
+    return
+  }
+
+  if (derivedStateTimer) return
+
+  derivedStateTimer = setTimeout(() => {
+    derivedStateTimer = undefined
+    if (pendingDerivedStateEditor) {
+      syncEditorDerivedState(pendingDerivedStateEditor)
+    }
+  }, 250)
+}
+
+function syncEditorDerivedState(editor: Editor) {
+  editorPlainText.value = editor.state.doc.textContent
+  outlineItems.value = getEditorOutlineItems(editor).map(({ text, depth }) => ({ text, depth }))
+}
+
+function getCurrentMarkdown() {
+  const editor = editorRef.value?.editor as (Editor & { getMarkdown?: () => string }) | undefined
+  return editor?.getMarkdown?.() || content.value
 }
 
 function resizeTitleInput() {
@@ -330,37 +376,6 @@ function normalizeHeadingText(value: string) {
 type OutlineItem = { text: string, depth: number }
 
 const OUTLINE_MAX_DEPTH = 4
-
-const outlineItems = computed(() => {
-  const headings: OutlineItem[] = []
-  let inCodeFence = false
-
-  for (const line of content.value.split('\n')) {
-    const trimmed = line.trim()
-    if (/^```/.test(trimmed) || /^~~~/.test(trimmed)) {
-      inCodeFence = !inCodeFence
-      continue
-    }
-
-    if (inCodeFence) continue
-
-    const match = /^(#{1,6})\s+(.+?)\s*#*$/.exec(trimmed)
-    if (!match) continue
-
-    const depth = match[1]?.length || 1
-    if (depth > OUTLINE_MAX_DEPTH) continue
-
-    const text = normalizeHeadingText(match[2] || '')
-    if (text) {
-      headings.push({
-        text,
-        depth
-      })
-    }
-  }
-
-  return headings
-})
 
 watch(activeOutlineIndex, () => {
   nextTick(scrollActiveOutlineIntoView)
@@ -708,7 +723,8 @@ async function savePost(status: number) {
   isSaving.value = true
 
   try {
-    const markdownContent = normalizeCodeFenceLanguages(normalizeLooseMarkdownTables(content.value))
+    const markdownContent = normalizeCodeFenceLanguages(normalizeLooseMarkdownTables(getCurrentMarkdown()))
+    content.value = markdownContent
     await ensureSafeSlug(markdownContent)
     const summary = await resolveSummaryForSave(markdownContent)
     const payload = {
@@ -839,7 +855,22 @@ const MarkdownCodeBlockShiki = CodeBlockShiki.extend({
   }
 })
 
+const WriteDerivedState = Extension.create({
+  name: 'writeDerivedState',
+  onCreate() {
+    scheduleEditorDerivedStateSync(this.editor as Editor, true)
+  },
+  onUpdate() {
+    scheduleEditorDerivedStateSync(this.editor as Editor)
+  }
+})
+
 const extensions = computed(() => [
+  Markdown.configure({
+    markedOptions: {
+      gfm: true
+    }
+  }),
   MarkdownCodeBlockShiki.configure({
     defaultTheme: 'material-theme',
     themes: {
@@ -848,6 +879,7 @@ const extensions = computed(() => [
     }
   }),
   Completion,
+  WriteDerivedState,
   Emoji,
   ImageUpload,
   TableKit,
@@ -862,8 +894,8 @@ const extensions = computed(() => [
     v-if="collaborationReady"
     ref="editorRef"
     v-slot="{ editor, handlers }"
-    :model-value="collaborationEnabled ? undefined : content"
-    content-type="markdown"
+    :model-value="undefined"
+    :content-type="editorRuntimeContentType"
     :extensions="extensions"
     :starter-kit="editorStarterKit"
     :handlers="customHandlers"
@@ -874,7 +906,6 @@ const extensions = computed(() => [
       base: 'px-0 pb-16 pt-4 min-[1600px]:pt-10',
       content: 'mx-auto w-full max-w-[920px] px-4 pb-32'
     }"
-    @update:model-value="onUpdate"
     @create="onCreate"
   >
     <AppHeader compact>
@@ -1135,85 +1166,6 @@ const extensions = computed(() => [
       </details>
     </aside>
 
-    <div
-      v-if="aiReview.isOpen.value"
-      class="fixed bottom-6 right-6 z-50 w-[min(520px,calc(100vw-2rem))] rounded-xl border border-default bg-default/95 p-4 shadow-xl backdrop-blur"
-    >
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
-          <UIcon
-            name="i-lucide-sparkles"
-            class="text-primary"
-          />
-          <p class="text-sm font-medium text-highlighted">
-            AI candidate
-          </p>
-          <UBadge
-            v-if="aiLoading"
-            label="Streaming"
-            color="primary"
-            variant="soft"
-          />
-        </div>
-
-        <div class="flex items-center gap-1">
-          <UButton
-            v-if="aiLoading"
-            size="xs"
-            color="error"
-            variant="soft"
-            icon="i-lucide-square"
-            label="Stop"
-            @click="aiReview.stop"
-          />
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-refresh-cw"
-            label="Reroll"
-            :disabled="aiLoading"
-            @click="aiReview.reroll"
-          />
-          <UButton
-            size="xs"
-            icon="i-lucide-check"
-            label="Accept"
-            :disabled="!aiReview.previewText.value.trim()"
-            @click="aiReview.accept"
-          />
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-x"
-            @click="aiReview.discard"
-          />
-        </div>
-      </div>
-
-      <div
-        class="mt-3 max-h-56 overflow-auto rounded-lg border border-default bg-elevated/50 p-3 text-sm leading-6 whitespace-pre-wrap text-toned"
-      >
-        {{ aiReview.previewText.value || 'Waiting for AI output...' }}
-      </div>
-
-      <div
-        v-if="aiReview.candidates.value.length > 0"
-        class="mt-3 flex flex-wrap gap-2"
-      >
-        <UButton
-          v-for="(candidate, index) in aiReview.candidates.value"
-          :key="candidate.id"
-          size="xs"
-          :color="index === aiReview.activeCandidateIndex.value ? 'primary' : 'neutral'"
-          :variant="index === aiReview.activeCandidateIndex.value ? 'soft' : 'ghost'"
-          :label="`${index + 1}${candidate.stopped ? ' partial' : ''}`"
-          @click="aiReview.select(index)"
-        />
-      </div>
-    </div>
-
     <UEditorToolbar
       :editor="editor"
       :items="bubbleToolbarItems"
@@ -1345,6 +1297,87 @@ const extensions = computed(() => [
       </UDropdownMenu>
     </UEditorDragHandle>
   </UEditor>
+
+  <Teleport to="body">
+    <div
+      v-if="aiReview.isOpen.value"
+      class="fixed bottom-6 right-6 z-50 w-[min(520px,calc(100vw-2rem))] rounded-xl border border-default bg-default/95 p-4 shadow-xl backdrop-blur"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <UIcon
+            name="i-lucide-sparkles"
+            class="text-primary"
+          />
+          <p class="text-sm font-medium text-highlighted">
+            AI candidate
+          </p>
+          <UBadge
+            v-if="aiLoading"
+            label="Streaming"
+            color="primary"
+            variant="soft"
+          />
+        </div>
+
+        <div class="flex items-center gap-1">
+          <UButton
+            v-if="aiLoading"
+            size="xs"
+            color="error"
+            variant="soft"
+            icon="i-lucide-square"
+            label="Stop"
+            @click="aiReview.stop"
+          />
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-refresh-cw"
+            label="Reroll"
+            :disabled="aiLoading"
+            @click="aiReview.reroll"
+          />
+          <UButton
+            size="xs"
+            icon="i-lucide-check"
+            label="Accept"
+            :disabled="!aiReview.previewText.value.trim()"
+            @click="aiReview.accept"
+          />
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-x"
+            @click="aiReview.discard"
+          />
+        </div>
+      </div>
+
+      <div
+        class="mt-3 max-h-56 overflow-auto rounded-lg border border-default bg-elevated/50 p-3 text-sm leading-6 whitespace-pre-wrap text-toned"
+      >
+        {{ aiReview.previewText.value || 'Waiting for AI output...' }}
+      </div>
+
+      <div
+        v-if="aiReview.candidates.value.length > 0"
+        class="mt-3 flex flex-wrap gap-2"
+      >
+        <UButton
+          v-for="(candidate, index) in aiReview.candidates.value"
+          :key="candidate.id"
+          size="xs"
+          :color="index === aiReview.activeCandidateIndex.value ? 'primary' : 'neutral'"
+          :variant="index === aiReview.activeCandidateIndex.value ? 'soft' : 'ghost'"
+          :label="`${index + 1}${candidate.stopped ? ' partial' : ''}`"
+          @click="aiReview.select(index)"
+        />
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>

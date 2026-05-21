@@ -5,6 +5,7 @@ import type { CompletionStorage } from '~/components/editor/CompletionExtension'
 
 type CompletionMode = 'continue' | 'fix' | 'extend' | 'reduce' | 'simplify' | 'summarize' | 'translate'
 type TransformMode = Exclude<CompletionMode, 'continue'>
+type InlineContinueSource = 'auto' | 'manual' | 'toolbar-cursor' | 'toolbar-selection' | 'shortcut'
 
 interface AiCandidate {
   id: number
@@ -31,8 +32,8 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
   }>()
   const mode = ref<CompletionMode>('continue')
   const language = ref<string>()
-  const insertedChars = ref(0)
   const activeRequestId = ref(0)
+  const inlineContinueSource = ref<InlineContinueSource>('manual')
   const candidateSeq = ref(0)
   const candidates = ref<AiCandidate[]>([])
   const activeCandidateIndex = ref(-1)
@@ -60,29 +61,23 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
     return storage?.completion
   }
 
-  function insertContinueText(editor: Editor, pos: number, text: string, source: string) {
-    if (!text || insertedChars.value > 0) return
+  function shouldPrefixInlineSpace(textBefore: string, text: string) {
+    if (!textBefore || /\s/.test(textBefore) || /^\s/.test(text)) return false
+    return !/^(#{1,6}\s|[-*+]\s|\d+\.\s|>\s|```|~~~|\|)/.test(text)
+  }
 
-    const textBefore = editor.state.doc.textBetween(Math.max(0, pos - 1), pos)
-    const textToInsert = textBefore && !/\s/.test(textBefore) && !text.startsWith(' ')
-      ? ` ${text}`
-      : text
+  function normalizeInlineSuggestion(text: string, source: InlineContinueSource) {
+    if (source !== 'auto') return text
 
-    editor.chain()
-      .focus()
-      .insertContentAt(pos, textToInsert, { contentType: 'markdown' })
-      .run()
-    insertedChars.value = textToInsert.length
-    console.info('[ai:editor] continue inserted', {
-      source,
-      chars: insertedChars.value
-    })
+    return text
+      .replace(/[\r\n]+[\s\S]*$/u, '')
+      .replace(/\s+/g, ' ')
+      .trimEnd()
   }
 
   function beginRequest(nextMode: CompletionMode) {
     activeRequestId.value += 1
     setCompletion('')
-    insertedChars.value = 0
     mode.value = nextMode
     getCompletionStorage()?.clearSuggestion()
     return activeRequestId.value
@@ -90,7 +85,6 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
 
   function clearActiveRequest(options: { clearReview?: boolean } = {}) {
     insertState.value = undefined
-    insertedChars.value = 0
     getCompletionStorage()?.clearSuggestion()
     if (options.clearReview) {
       reviewState.value = undefined
@@ -122,7 +116,6 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
       addCandidate(completion.value, true)
       setCompletion('')
       insertState.value = undefined
-      insertedChars.value = 0
       return
     }
     setCompletion('')
@@ -135,7 +128,8 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
     headers: { [headerName]: csrf },
     body: computed(() => ({
       mode: mode.value,
-      language: language.value
+      language: language.value,
+      source: inlineContinueSource.value
     })),
     onFinish: (_prompt, completionText) => {
       // For inline suggestion mode, don't clear - let user accept with Tab
@@ -145,13 +139,6 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
           chars: completionText.length
         })
         return
-      }
-
-      if (mode.value === 'continue' && insertState.value && completionText && insertedChars.value === 0) {
-        const editor = editorRef.value?.editor
-        if (editor) {
-          insertContinueText(editor, insertState.value.pos, completionText, 'finish')
-        }
       }
 
       if (transformModes.includes(mode.value) && reviewState.value && completionText) {
@@ -167,7 +154,7 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
   })
 
   // Watch completion for inline suggestion updates
-  watch(completion, (newCompletion, oldCompletion) => {
+  watch(completion, (newCompletion, _oldCompletion) => {
     const editor = editorRef.value?.editor
     if (!editor || !newCompletion) return
 
@@ -175,93 +162,25 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
     if (storage?.visible) {
       // Update inline suggestion
       // Add space prefix if needed (so preview matches what will be inserted)
-      let suggestionText = newCompletion
+      let suggestionText = normalizeInlineSuggestion(newCompletion, inlineContinueSource.value)
+      if (!suggestionText) return
+
+      if (storage.consumedText) {
+        if (!suggestionText.startsWith(storage.consumedText)) return
+        suggestionText = suggestionText.slice(storage.consumedText.length)
+        if (!suggestionText) return
+      }
+
       if (storage.position !== undefined) {
         const textBefore = editor.state.doc.textBetween(Math.max(0, storage.position - 1), storage.position)
-        if (textBefore && !/\s/.test(textBefore) && !suggestionText.startsWith(' ')) {
+        if (shouldPrefixInlineSpace(textBefore, suggestionText)) {
           suggestionText = ' ' + suggestionText
         }
       }
       storage.setSuggestion(suggestionText)
       editor.view.dispatch(editor.state.tr.setMeta('completionUpdate', true))
-    } else if (insertState.value) {
-      // Direct insertion/transform mode (from toolbar actions)
-
-      if (transformModes.includes(mode.value)) {
-        return
-      }
-
-      // If this is the first chunk and we have a selection to replace, delete it first
-      if (insertState.value.deleteRange && !oldCompletion) {
-        editor.chain()
-          .focus()
-          .deleteRange(insertState.value.deleteRange)
-          .run()
-        insertState.value.deleteRange = undefined
-      }
-
-      let delta = newCompletion.slice(oldCompletion?.length || 0)
-      if (delta) {
-        // For single-paragraph transforms, replace all line breaks with spaces
-        if (['fix', 'simplify', 'translate'].includes(mode.value)) {
-          delta = delta.replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ')
-        }
-
-        // For "continue" mode, add a space before if needed (first chunk only)
-        if (mode.value === 'continue' && !oldCompletion) {
-          const textBefore = editor.state.doc.textBetween(Math.max(0, insertState.value.pos - 1), insertState.value.pos)
-          if (textBefore && !/\s/.test(textBefore)) {
-            delta = ' ' + delta
-          }
-        }
-
-        editor.chain().focus().command(({ tr }) => {
-          tr.insertText(delta, insertState.value!.pos)
-          return true
-        }).run()
-        insertState.value.pos += delta.length
-        insertedChars.value += delta.length
-        console.info('[ai:editor] continue chunk inserted', {
-          chars: delta.length,
-          totalChars: insertedChars.value
-        })
-      }
     }
   })
-
-  function triggerTransform(editor: Editor, transformMode: Exclude<CompletionMode, 'continue'>, lang?: string) {
-    if (isLoading.value) return
-
-    const { state } = editor
-    const { selection } = state
-
-    if (selection.empty) return
-
-    const requestId = beginRequest(transformMode)
-    language.value = lang
-    const selectedText = state.doc.textBetween(selection.from, selection.to, '\n\n')
-
-    insertState.value = { pos: selection.from, deleteRange: { from: selection.from, to: selection.to } }
-    reviewState.value = {
-      pos: selection.from,
-      deleteRange: { from: selection.from, to: selection.to },
-      prompt: selectedText,
-      mode: transformMode,
-      language: lang
-    }
-    candidates.value = []
-    activeCandidateIndex.value = -1
-
-    console.info('[ai:editor] transform start', {
-      mode: transformMode,
-      selectedChars: selectedText.length
-    })
-    void complete(selectedText).finally(() => {
-      if (activeRequestId.value === requestId) {
-        activeRequestId.value = 0
-      }
-    })
-  }
 
   function getMarkdownBefore(editor: Editor, pos: number): string {
     const { state } = editor
@@ -274,31 +193,111 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
     return state.doc.textBetween(0, pos, '\n')
   }
 
-  function buildContinuePrompt(editor: Editor, pos: number) {
-    const markdownBefore = getMarkdownBefore(editor, pos)
-    const context = markdownBefore.slice(-2400).trim()
+  function getMarkdownBetween(editor: Editor, from: number, to: number): string {
+    const { state } = editor
+    const serializer = (editor.storage.markdown as { serializer?: { serialize: (content: unknown) => string } })?.serializer
+    if (serializer) {
+      const slice = state.doc.slice(from, to)
+      return serializer.serialize(slice.content)
+    }
+    // Fallback to plain text
+    return state.doc.textBetween(from, to, '\n\n')
+  }
+
+  function triggerTransform(editor: Editor, transformMode: Exclude<CompletionMode, 'continue'>, lang?: string) {
+    if (isLoading.value) return
+
+    const { state } = editor
+    const { selection } = state
+
+    if (selection.empty) return
+
+    const requestId = beginRequest(transformMode)
+    language.value = lang
+    const selectedMarkdown = getMarkdownBetween(editor, selection.from, selection.to)
+
+    insertState.value = { pos: selection.from, deleteRange: { from: selection.from, to: selection.to } }
+    reviewState.value = {
+      pos: selection.from,
+      deleteRange: { from: selection.from, to: selection.to },
+      prompt: selectedMarkdown,
+      mode: transformMode,
+      language: lang
+    }
+    candidates.value = []
+    activeCandidateIndex.value = -1
+
+    console.info('[ai:editor] transform start', {
+      mode: transformMode,
+      selectedChars: selectedMarkdown.length
+    })
+    void complete(selectedMarkdown).finally(() => {
+      if (activeRequestId.value === requestId) {
+        activeRequestId.value = 0
+      }
+    })
+  }
+
+  function buildContinuePrompt(editor: Editor, pos: number, options: { singleLine?: boolean } = {}) {
+    const context = options.singleLine
+      ? editor.state.doc.textBetween(Math.max(0, pos - 700), pos, '\n').trim()
+      : getMarkdownBefore(editor, pos).slice(-2400).trim()
+    const outputInstruction = options.singleLine
+      ? 'Write a short single-line inline completion only. Usually complete the current sentence or phrase in 4-18 words. No headings, lists, tables, code fences, or line breaks.'
+      : 'You may continue with prose, a list item, a table row, a fenced code block, or a descriptive Markdown link when the context calls for it.'
+
+    if (options.singleLine) {
+      return [
+        'Complete the current Markdown line from the cursor.',
+        'Output only the missing text after the cursor.',
+        outputInstruction,
+        '',
+        context
+      ].join('\n')
+    }
+
     return [
-      'Continue the following draft from the cursor position.',
-      'Write only the next natural continuation. Do not repeat existing text.',
-      'Keep the same language, tone, and markdown style.',
+      'Continue the following Markdown draft from the cursor position.',
+      'Write only the next natural continuation as valid Markdown. Do not repeat existing text.',
+      'Keep the same language, tone, structure, and Markdown style.',
+      outputInstruction,
       '',
       context
     ].join('\n')
   }
 
-  function startContinue(editor: Editor, insertPos: number, source: string) {
+  function startInlineContinue(editor: Editor, insertPos: number, source: InlineContinueSource) {
     const requestId = beginRequest('continue')
     language.value = undefined
-    const prompt = buildContinuePrompt(editor, insertPos)
-    insertState.value = { pos: insertPos }
-    console.info('[ai:editor] continue start', {
+    inlineContinueSource.value = source
+    const prompt = buildContinuePrompt(editor, insertPos, { singleLine: source === 'auto' })
+    const storage = getCompletionStorage()
+    if (!storage) return
+
+    storage.position = insertPos
+    storage.visible = true
+    storage.consumedText = ''
+    storage.setSuggestion('')
+    editor.view.dispatch(editor.state.tr.setMeta('completionUpdate', true))
+
+    console.info('[ai:editor] inline continue start', {
       source,
       promptChars: prompt.length,
       position: insertPos
     })
     void complete(prompt).then((result) => {
-      if (activeRequestId.value !== requestId || !result) return
-      insertContinueText(editor, insertPos, result, 'promise')
+      if (activeRequestId.value !== requestId || !result || !storage.visible || storage.suggestion) return
+      const textBeforePosition = editor.state.doc.textBetween(Math.max(0, insertPos - 1), insertPos)
+      let suggestion = normalizeInlineSuggestion(result, source)
+      if (!suggestion) return
+      suggestion = shouldPrefixInlineSpace(textBeforePosition, suggestion)
+        ? ` ${suggestion}`
+        : suggestion
+      storage.setSuggestion(suggestion)
+      editor.view.dispatch(editor.state.tr.setMeta('completionUpdate', true))
+      console.info('[ai:editor] inline suggestion set from promise', {
+        chars: suggestion.length
+      })
     }).finally(() => {
       if (activeRequestId.value === requestId) {
         activeRequestId.value = 0
@@ -313,7 +312,7 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
     const { selection } = state
     const insertPos = selection.empty ? selection.from : selection.to
 
-    startContinue(editor, insertPos, selection.empty ? 'cursor' : 'selection')
+    startInlineContinue(editor, insertPos, selection.empty ? 'toolbar-cursor' : 'toolbar-selection')
   }
 
   function acceptCandidate() {
@@ -366,33 +365,12 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
 
   // Configure Completion extension
   const extension = Completion.configure({
-    onTrigger: (editor) => {
+    autoTrigger: true,
+    debounce: 500,
+    onTrigger: (editor, source) => {
       if (isLoading.value) return
-      const requestId = beginRequest('continue')
       const insertPos = editor.state.selection.from
-      const prompt = buildContinuePrompt(editor, insertPos)
-      console.info('[ai:editor] inline continue start', {
-        promptChars: prompt.length,
-        position: insertPos
-      })
-      void complete(prompt).then((result) => {
-        if (activeRequestId.value !== requestId) return
-        const storage = getCompletionStorage()
-        if (!result || !storage?.visible || storage.suggestion) return
-        const textBeforePosition = editor.state.doc.textBetween(Math.max(0, insertPos - 1), insertPos)
-        const suggestion = textBeforePosition && !/\s/.test(textBeforePosition) && !result.startsWith(' ')
-          ? ` ${result}`
-          : result
-        storage.setSuggestion(suggestion)
-        editor.view.dispatch(editor.state.tr.setMeta('completionUpdate', true))
-        console.info('[ai:editor] inline suggestion set from promise', {
-          chars: suggestion.length
-        })
-      }).finally(() => {
-        if (activeRequestId.value === requestId) {
-          activeRequestId.value = 0
-        }
-      })
+      startInlineContinue(editor, insertPos, source === 'auto' ? 'auto' : 'shortcut')
     },
     onAccept: () => {
       setCompletion('')

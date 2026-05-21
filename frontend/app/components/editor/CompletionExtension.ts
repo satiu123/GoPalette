@@ -4,6 +4,8 @@ import { Plugin, PluginKey } from '@tiptap/pm/state'
 import type { Editor } from '@tiptap/vue-3'
 import { useDebounceFn } from '@vueuse/core'
 
+type CompletionTriggerSource = 'auto' | 'manual'
+
 export interface CompletionOptions {
   /**
    * Whether to automatically trigger completion while typing
@@ -23,7 +25,7 @@ export interface CompletionOptions {
   /**
    * Called when completion should be triggered, receives the editor instance
    */
-  onTrigger?: (editor: Editor) => void
+  onTrigger?: (editor: Editor, source: CompletionTriggerSource) => void
   /**
    * Called when suggestion is accepted
    */
@@ -36,14 +38,19 @@ export interface CompletionOptions {
 
 export interface CompletionStorage {
   suggestion: string
+  consumedText: string
   position: number | undefined
   visible: boolean
-  debouncedTrigger: ((editor: Editor) => void) | null
+  debouncedTrigger: ((editor: Editor, source?: CompletionTriggerSource) => void) | null
   setSuggestion: (text: string) => void
   clearSuggestion: () => void
 }
 
 export const completionPluginKey = new PluginKey('completion')
+
+function shouldInsertAsMarkdown(text: string) {
+  return /[\r\n]/.test(text) || /^(#{1,6}\s|[-*+]\s|\d+\.\s|>\s|```|~~~|\|)/.test(text.trimStart())
+}
 
 export const Completion = Extension.create<CompletionOptions, CompletionStorage>({
   name: 'completion',
@@ -62,14 +69,16 @@ export const Completion = Extension.create<CompletionOptions, CompletionStorage>
   addStorage() {
     return {
       suggestion: '',
+      consumedText: '',
       position: undefined as number | undefined,
       visible: false,
-      debouncedTrigger: null as ((editor: Editor) => void) | null,
+      debouncedTrigger: null as ((editor: Editor, source?: CompletionTriggerSource) => void) | null,
       setSuggestion(text: string) {
         this.suggestion = text
       },
       clearSuggestion() {
         this.suggestion = ''
+        this.consumedText = ''
         this.position = undefined
         this.visible = false
       }
@@ -92,7 +101,7 @@ export const Completion = Extension.create<CompletionOptions, CompletionStorage>
               const span = document.createElement('span')
               span.className = 'completion-suggestion'
               span.textContent = storage.suggestion
-              span.style.cssText = 'color: var(--ui-text-muted); opacity: 0.6; pointer-events: none;'
+              span.style.cssText = 'color: var(--ui-text-muted); opacity: 0.6; pointer-events: none; white-space: pre-wrap;'
               return span
             }, { side: 1 })
 
@@ -109,7 +118,7 @@ export const Completion = Extension.create<CompletionOptions, CompletionStorage>
         this.storage.clearSuggestion()
         this.options.onDismiss?.()
       }
-      this.storage.debouncedTrigger?.(editor)
+      this.storage.debouncedTrigger?.(editor, 'manual')
       return true
     }
 
@@ -138,8 +147,14 @@ export const Completion = Extension.create<CompletionOptions, CompletionStorage>
         // Force decoration update
         editor.view.dispatch(editor.state.tr.setMeta('completionUpdate', true))
 
-        // Insert the suggestion text
-        editor.chain().focus().insertContentAt(position, suggestion).run()
+        if (shouldInsertAsMarkdown(suggestion)) {
+          editor.chain().focus().insertContentAt(position, suggestion, { contentType: 'markdown' }).run()
+        } else {
+          editor.chain().focus().command(({ tr }) => {
+            tr.insertText(suggestion, position)
+            return true
+          }).run()
+        }
 
         this.options.onAccept?.()
         return true
@@ -157,22 +172,45 @@ export const Completion = Extension.create<CompletionOptions, CompletionStorage>
     }
   },
 
-  onUpdate({ editor }) {
-    // Clear suggestion on any edit
+  onUpdate({ editor, transaction }) {
+    if (!transaction.docChanged) return
+
     if (this.storage.visible) {
+      const { selection, doc } = editor.state
+      const typedText = this.storage.position !== undefined && selection.empty && selection.from > this.storage.position
+        ? doc.textBetween(this.storage.position, selection.from, '\n')
+        : ''
+
+      if (typedText && this.storage.suggestion.startsWith(typedText)) {
+        this.storage.consumedText += typedText
+        this.storage.position = selection.from
+        this.storage.suggestion = this.storage.suggestion.slice(typedText.length)
+
+        if (!this.storage.suggestion) {
+          this.storage.clearSuggestion()
+          this.options.onAccept?.()
+        }
+
+        editor.view.dispatch(editor.state.tr.setMeta('completionUpdate', true))
+        return
+      }
+
       this.storage.clearSuggestion()
       // Force decoration update
       editor.view.dispatch(editor.state.tr.setMeta('completionUpdate', true))
       this.options.onDismiss?.()
+      return
     }
 
     // Debounced trigger check (only if autoTrigger is enabled)
     if (this.options.autoTrigger) {
-      this.storage.debouncedTrigger?.(editor as Editor)
+      this.storage.debouncedTrigger?.(editor as Editor, 'auto')
     }
   },
 
-  onSelectionUpdate({ editor }) {
+  onSelectionUpdate({ editor, transaction }) {
+    if (!transaction.selectionSet) return
+
     if (this.storage.visible) {
       this.storage.clearSuggestion()
       // Force decoration update
@@ -186,7 +224,7 @@ export const Completion = Extension.create<CompletionOptions, CompletionStorage>
     const options = this.options
 
     // Create debounced trigger function for this instance
-    this.storage.debouncedTrigger = useDebounceFn((editor: Editor) => {
+    this.storage.debouncedTrigger = useDebounceFn((editor: Editor, source: CompletionTriggerSource = 'auto') => {
       if (!options.onTrigger) return
 
       const { state } = editor
@@ -194,18 +232,19 @@ export const Completion = Extension.create<CompletionOptions, CompletionStorage>
       const { $from } = selection
 
       // Only suggest at end of block with content
+      const hasEmptySelection = selection.empty
       const isAtEndOfBlock = $from.parentOffset === $from.parent.content.size
-      const hasContent = $from.parent.textContent.trim().length > 0
+      const hasContent = $from.parent.textContent.trim().length >= 6
       const textContent = $from.parent.textContent
 
       // Don't trigger if sentence is complete (ends with punctuation)
-      const endsWithPunctuation = /[.!?]\s*$/.test(textContent)
+      const endsWithPunctuation = /[.!?。！？]\s*$/.test(textContent)
 
       // Don't trigger if text ends with trigger characters
       const triggerChars = options.triggerCharacters || []
       const endsWithTrigger = triggerChars.some(char => textContent.endsWith(char))
 
-      if (!isAtEndOfBlock || !hasContent || endsWithPunctuation || endsWithTrigger) {
+      if (!hasEmptySelection || !isAtEndOfBlock || !hasContent || endsWithPunctuation || endsWithTrigger) {
         return
       }
 
@@ -214,7 +253,7 @@ export const Completion = Extension.create<CompletionOptions, CompletionStorage>
       storage.visible = true
 
       // Pass editor to let the handler extract content (e.g., as markdown)
-      options.onTrigger(editor)
+      options.onTrigger(editor, source)
     }, options.debounce || 250)
   },
 
