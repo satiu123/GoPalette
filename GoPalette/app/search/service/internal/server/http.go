@@ -1,12 +1,7 @@
 package server
 
 import (
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	v1 "github.com/satiu123/GoPalette/api/search/v1"
-	"go.opentelemetry.io/otel/metric"
-
-	"github.com/satiu123/GoPalette/app/search/service/internal/conf"
-	"github.com/satiu123/GoPalette/app/search/service/internal/service"
+	net_http "net/http"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
@@ -14,6 +9,12 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	v1 "github.com/satiu123/GoPalette/api/search/v1"
+	"github.com/satiu123/GoPalette/app/search/service/internal/conf"
+	"github.com/satiu123/GoPalette/app/search/service/internal/health"
+	"github.com/satiu123/GoPalette/app/search/service/internal/service"
+	"go.opentelemetry.io/otel/metric"
 )
 
 // NewHTTPServer new an HTTP server.
@@ -21,6 +22,7 @@ func NewHTTPServer(
 	c *conf.Server,
 	search *service.SearchService,
 	logger log.Logger,
+	h *health.Health,
 	counter metric.Int64Counter,
 	histogram metric.Float64Histogram,
 ) *http.Server {
@@ -46,6 +48,13 @@ func NewHTTPServer(
 	}
 	srv := http.NewServer(opts...)
 	srv.Handle("/metrics", promhttp.Handler())
+
+	// 注册健康检查服务
+	mux := net_http.NewServeMux()
+	health.RegisterHTTP(mux, h)
+	srv.HandlePrefix("/health", mux)
+
+	// 注册搜索服务
 	v1.RegisterSearchHTTPServer(srv, search)
 	return srv
 }

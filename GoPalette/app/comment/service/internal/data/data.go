@@ -34,6 +34,14 @@ type Data struct {
 	userClient userv1.UserClient
 }
 
+func (d *Data) DB() *gorm.DB {
+	return d.db
+}
+
+func (d *Data) Redis() *redis.Client {
+	return d.rdb
+}
+
 func NewPostClient(reg *etcd.Registry, c *conf.Data) postv1.PostClient {
 	conn, err := grpc.DialInsecure(
 		context.Background(),

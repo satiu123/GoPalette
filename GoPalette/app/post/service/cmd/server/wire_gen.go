@@ -12,6 +12,7 @@ import (
 	"github.com/satiu123/GoPalette/app/post/service/internal/biz"
 	"github.com/satiu123/GoPalette/app/post/service/internal/conf"
 	"github.com/satiu123/GoPalette/app/post/service/internal/data"
+	"github.com/satiu123/GoPalette/app/post/service/internal/health"
 	"github.com/satiu123/GoPalette/app/post/service/internal/server"
 	"github.com/satiu123/GoPalette/app/post/service/internal/service"
 	"github.com/satiu123/GoPalette/pkg/opentelemetry"
@@ -45,10 +46,13 @@ func wireApp(confServer *conf.Server, confData *conf.Data, auth *conf.Auth, regi
 	tagRepo := data.NewTagRepo(dataData, logger)
 	tagUsecase := biz.NewTagUsecase(tagRepo, logger)
 	tagService := service.NewTagService(tagUsecase, logger)
+	mySQLChecker := health.NewMySQLCheckerWrapper(dataData)
+	redisChecker := health.NewRedisCheckerWrapper(dataData)
+	healthHealth := health.NewHealthWrapper(mySQLChecker, redisChecker)
 	int64Counter := opentelemetry.NewRequestCounter(serviceName)
 	float64Histogram := opentelemetry.NewSecondsHistogram(serviceName)
-	grpcServer := server.NewGRPCServer(confServer, auth, postService, categoryService, tagService, logger, int64Counter, float64Histogram)
-	httpServer := server.NewHTTPServer(confServer, auth, postService, categoryService, tagService, logger, int64Counter, float64Histogram)
+	grpcServer := server.NewGRPCServer(confServer, auth, postService, categoryService, tagService, logger, healthHealth, int64Counter, float64Histogram)
+	httpServer := server.NewHTTPServer(confServer, auth, postService, categoryService, tagService, logger, healthHealth, int64Counter, float64Histogram)
 	app := newApp(logger, grpcServer, httpServer, etcdRegistry)
 	return app, func() {
 		cleanup()

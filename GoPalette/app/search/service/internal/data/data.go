@@ -27,6 +27,10 @@ type Data struct {
 	indexName  string
 }
 
+func (d *Data) Meili() meilisearch.ServiceManager {
+	return d.meili
+}
+
 func NewPostClient(reg *etcd.Registry, c *conf.Data) postv1.PostClient {
 	conn, err := grpc.DialInsecure(
 		context.Background(),

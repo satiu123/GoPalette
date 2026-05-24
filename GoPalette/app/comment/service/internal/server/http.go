@@ -2,15 +2,14 @@ package server
 
 import (
 	"context"
+	"strings"
+
+	net_http "net/http"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	v1 "github.com/satiu123/GoPalette/api/comment/v1"
 	"github.com/satiu123/GoPalette/pkg/auth"
 	"go.opentelemetry.io/otel/metric"
-
-	v1 "github.com/satiu123/GoPalette/api/comment/v1"
-
-	"github.com/satiu123/GoPalette/app/comment/service/internal/conf"
-	"github.com/satiu123/GoPalette/app/comment/service/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
@@ -19,12 +18,18 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/selector"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/satiu123/GoPalette/app/comment/service/internal/conf"
+	"github.com/satiu123/GoPalette/app/comment/service/internal/health"
+	"github.com/satiu123/GoPalette/app/comment/service/internal/service"
 )
 
 func NewWhiteListMatcher() selector.MatchFunc {
 	whiteList := make(map[string]struct{})
 	whiteList["/api.comment.v1.Comment/ListComments"] = struct{}{}
 	return func(ctx context.Context, operation string) bool {
+		if strings.HasPrefix(operation, "/grpc.health.v1.Health/") {
+			return false
+		}
 		if _, ok := whiteList[operation]; ok {
 			return false
 		}
@@ -38,6 +43,7 @@ func NewHTTPServer(
 	_ *conf.Auth,
 	comment *service.CommentService,
 	logger log.Logger,
+	h *health.Health,
 	counter metric.Int64Counter,
 	histogram metric.Float64Histogram,
 ) *http.Server {
@@ -66,6 +72,13 @@ func NewHTTPServer(
 	}
 	srv := http.NewServer(opts...)
 	srv.Handle("/metrics", promhttp.Handler())
+
+	// 注册健康检查路由
+	mux := net_http.NewServeMux()
+	health.RegisterHTTP(mux, h)
+	srv.HandlePrefix("/healthz", mux)
+
+	// 注册 HTTP 服务器和服务实现
 	v1.RegisterCommentHTTPServer(srv, comment)
 	return srv
 }

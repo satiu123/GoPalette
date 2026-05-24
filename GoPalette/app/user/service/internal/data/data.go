@@ -25,6 +25,14 @@ type Data struct {
 	rdb *redis.Client
 }
 
+func (d *Data) DB() *gorm.DB {
+	return d.db
+}
+
+func (d *Data) Redis() *redis.Client {
+	return d.rdb
+}
+
 // NewData .
 func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 	helper := log.NewHelper(log.With(logger, "module", "user-service/data"))

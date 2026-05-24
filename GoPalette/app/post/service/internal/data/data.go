@@ -38,6 +38,14 @@ type Data struct {
 	searchClient searchv1.SearchClient
 }
 
+func (d *Data) DB() *gorm.DB {
+	return d.db
+}
+
+func (d *Data) Redis() *redis.Client {
+	return d.rdb
+}
+
 func NewUserClient(reg *etcd.Registry, c *conf.Data) userv1.UserClient {
 	conn, err := grpc.DialInsecure(
 		context.Background(),

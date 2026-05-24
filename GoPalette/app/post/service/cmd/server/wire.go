@@ -9,6 +9,7 @@ import (
 	"github.com/satiu123/GoPalette/app/post/service/internal/biz"
 	"github.com/satiu123/GoPalette/app/post/service/internal/conf"
 	"github.com/satiu123/GoPalette/app/post/service/internal/data"
+	"github.com/satiu123/GoPalette/app/post/service/internal/health"
 	"github.com/satiu123/GoPalette/app/post/service/internal/server"
 	"github.com/satiu123/GoPalette/app/post/service/internal/service"
 	"github.com/satiu123/GoPalette/pkg/opentelemetry"
@@ -21,5 +22,5 @@ import (
 
 // wireApp init kratos application.
 func wireApp(*conf.Server, *conf.Data, *conf.Auth, *conf.Registry, log.Logger, opentelemetry.ServiceName) (*kratos.App, func(), error) {
-	panic(wire.Build(server.ProviderSet, data.ProviderSet, biz.ProviderSet, service.ProviderSet, newApp, NewEtcdClient, NewRegistry))
+	panic(wire.Build(server.ProviderSet, data.ProviderSet, biz.ProviderSet, service.ProviderSet, health.ProviderSet, newApp, NewEtcdClient, NewRegistry))
 }

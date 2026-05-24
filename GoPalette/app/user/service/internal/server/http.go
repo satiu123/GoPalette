@@ -2,14 +2,17 @@ package server
 
 import (
 	"context"
+	"strings"
+
+	net_http "net/http"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	u "github.com/satiu123/GoPalette/api/user/v1"
 	"github.com/satiu123/GoPalette/pkg/auth"
 	"go.opentelemetry.io/otel/metric"
 
-	u "github.com/satiu123/GoPalette/api/user/v1"
-
 	"github.com/satiu123/GoPalette/app/user/service/internal/conf"
+	"github.com/satiu123/GoPalette/app/user/service/internal/health"
 	"github.com/satiu123/GoPalette/app/user/service/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -28,6 +31,9 @@ func NewWhiteListMatcher() selector.MatchFunc {
 	whiteList["/api.user.v1.User/RefreshToken"] = struct{}{}
 	whiteList["/api.user.v1.User/BatchGetUsers"] = struct{}{}
 	return func(ctx context.Context, operation string) bool {
+		if strings.HasPrefix(operation, "/grpc.health.v1.Health/") {
+			return false
+		}
 		if _, ok := whiteList[operation]; ok {
 			return false
 		}
@@ -40,6 +46,7 @@ func NewHTTPServer(c *conf.Server,
 	_ *conf.Auth,
 	user *service.UserService,
 	logger log.Logger,
+	h *health.Health,
 	counter metric.Int64Counter,
 	histogram metric.Float64Histogram,
 ) *http.Server {
@@ -71,6 +78,12 @@ func NewHTTPServer(c *conf.Server,
 
 	srv.Handle("/metrics", promhttp.Handler())
 
+	// 注册健康检查 HTTP 处理器
+	mux := net_http.NewServeMux()
+	health.RegisterHTTP(mux, h)
+	srv.Handle("/healthz", mux)
+
+	// 注册用户服务 HTTP 处理器
 	u.RegisterUserHTTPServer(srv, user)
 	return srv
 }

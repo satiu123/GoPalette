@@ -7,6 +7,7 @@ import (
 	v1 "github.com/satiu123/GoPalette/api/comment/v1"
 
 	"github.com/satiu123/GoPalette/app/comment/service/internal/conf"
+	"github.com/satiu123/GoPalette/app/comment/service/internal/health"
 	"github.com/satiu123/GoPalette/app/comment/service/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -24,6 +25,7 @@ func NewGRPCServer(
 	_ *conf.Auth,
 	comment *service.CommentService,
 	logger log.Logger,
+	h *health.Health,
 	counter metric.Int64Counter,
 	histogram metric.Float64Histogram,
 ) *grpc.Server {
@@ -40,6 +42,7 @@ func NewGRPCServer(
 				auth.Server(),
 			).Match(NewWhiteListMatcher()).Build(),
 		),
+		grpc.CustomHealth(),
 	}
 	if c.Grpc.Network != "" {
 		opts = append(opts, grpc.Network(c.Grpc.Network))
@@ -51,6 +54,11 @@ func NewGRPCServer(
 		opts = append(opts, grpc.Timeout(c.Grpc.Timeout.AsDuration()))
 	}
 	srv := grpc.NewServer(opts...)
+
+	// 注册健康检查服务
+	health.RegisterGRPC(srv, h)
+
+	// 注册 gRPC 服务器和服务实现
 	v1.RegisterCommentServer(srv, comment)
 	return srv
 }

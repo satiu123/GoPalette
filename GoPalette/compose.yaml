@@ -73,6 +73,9 @@ services:
       - mariadb
       - redis
     logging: *default-logging
+    ports:
+      - "8000:8000"
+      - "9000:9000" # gRPC 端口
 
   post:
     build:
@@ -91,6 +94,9 @@ services:
       - mariadb
       - redis
     logging: *default-logging
+    ports:
+      - "8001:8001" # HTTP 端口
+      - "9001:9001" # gRPC 端口
 
   comment:
     build:
@@ -108,7 +114,9 @@ services:
       - mariadb
       - redis
     logging: *default-logging
-
+    ports:
+      - "8002:8002" # HTTP 端口
+      - "9002:9002" # gRPC 端口
   search:
     build:
       context: .
@@ -122,6 +130,9 @@ services:
     depends_on:
       - meilisearch
     logging: *default-logging
+    ports:
+      - "8003:8003" # HTTP 端口
+      - "9003:9003" # gRPC 端口
 
   bff:
     build:
