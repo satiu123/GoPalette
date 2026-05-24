@@ -4,35 +4,41 @@ on:
   push:
     tags:
       - 'v*'
+
   workflow_call:
     inputs:
       push:
-        description: Push images to Docker Hub.
+        description: Push images to Docker Hub and GHCR.
         required: false
         type: boolean
         default: false
+
       images:
         description: 'Images to build: all, backend, web, frontend, nginx, or backend service names separated by commas.'
         required: false
         type: string
         default: all
+
       image_tag:
         description: 'Optional Docker image tag to publish, for example v1.0.4.'
         required: false
         type: string
         default: ''
+
   workflow_dispatch:
     inputs:
       push:
-        description: Push images to Docker Hub.
+        description: Push images to Docker Hub and GHCR.
         required: false
         type: boolean
         default: false
+
       images:
         description: 'Images to build: all, backend, web, frontend, nginx, or backend service names separated by commas.'
         required: false
         type: string
         default: all
+
       image_tag:
         description: 'Optional Docker image tag to publish, for example v1.0.4.'
         required: false
@@ -41,15 +47,18 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  IMAGE_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME || github.repository_owner }}
+  DOCKERHUB_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
+  GHCR_NAMESPACE: ${{ github.repository_owner }}
 
 jobs:
   prepare-matrix:
     name: Prepare image matrix
     runs-on: ubuntu-latest
+
     outputs:
       backend: ${{ steps.matrix.outputs.backend }}
       web: ${{ steps.matrix.outputs.web }}
@@ -73,6 +82,7 @@ jobs:
             { name: 'bff', path: 'app/bff/service', http_port: '8004', grpc_port: '9004' },
             { name: 'gateway', path: 'app/gateway/service', http_port: '8080', grpc_port: '0' }
           ]
+
           const webImages = [
             { name: 'frontend', target: 'frontend-runtime' },
             { name: 'nginx', target: 'nginx' }
@@ -84,30 +94,41 @@ jobs:
               .map(item => item.trim().toLowerCase())
               .filter(Boolean)
           )
+
           const all = filters.has('all')
           const backendAll = all || filters.has('backend')
           const webAll = all || filters.has('web')
 
-          const backend = services.filter(service => backendAll || filters.has(service.name))
-          const web = webImages.filter(image => webAll || filters.has(image.name))
+          const backend = services.filter(service =>
+            backendAll || filters.has(service.name)
+          )
 
-          fs.appendFileSync(process.env.GITHUB_OUTPUT, [
-            `backend=${JSON.stringify({ service: backend })}`,
-            `web=${JSON.stringify({ image: web })}`,
-            `has_backend=${backend.length > 0}`,
-            `has_web=${web.length > 0}`
-          ].join('\n') + '\n')
+          const web = webImages.filter(image =>
+            webAll || filters.has(image.name)
+          )
+
+          fs.appendFileSync(
+            process.env.GITHUB_OUTPUT,
+            [
+              `backend=${JSON.stringify({ service: backend })}`,
+              `web=${JSON.stringify({ image: web })}`,
+              `has_backend=${backend.length > 0}`,
+              `has_web=${web.length > 0}`
+            ].join('\n') + '\n'
+          )
           NODE
 
   backend-images:
+    name: Backend image / ${{ matrix.service.name }}
+
     needs: prepare-matrix
     if: needs.prepare-matrix.outputs.has_backend == 'true'
+
     runs-on: ubuntu-latest
+
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare-matrix.outputs.backend) }}
-
-    name: Backend image / ${{ matrix.service.name }}
 
     steps:
       - name: Checkout repository
@@ -131,6 +152,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Log in to GHCR
+        if: ${{ github.event_name == 'push' || inputs.push }}
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -138,7 +167,10 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ env.IMAGE_NAMESPACE }}/gopalette-${{ matrix.service.name }}
+          images: |
+            docker.io/${{ env.DOCKERHUB_NAMESPACE }}/gopalette-${{ matrix.service.name }}
+            ghcr.io/${{ env.GHCR_NAMESPACE }}/gopalette-${{ matrix.service.name }}
+
           tags: |
             type=ref,event=tag
             type=sha
@@ -150,25 +182,31 @@ jobs:
         with:
           context: GoPalette
           file: GoPalette/Dockerfile
+
           push: ${{ github.event_name == 'push' || inputs.push }}
+
           build-args: |
             APP_RELATIVE_PATH=${{ matrix.service.path }}
             HTTP_PORT=${{ matrix.service.http_port }}
             GRPC_PORT=${{ matrix.service.grpc_port }}
+
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
           cache-from: type=gha,scope=backend-${{ matrix.service.name }}
           cache-to: type=gha,scope=backend-${{ matrix.service.name }},mode=max
 
   web-images:
+    name: Web image / ${{ matrix.image.name }}
+
     needs: prepare-matrix
     if: needs.prepare-matrix.outputs.has_web == 'true'
+
     runs-on: ubuntu-latest
+
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare-matrix.outputs.web) }}
-
-    name: Web image / ${{ matrix.image.name }}
 
     steps:
       - name: Checkout repository
@@ -192,6 +230,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Log in to GHCR
+        if: ${{ github.event_name == 'push' || inputs.push }}
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -199,7 +245,10 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ env.IMAGE_NAMESPACE }}/gopalette-${{ matrix.image.name }}
+          images: |
+            docker.io/${{ env.DOCKERHUB_NAMESPACE }}/gopalette-${{ matrix.image.name }}
+            ghcr.io/${{ env.GHCR_NAMESPACE }}/gopalette-${{ matrix.image.name }}
+
           tags: |
             type=ref,event=tag
             type=sha
@@ -211,9 +260,13 @@ jobs:
         with:
           context: .
           file: GoPalette/nginx/Dockerfile
+
           target: ${{ matrix.image.target }}
+
           push: ${{ github.event_name == 'push' || inputs.push }}
+
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
           cache-from: type=gha,scope=web-${{ matrix.image.name }}
           cache-to: type=gha,scope=web-${{ matrix.image.name }},mode=max
