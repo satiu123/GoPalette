@@ -18,8 +18,9 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
-	"github.com/go-redis/redis/extra/redisotel"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/extra/redisotel/v9"
+	"github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9/maintnotifications"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
@@ -67,7 +68,7 @@ func NewSearchClient(reg *etcd.Registry, c *conf.Data) searchv1.SearchClient {
 
 // NewData .
 func NewData(c *conf.Data, logger log.Logger, uc userv1.UserClient, sc searchv1.SearchClient) (*Data, func(), error) {
-	log := log.NewHelper(logger)
+	helper := log.NewHelper(log.With(logger, "module", "post-service/data"))
 	if c == nil {
 		return nil, nil, errors.New("缺少 data 配置")
 	}
@@ -90,25 +91,25 @@ func NewData(c *conf.Data, logger log.Logger, uc userv1.UserClient, sc searchv1.
 		),
 	})
 	if err != nil {
-		log.Errorf("无法连接数据库: %v", err)
+		helper.Errorf("无法连接数据库: %v", err)
 		return nil, nil, err
 	}
 	if err := db.Use(gormtracing.NewPlugin()); err != nil {
-		log.Errorf("failed to enable gorm tracing: %v", err)
+		helper.Errorf("failed to enable gorm tracing: %v", err)
 		return nil, nil, err
 	}
 	if sqlDB, err := db.DB(); err == nil {
 		dbpool.ConfigurePool(sqlDB)
 	} else {
-		log.Errorf("failed to get sqlDB: %v", err)
+		helper.Errorf("failed to get sqlDB: %v", err)
 	}
 
 	// 自动迁移数据库结构
 	if err := db.AutoMigrate(&Post{}, &Category{}, &Tag{}, &PostLike{}); err != nil {
-		log.Errorf("自动迁移数据库结构失败: %v", err)
+		helper.Errorf("自动迁移数据库结构失败: %v", err)
 		return nil, nil, err
 	}
-	log.Info("数据库连接成功并完成自动迁移")
+	helper.Info("数据库连接成功并完成自动迁移")
 
 	rdb := redis.NewClient(&redis.Options{
 		Addr:         c.Redis.Addr,
@@ -117,8 +118,15 @@ func NewData(c *conf.Data, logger log.Logger, uc userv1.UserClient, sc searchv1.
 		DialTimeout:  c.Redis.DialTimeout.AsDuration(),
 		ReadTimeout:  c.Redis.ReadTimeout.AsDuration(),
 		WriteTimeout: c.Redis.WriteTimeout.AsDuration(),
+		MaintNotificationsConfig: &maintnotifications.Config{
+			Mode: maintnotifications.ModeDisabled,
+		},
 	})
-	rdb.AddHook(redisotel.TracingHook{})
+	if err := redisotel.InstrumentTracing(rdb); err != nil {
+		helper.Errorf("无法启用 Redis tracing: %v", err)
+		return nil, nil, err
+	}
+
 	d := &Data{
 		db:           db,
 		rdb:          rdb,
@@ -127,16 +135,16 @@ func NewData(c *conf.Data, logger log.Logger, uc userv1.UserClient, sc searchv1.
 	}
 
 	return d, func() {
-		log.Info("message", "close the data resource")
+		helper.Info("message", "close the data resource")
 		if sqlDB, err := db.DB(); err != nil {
-			log.Errorf("failed to get sqlDB: %v", err)
+			helper.Errorf("failed to get sqlDB: %v", err)
 		} else {
 			if err := sqlDB.Close(); err != nil {
-				log.Errorf("failed to close database: %v", err)
+				helper.Errorf("failed to close database: %v", err)
 			}
 		}
 		if err := d.rdb.Close(); err != nil {
-			log.Errorf("failed to close redis: %v", err)
+			helper.Errorf("failed to close redis: %v", err)
 		}
 
 	}, nil

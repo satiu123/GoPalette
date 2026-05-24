@@ -8,7 +8,7 @@ import (
 
 	"github.com/satiu123/GoPalette/app/user/service/internal/biz"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
 type authSessionRepo struct {

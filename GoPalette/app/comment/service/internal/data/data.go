@@ -16,8 +16,9 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
-	"github.com/go-redis/redis/extra/redisotel"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/extra/redisotel/v9"
+	"github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9/maintnotifications"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -63,7 +64,7 @@ func NewUserClient(reg *etcd.Registry, c *conf.Data) userv1.UserClient {
 
 // NewData .
 func NewData(c *conf.Data, logger log.Logger, pc postv1.PostClient, uc userv1.UserClient) (*Data, func(), error) {
-	helper := log.NewHelper(logger)
+	helper := log.NewHelper(log.With(logger, "module", "comment-service/data"))
 	if c == nil {
 		return nil, nil, errors.New("缺少 data 配置")
 	}
@@ -95,8 +96,15 @@ func NewData(c *conf.Data, logger log.Logger, pc postv1.PostClient, uc userv1.Us
 		DialTimeout:  c.Redis.DialTimeout.AsDuration(),
 		ReadTimeout:  c.Redis.ReadTimeout.AsDuration(),
 		WriteTimeout: c.Redis.WriteTimeout.AsDuration(),
+		MaintNotificationsConfig: &maintnotifications.Config{
+			Mode: maintnotifications.ModeDisabled,
+		},
 	})
-	rdb.AddHook(redisotel.TracingHook{})
+
+	if err := redisotel.InstrumentTracing(rdb); err != nil {
+		helper.Errorf("无法启用 Redis tracing: %v", err)
+		return nil, nil, err
+	}
 
 	helper.Info("数据库和Redis连接成功")
 

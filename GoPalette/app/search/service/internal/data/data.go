@@ -36,7 +36,7 @@ func NewPostClient(reg *etcd.Registry, c *conf.Data) postv1.PostClient {
 		grpc.WithMiddleware(tracing.Client()),
 		grpc.WithOptions(
 			grpcgo.WithDefaultCallOptions(
-				grpcgo.MaxCallRecvMsgSize(32 * 1024 * 1024),
+				grpcgo.MaxCallRecvMsgSize(32*1024*1024),
 			),
 		),
 	)
@@ -48,7 +48,7 @@ func NewPostClient(reg *etcd.Registry, c *conf.Data) postv1.PostClient {
 
 // NewData .
 func NewData(c *conf.Data, logger log.Logger, pc postv1.PostClient) (*Data, func(), error) {
-	helper := log.NewHelper(logger)
+	helper := log.NewHelper(log.With(logger, "module", "search-service/data"))
 	if c == nil {
 		return nil, nil, errors.New("缺少 data 配置")
 	}

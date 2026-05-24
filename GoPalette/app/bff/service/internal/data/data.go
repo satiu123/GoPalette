@@ -71,7 +71,7 @@ func NewCommentClient(reg *etcd.Registry, c *conf.Data) commentv1.CommentClient 
 
 // NewData .
 func NewData(c *conf.Data, logger log.Logger, uc userv1.UserClient, pc postv1.PostClient, cc commentv1.CommentClient) (*Data, func(), error) {
-	helper := log.NewHelper(logger)
+	helper := log.NewHelper(log.With(logger, "module", "bff-service/data"))
 	if c == nil {
 		return nil, nil, errors.New("缺少 data 配置")
 	}
