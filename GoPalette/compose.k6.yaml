@@ -1,37 +1,44 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "2"
+
 services:
   nginx:
     build:
       context: ..
       dockerfile: GoPalette/nginx/Dockerfile
       target: nginx
-    restart: always
+    restart: "no"
     depends_on:
       - frontend
     ports:
       - "180:80"
-      - "1443:443"
-    volumes:
-      - "${NGINX_CERT_DIR:-/etc/nginx/certs}:/etc/nginx/certs:ro"
+    logging: *default-logging
 
   frontend:
     build:
       context: ..
       dockerfile: GoPalette/nginx/Dockerfile
       target: frontend-runtime
-    restart: always
+    restart: "no"
     environment:
       NUXT_GATEWAY_BASE: "http://gateway:8080"
       NUXT_PUBLIC_SITE_URL: "${NUXT_PUBLIC_SITE_URL:-http://localhost:13001}"
       NUXT_PUBLIC_SITE_NAME: "${NUXT_PUBLIC_SITE_NAME:-GoPalette Blog K6}"
-      NITRO_CSURF_HTTPS: "${NITRO_CSURF_HTTPS:-false}"
-      NITRO_CSURF_COOKIE_KEY: "${NITRO_CSURF_COOKIE_KEY:-csrf_k6}"
-      NITRO_CSURF_COOKIE_SECURE: "${NITRO_CSURF_COOKIE_SECURE:-false}"
-      NITRO_AUTH_COOKIE_SECURE: "${NITRO_AUTH_COOKIE_SECURE:-false}"
+
+      NITRO_CSURF_HTTPS: "false"
+      NITRO_CSURF_COOKIE_KEY: "csrf_k6"
+      NITRO_CSURF_COOKIE_SECURE: "false"
+      NITRO_AUTH_COOKIE_SECURE: "false"
+
       NUXT_DEEPSEEK_API_KEY: "${NUXT_DEEPSEEK_API_KEY}"
     depends_on:
       - gateway
     ports:
       - "13001:3000"
+    logging: *default-logging
 
   gateway:
     build:
@@ -41,12 +48,13 @@ services:
         - APP_RELATIVE_PATH=app/gateway/service
         - HTTP_PORT=8080
     command: [ "./server", "-conf", "/data/conf/config.yaml", "-discovery.dsn", "etcd:2379" ]
+    restart: "no"
     environment:
       JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:?请设置 JWT_ACCESS_SECRET}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
-    restart: always
     ports:
       - "18080:8080"
+    logging: *default-logging
 
   user:
     build:
@@ -55,19 +63,23 @@ services:
       args:
         - APP_RELATIVE_PATH=app/user/service
         - HTTP_PORT=8000
-    restart: always
+    restart: "no"
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
       MYSQL_DATABASE: "${MYSQL_DATABASE:-gopalette_k6}"
       MYSQL_MAX_OPEN_CONNS: "${MYSQL_MAX_OPEN_CONNS:-80}"
       MYSQL_MAX_IDLE_CONNS: "${MYSQL_MAX_IDLE_CONNS:-40}"
+
       REDIS_PASSWORD: "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
+
       JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:?请设置 JWT_ACCESS_SECRET}"
       JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:?请设置 JWT_REFRESH_SECRET}"
+
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
     depends_on:
       - mariadb
       - redis
+    logging: *default-logging
 
   post:
     build:
@@ -75,19 +87,23 @@ services:
       dockerfile: Dockerfile
       args:
         - APP_RELATIVE_PATH=app/post/service
-    restart: always
+    restart: "no"
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
       MYSQL_DATABASE: "${MYSQL_DATABASE:-gopalette_k6}"
       MYSQL_MAX_OPEN_CONNS: "${MYSQL_MAX_OPEN_CONNS:-80}"
       MYSQL_MAX_IDLE_CONNS: "${MYSQL_MAX_IDLE_CONNS:-40}"
+
       REDIS_PASSWORD: "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
+
       JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:?请设置 JWT_ACCESS_SECRET}"
       JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:?请设置 JWT_REFRESH_SECRET}"
+
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
     depends_on:
       - mariadb
       - redis
+    logging: *default-logging
 
   comment:
     build:
@@ -95,18 +111,22 @@ services:
       dockerfile: Dockerfile
       args:
         - APP_RELATIVE_PATH=app/comment/service
-    restart: always
+    restart: "no"
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
       MYSQL_DATABASE: "${MYSQL_DATABASE:-gopalette_k6}"
       MYSQL_MAX_OPEN_CONNS: "${MYSQL_MAX_OPEN_CONNS:-80}"
       MYSQL_MAX_IDLE_CONNS: "${MYSQL_MAX_IDLE_CONNS:-40}"
+
       REDIS_PASSWORD: "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
+
       JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:?请设置 JWT_ACCESS_SECRET}"
+
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
     depends_on:
       - mariadb
       - redis
+    logging: *default-logging
 
   search:
     build:
@@ -114,12 +134,13 @@ services:
       dockerfile: Dockerfile
       args:
         - APP_RELATIVE_PATH=app/search/service
-    restart: always
+    restart: "no"
     environment:
       MEILISEARCH_MASTER_KEY: "${MEILISEARCH_MASTER_KEY:?请设置 MEILISEARCH_MASTER_KEY}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
     depends_on:
       - meilisearch
+    logging: *default-logging
 
   bff:
     build:
@@ -127,7 +148,7 @@ services:
       dockerfile: Dockerfile
       args:
         - APP_RELATIVE_PATH=app/bff/service
-    restart: always
+    restart: "no"
     environment:
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
     depends_on:
@@ -135,9 +156,10 @@ services:
       - post
       - comment
       - etcd
+    logging: *default-logging
 
   seed-k6-data:
-    image: mariadb
+    image: mariadb:latest
     restart: "no"
     depends_on:
       mariadb:
@@ -154,27 +176,38 @@ services:
       - -c
       - |
         until mariadb -hmariadb -uroot -p"$${MYSQL_ROOT_PASSWORD}" "$${MYSQL_DATABASE}" -e "SHOW TABLES LIKE 'categories'" | grep -q categories; do
-          echo "waiting for post service to migrate categories table..."
+          echo "waiting for categories table..."
           sleep 2
         done
+
         mariadb -hmariadb -uroot -p"$${MYSQL_ROOT_PASSWORD}" "$${MYSQL_DATABASE}" -e "
           INSERT INTO categories (name, slug, description, post_count, created_at, updated_at)
-          VALUES ('$${K6_CATEGORY_NAME}', '$${K6_CATEGORY_SLUG}', 'Category reserved for isolated k6 write tests', 0, NOW(), NOW())
+          VALUES (
+            '$${K6_CATEGORY_NAME}',
+            '$${K6_CATEGORY_SLUG}',
+            'Category reserved for isolated k6 write tests',
+            0,
+            NOW(),
+            NOW()
+          )
           ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at);
         "
+    logging: *default-logging
 
   mariadb:
-    image: mariadb
+    image: mariadb:12.2.2
+    restart: "no"
     command:
       - mariadbd
       - --max-connections=${MARIADB_MAX_CONNECTIONS:-600}
       - --innodb-buffer-pool-size=${MARIADB_INNODB_BUFFER_POOL_SIZE:-512M}
-    volumes:
-      - mariadb_k6_data:/var/lib/mysql
-    restart: always
+      - --innodb_flush_log_at_trx_commit=2
+      - --skip-log-bin
     environment:
       MARIADB_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
       MARIADB_DATABASE: "${MYSQL_DATABASE:-gopalette_k6}"
+    volumes:
+      - mariadb_k6_data:/var/lib/mysql
     healthcheck:
       test: [ "CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}" ]
       interval: 10s
@@ -182,10 +215,11 @@ services:
       retries: 10
     ports:
       - "13306:3306"
+    logging: *default-logging
 
   mariadb-exporter:
     image: prom/mysqld-exporter:v0.15.1
-    restart: always
+    restart: "no"
     command:
       - --mysqld.address=mariadb:3306
       - --mysqld.username=root
@@ -196,10 +230,11 @@ services:
         condition: service_healthy
     ports:
       - "19104:9104"
+    logging: *default-logging
 
   redis:
     image: redis:trixie
-    restart: always
+    restart: "no"
     command: redis-server --appendonly yes --requirepass "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
     healthcheck:
       test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}", "ping" ]
@@ -210,22 +245,25 @@ services:
       - "16379:6379"
     volumes:
       - redis_k6_data:/data
+    logging: *default-logging
 
   jaeger:
     image: jaegertracing/jaeger:2.17.0
-    restart: always
+    restart: "no"
+    environment:
+      LOG_LEVEL: info
     ports:
       - "16696:16686"
-      - "16697:16687"
       - "14317:4317"
       - "14318:4318"
-    environment:
-      - LOG_LEVEL=debug
+    logging: *default-logging
 
   meilisearch:
     image: getmeili/meilisearch:v1.42.1
-    restart: always
+    restart: "no"
     command: meilisearch --master-key="${MEILISEARCH_MASTER_KEY:?请设置 MEILISEARCH_MASTER_KEY}"
+    environment:
+      MEILI_NO_ANALYTICS: "true"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:7700/health" ]
       interval: 10s
@@ -235,10 +273,11 @@ services:
       - "17700:7700"
     volumes:
       - meilisearch_k6_data:/meili_data
+    logging: *default-logging
 
   etcd:
     image: quay.io/coreos/etcd:v3.6.10
-    restart: always
+    restart: "no"
     volumes:
       - etcd_k6_data:/etcd-data
     command:
@@ -252,19 +291,19 @@ services:
       - --initial-cluster=s1=http://0.0.0.0:2380
       - --initial-cluster-token=tkn
       - --initial-cluster-state=new
-      - --log-level=info
-      - --logger=zap
-      - --log-outputs=stderr
+      - --log-level=warn
     ports:
       - "12379:2379"
       - "12380:2380"
+    logging: *default-logging
 
   prometheus:
     image: prom/prometheus:v3
-    restart: always
+    restart: "no"
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=12h
       - --web.enable-lifecycle
       - --web.enable-remote-write-receiver
       - --enable-feature=native-histograms
@@ -277,10 +316,11 @@ services:
       - mariadb-exporter
     ports:
       - "19091:9090"
+    logging: *default-logging
 
   grafana:
     image: grafana/grafana:13.0.1
-    restart: always
+    restart: "no"
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
@@ -293,10 +333,11 @@ services:
       - prometheus
     ports:
       - "13000:3000"
+    logging: *default-logging
 
   cadvisor:
     image: ghcr.io/google/cadvisor:0.56.2
-    restart: always
+    restart: "no"
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -304,10 +345,11 @@ services:
       - /var/lib/docker:/var/lib/docker:ro
     ports:
       - "18081:8080"
+    logging: *default-logging
 
   node-exporter:
     image: prom/node-exporter:v1.8.2
-    restart: always
+    restart: "no"
     command:
       - --path.rootfs=/host
     pid: host
@@ -315,6 +357,7 @@ services:
       - /:/host:ro,rslave
     ports:
       - "19100:9100"
+    logging: *default-logging
 
 volumes:
   mariadb_k6_data:
