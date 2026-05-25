@@ -102,10 +102,6 @@ func NewData(c *conf.Data, logger log.Logger, uc userv1.UserClient, sc searchv1.
 		helper.Errorf("无法连接数据库: %v", err)
 		return nil, nil, err
 	}
-	if err := db.Use(gormtracing.NewPlugin()); err != nil {
-		helper.Errorf("failed to enable gorm tracing: %v", err)
-		return nil, nil, err
-	}
 	if sqlDB, err := db.DB(); err == nil {
 		dbpool.ConfigurePool(sqlDB)
 	} else {
@@ -119,6 +115,11 @@ func NewData(c *conf.Data, logger log.Logger, uc userv1.UserClient, sc searchv1.
 	}
 	helper.Info("数据库连接成功并完成自动迁移")
 
+	// 启用 GORM 的 OpenTelemetry 插件
+	if err := db.Use(gormtracing.NewPlugin()); err != nil {
+		helper.Errorf("failed to enable gorm tracing: %v", err)
+		return nil, nil, err
+	}
 	rdb := redis.NewClient(&redis.Options{
 		Addr:         c.Redis.Addr,
 		Password:     c.Redis.Password,
@@ -130,7 +131,8 @@ func NewData(c *conf.Data, logger log.Logger, uc userv1.UserClient, sc searchv1.
 			Mode: maintnotifications.ModeDisabled,
 		},
 	})
-	if err := redisotel.InstrumentTracing(rdb); err != nil {
+
+	if err := redisotel.InstrumentTracing(rdb, redisotel.WithDialFilter(true)); err != nil {
 		helper.Errorf("无法启用 Redis tracing: %v", err)
 		return nil, nil, err
 	}
