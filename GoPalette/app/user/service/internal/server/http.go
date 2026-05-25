@@ -1,11 +1,6 @@
 package server
 
 import (
-	"context"
-	"strings"
-
-	net_http "net/http"
-
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	u "github.com/satiu123/GoPalette/api/user/v1"
 	"github.com/satiu123/GoPalette/pkg/auth"
@@ -24,23 +19,6 @@ import (
 	"github.com/go-kratos/kratos/v2/transport/http"
 )
 
-func NewWhiteListMatcher() selector.MatchFunc {
-	whiteList := make(map[string]struct{})
-	whiteList["/api.user.v1.User/Register"] = struct{}{}
-	whiteList["/api.user.v1.User/Login"] = struct{}{}
-	whiteList["/api.user.v1.User/RefreshToken"] = struct{}{}
-	whiteList["/api.user.v1.User/BatchGetUsers"] = struct{}{}
-	return func(ctx context.Context, operation string) bool {
-		if strings.HasPrefix(operation, "/grpc.health.v1.Health/") {
-			return false
-		}
-		if _, ok := whiteList[operation]; ok {
-			return false
-		}
-		return true
-	}
-}
-
 // NewHTTPServer new an HTTP server.
 func NewHTTPServer(c *conf.Server,
 	_ *conf.Auth,
@@ -54,15 +32,17 @@ func NewHTTPServer(c *conf.Server,
 	var opts = []http.ServerOption{
 		http.Middleware(
 			recovery.Recovery(),
-			tracing.Server(),
-			logging.Server(logger),
 			metrics.Server(
 				metrics.WithSeconds(histogram),
 				metrics.WithRequests(counter),
 			),
 			selector.Server(
+				logging.Server(logger),
+				tracing.Server(),
+			).Match(ObservabilityMatcher()).Build(),
+			selector.Server(
 				auth.Server(),
-			).Match(NewWhiteListMatcher()).Build(),
+			).Match(AuthMatcher()).Build(),
 		),
 	}
 	if c.Http.Network != "" {
@@ -79,9 +59,7 @@ func NewHTTPServer(c *conf.Server,
 	srv.Handle("/metrics", promhttp.Handler())
 
 	// 注册健康检查 HTTP 处理器
-	mux := net_http.NewServeMux()
-	health.RegisterHTTP(mux, h)
-	srv.Handle("/healthz", mux)
+	h.RegisterHTTP(srv)
 
 	// 注册用户服务 HTTP 处理器
 	u.RegisterUserHTTPServer(srv, user)

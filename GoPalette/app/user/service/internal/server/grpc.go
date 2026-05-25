@@ -33,15 +33,17 @@ func NewGRPCServer(
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			recovery.Recovery(),
-			tracing.Server(),
-			logging.Server(logger),
 			metrics.Server(
 				metrics.WithSeconds(histogram),
 				metrics.WithRequests(counter),
 			),
 			selector.Server(
+				tracing.Server(),
+				logging.Server(logger),
+			).Match(ObservabilityMatcher()).Build(),
+			selector.Server(
 				auth.Server(),
-			).Match(NewWhiteListMatcher()).Build(),
+			).Match(AuthMatcher()).Build(),
 		),
 		grpc.CustomHealth(),
 	}
