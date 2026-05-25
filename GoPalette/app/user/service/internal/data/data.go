@@ -6,6 +6,7 @@ import (
 	"github.com/euskadi31/wire"
 	"github.com/satiu123/GoPalette/app/user/service/internal/conf"
 	dbpool "github.com/satiu123/GoPalette/pkg/db"
+	gormtracing "gorm.io/plugin/opentelemetry/tracing"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/redis/go-redis/extra/redisotel/v9"
@@ -64,6 +65,12 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 	}
 	helper.Info("数据库连接成功并完成自动迁移")
 
+	// 启用 GORM 的 OpenTelemetry 插件
+	if err := db.Use(gormtracing.NewPlugin()); err != nil {
+		helper.Errorf("failed to enable gorm tracing: %v", err)
+		return nil, nil, err
+	}
+
 	rdb := redis.NewClient(&redis.Options{
 		Addr:         c.Redis.Addr,
 		Password:     c.Redis.Password,
@@ -75,7 +82,8 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 			Mode: maintnotifications.ModeDisabled,
 		},
 	})
-	if err := redisotel.InstrumentTracing(rdb); err != nil {
+
+	if err := redisotel.InstrumentTracing(rdb, redisotel.WithDialFilter(true)); err != nil {
 		helper.Errorf("无法启用 Redis tracing: %v", err)
 		return nil, nil, err
 	}

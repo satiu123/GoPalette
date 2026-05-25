@@ -1,22 +1,22 @@
 services:
-  nginx:
-    build:
-      context: ..
-      dockerfile: GoPalette/nginx/Dockerfile
-      target: nginx
-    restart: unless-stopped
-    depends_on:
-      - frontend
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - "${NGINX_CERT_DIR:-./certs}:/etc/nginx/certs:ro"
-    logging: &default-logging
-      driver: json-file
-      options:
-        max-size: "100m"
-        max-file: "3"
+  # nginx:
+  #   build:
+  #     context: ..
+  #     dockerfile: GoPalette/nginx/Dockerfile
+  #     target: nginx
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - frontend
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - "${NGINX_CERT_DIR:-./certs}:/etc/nginx/certs:ro"
+  #   logging: &default-logging
+  #     driver: json-file
+  #     options:
+  #       max-size: "100m"
+  #       max-file: "3"
 
   frontend:
     build:
@@ -37,8 +37,11 @@ services:
       - gateway
     ports:
       - "3001:3000"
-    logging: *default-logging
-
+    logging: &default-logging
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "3"
   gateway:
     build:
       context: .

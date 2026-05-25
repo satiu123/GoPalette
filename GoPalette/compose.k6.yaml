@@ -5,17 +5,17 @@ x-logging: &default-logging
     max-file: "2"
 
 services:
-  nginx:
-    build:
-      context: ..
-      dockerfile: GoPalette/nginx/Dockerfile
-      target: nginx
-    restart: "no"
-    depends_on:
-      - frontend
-    ports:
-      - "180:80"
-    logging: *default-logging
+  # nginx:
+  #   build:
+  #     context: ..
+  #     dockerfile: GoPalette/nginx/Dockerfile
+  #     target: nginx
+  #   restart: "no"
+  #   depends_on:
+  #     - frontend
+  #   ports:
+  #     - "180:80"
+  #   logging: *default-logging
 
   frontend:
     build:
@@ -159,7 +159,7 @@ services:
     logging: *default-logging
 
   seed-k6-data:
-    image: mariadb:latest
+    image: mariadb:12.2.2
     restart: "no"
     depends_on:
       mariadb:
