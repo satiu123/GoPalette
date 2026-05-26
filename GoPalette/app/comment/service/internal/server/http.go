@@ -4,8 +4,6 @@ import (
 	"context"
 	"strings"
 
-	net_http "net/http"
-
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	v1 "github.com/satiu123/GoPalette/api/comment/v1"
 	"github.com/satiu123/GoPalette/pkg/auth"
@@ -19,8 +17,8 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/satiu123/GoPalette/app/comment/service/internal/conf"
-	"github.com/satiu123/GoPalette/app/comment/service/internal/health"
 	"github.com/satiu123/GoPalette/app/comment/service/internal/service"
+	"github.com/satiu123/GoPalette/pkg/health"
 )
 
 func NewWhiteListMatcher() selector.MatchFunc {
@@ -50,15 +48,17 @@ func NewHTTPServer(
 	var opts = []http.ServerOption{
 		http.Middleware(
 			recovery.Recovery(),
-			tracing.Server(),
-			logging.Server(logger),
 			metrics.Server(
 				metrics.WithSeconds(histogram),
 				metrics.WithRequests(counter),
 			),
 			selector.Server(
+				logging.Server(logger),
+				tracing.Server(),
+			).Match(ObservabilityMatcher()).Build(),
+			selector.Server(
 				auth.Server(),
-			).Match(NewWhiteListMatcher()).Build(),
+			).Match(AuthMatcher()).Build(),
 		),
 	}
 	if c.Http.Network != "" {
@@ -74,9 +74,7 @@ func NewHTTPServer(
 	srv.Handle("/metrics", promhttp.Handler())
 
 	// 注册健康检查路由
-	mux := net_http.NewServeMux()
-	health.RegisterHTTP(mux, h)
-	srv.HandlePrefix("/healthz", mux)
+	h.RegisterHTTP(srv)
 
 	// 注册 HTTP 服务器和服务实现
 	v1.RegisterCommentHTTPServer(srv, comment)

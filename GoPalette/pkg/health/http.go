@@ -1,11 +1,11 @@
 package health
 
 import (
-	"context"
 	"net/http"
 	"time"
 
 	khttp "github.com/go-kratos/kratos/v2/transport/http"
+	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
 const ReadyTimeout = time.Second * 3
@@ -22,15 +22,13 @@ func (h *Health) Live(w khttp.ResponseWriter, r *khttp.Request) {
 }
 
 func (h *Health) Ready(w khttp.ResponseWriter, r *khttp.Request) {
-	ctx, cancel := context.WithTimeout(
-		r.Context(),
-		ReadyTimeout,
-	)
-	defer cancel()
+	h.mu.RLock()
+	status := h.status[ServiceReadiness]
+	h.mu.RUnlock()
 
-	if err := h.Check(ctx); err != nil {
+	if status != grpc_health_v1.HealthCheckResponse_SERVING {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		_, _ = w.Write([]byte(err.Error()))
+		_, _ = w.Write([]byte("not ready"))
 		return
 	}
 

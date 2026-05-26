@@ -83,7 +83,14 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 		},
 	})
 
-	if err := redisotel.InstrumentTracing(rdb, redisotel.WithDialFilter(true)); err != nil {
+	if err := redisotel.InstrumentTracing(rdb, redisotel.WithDialFilter(true), redisotel.WithCommandFilter(
+		func(cmd redis.Cmder) bool {
+			// 过滤掉不需要追踪的命令
+			if cmd.Name() == "PING" {
+				return false
+			}
+			return true
+		})); err != nil {
 		helper.Errorf("无法启用 Redis tracing: %v", err)
 		return nil, nil, err
 	}

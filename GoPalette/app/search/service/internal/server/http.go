@@ -1,8 +1,6 @@
 package server
 
 import (
-	net_http "net/http"
-
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
 	"github.com/go-kratos/kratos/v2/middleware/metrics"
@@ -12,8 +10,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	v1 "github.com/satiu123/GoPalette/api/search/v1"
 	"github.com/satiu123/GoPalette/app/search/service/internal/conf"
-	"github.com/satiu123/GoPalette/app/search/service/internal/health"
 	"github.com/satiu123/GoPalette/app/search/service/internal/service"
+	"github.com/satiu123/GoPalette/pkg/health"
 	"go.opentelemetry.io/otel/metric"
 )
 
@@ -50,9 +48,7 @@ func NewHTTPServer(
 	srv.Handle("/metrics", promhttp.Handler())
 
 	// 注册健康检查服务
-	mux := net_http.NewServeMux()
-	health.RegisterHTTP(mux, h)
-	srv.HandlePrefix("/health", mux)
+	h.RegisterHTTP(srv)
 
 	// 注册搜索服务
 	v1.RegisterSearchHTTPServer(srv, search)

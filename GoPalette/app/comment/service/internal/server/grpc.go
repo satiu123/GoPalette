@@ -7,8 +7,8 @@ import (
 	v1 "github.com/satiu123/GoPalette/api/comment/v1"
 
 	"github.com/satiu123/GoPalette/app/comment/service/internal/conf"
-	"github.com/satiu123/GoPalette/app/comment/service/internal/health"
 	"github.com/satiu123/GoPalette/app/comment/service/internal/service"
+	"github.com/satiu123/GoPalette/pkg/health"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
@@ -32,15 +32,17 @@ func NewGRPCServer(
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			recovery.Recovery(),
-			tracing.Server(),
-			logging.Server(logger),
 			metrics.Server(
 				metrics.WithSeconds(histogram),
 				metrics.WithRequests(counter),
 			),
 			selector.Server(
+				logging.Server(logger),
+				tracing.Server(),
+			).Match(ObservabilityMatcher()).Build(),
+			selector.Server(
 				auth.Server(),
-			).Match(NewWhiteListMatcher()).Build(),
+			).Match(AuthMatcher()).Build(),
 		),
 		grpc.CustomHealth(),
 	}

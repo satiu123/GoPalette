@@ -1,18 +1,13 @@
 package server
 
 import (
-	"context"
-	"strings"
-
-	net_http "net/http"
-
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	p "github.com/satiu123/GoPalette/api/post/v1"
 	"github.com/satiu123/GoPalette/pkg/auth"
+	"github.com/satiu123/GoPalette/pkg/health"
 	"go.opentelemetry.io/otel/metric"
 
 	"github.com/satiu123/GoPalette/app/post/service/internal/conf"
-	"github.com/satiu123/GoPalette/app/post/service/internal/health"
 	"github.com/satiu123/GoPalette/app/post/service/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -23,31 +18,6 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/http"
 )
-
-func NewWhiteListMatcher() selector.MatchFunc {
-	whiteList := make(map[string]struct{})
-	whiteList["/api.post.v1.Post/GetPost"] = struct{}{}
-	whiteList["/api.post.v1.Post/ListPosts"] = struct{}{}
-	whiteList["/api.post.v1.Post/ListPostsForIndex"] = struct{}{}
-	whiteList["/api.post.v1.Post/ListAuthorPosts"] = struct{}{}
-	whiteList["/api.post.v1.Post/GetAuthorPostStats"] = struct{}{}
-	whiteList["/api.post.v1.Post/ListTopAuthorPosts"] = struct{}{}
-	whiteList["/api.post.v1.Post/IncrCommentCount"] = struct{}{}
-	whiteList["/api.post.v1.Post/RecordPostView"] = struct{}{}
-	whiteList["/api.post.v1.Category/GetCategory"] = struct{}{}
-	whiteList["/api.post.v1.Category/ListCategories"] = struct{}{}
-	whiteList["/api.post.v1.Tag/GetTag"] = struct{}{}
-	whiteList["/api.post.v1.Tag/ListTags"] = struct{}{}
-	return func(ctx context.Context, operation string) bool {
-		if strings.HasPrefix(operation, "/grpc.health.v1.Health/") {
-			return false
-		}
-		if _, ok := whiteList[operation]; ok {
-			return false
-		}
-		return true
-	}
-}
 
 // NewHTTPServer new an HTTP server.
 func NewHTTPServer(
@@ -64,15 +34,17 @@ func NewHTTPServer(
 	var opts = []http.ServerOption{
 		http.Middleware(
 			recovery.Recovery(),
-			tracing.Server(),
-			logging.Server(logger),
 			metrics.Server(
 				metrics.WithSeconds(histogram),
 				metrics.WithRequests(counter),
 			),
 			selector.Server(
+				logging.Server(logger),
+				tracing.Server(),
+			).Match(ObservabilityMatcher()).Build(),
+			selector.Server(
 				auth.Server(),
-			).Match(NewWhiteListMatcher()).Build(),
+			).Match(AuthMatcher()).Build(),
 		),
 	}
 	if c.Http.Network != "" {
@@ -88,9 +60,7 @@ func NewHTTPServer(
 	srv.Handle("/metrics", promhttp.Handler())
 
 	// 注册健康检查路由
-	mux := net_http.NewServeMux()
-	health.RegisterHTTP(mux, h)
-	srv.Handle("/healthz", mux)
+	h.RegisterHTTP(srv)
 
 	// 注册 HTTP 服务器和服务实现
 	p.RegisterPostHTTPServer(srv, post)

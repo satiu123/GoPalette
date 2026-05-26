@@ -2,12 +2,12 @@ package server
 
 import (
 	"github.com/satiu123/GoPalette/pkg/auth"
+	"github.com/satiu123/GoPalette/pkg/health"
 	"go.opentelemetry.io/otel/metric"
 
 	p "github.com/satiu123/GoPalette/api/post/v1"
 
 	"github.com/satiu123/GoPalette/app/post/service/internal/conf"
-	"github.com/satiu123/GoPalette/app/post/service/internal/health"
 	"github.com/satiu123/GoPalette/app/post/service/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -34,15 +34,17 @@ func NewGRPCServer(
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			recovery.Recovery(),
-			tracing.Server(),
-			logging.Server(logger),
 			metrics.Server(
 				metrics.WithSeconds(histogram),
 				metrics.WithRequests(counter),
 			),
 			selector.Server(
+				tracing.Server(),
+				logging.Server(logger),
+			).Match(ObservabilityMatcher()).Build(),
+			selector.Server(
 				auth.Server(),
-			).Match(NewWhiteListMatcher()).Build(),
+			).Match(AuthMatcher()).Build(),
 		),
 		grpc.CustomHealth(),
 	}

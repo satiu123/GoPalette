@@ -2,7 +2,7 @@ package health
 
 import (
 	"context"
-	"errors"
+	"time"
 
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
@@ -22,10 +22,9 @@ func (c *EtcdChecker) Name() string {
 }
 
 func (c *EtcdChecker) Check(ctx context.Context) error {
-	endpoints := c.client.Endpoints()
-	if len(endpoints) == 0 {
-		return errors.New("etcd endpoints empty")
-	}
-	_, err := c.client.Maintenance.Status(ctx, endpoints[0])
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+
+	_, err := c.client.Get(ctx, "health", clientv3.WithLimit(1))
 	return err
 }

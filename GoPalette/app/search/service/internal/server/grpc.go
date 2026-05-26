@@ -2,10 +2,11 @@ package server
 
 import (
 	v1 "github.com/satiu123/GoPalette/api/search/v1"
+	"github.com/satiu123/GoPalette/pkg/health"
 	"go.opentelemetry.io/otel/metric"
 
 	"github.com/satiu123/GoPalette/app/search/service/internal/conf"
-	"github.com/satiu123/GoPalette/app/search/service/internal/health"
+
 	"github.com/satiu123/GoPalette/app/search/service/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"

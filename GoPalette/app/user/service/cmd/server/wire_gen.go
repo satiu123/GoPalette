@@ -12,7 +12,6 @@ import (
 	"github.com/satiu123/GoPalette/app/user/service/internal/biz"
 	"github.com/satiu123/GoPalette/app/user/service/internal/conf"
 	"github.com/satiu123/GoPalette/app/user/service/internal/data"
-	"github.com/satiu123/GoPalette/app/user/service/internal/health"
 	"github.com/satiu123/GoPalette/app/user/service/internal/server"
 	"github.com/satiu123/GoPalette/app/user/service/internal/service"
 	"github.com/satiu123/GoPalette/pkg/opentelemetry"
@@ -35,11 +34,11 @@ func wireApp(confServer *conf.Server, confData *conf.Data, auth *conf.Auth, regi
 	authSessionRepo := data.NewAuthSessionRepo(dataData)
 	authUsecase := biz.NewAuthUsecase(auth, userRepo, authSessionRepo, logger)
 	userService := service.NewUserService(userUsecase, authUsecase, logger)
-	healthHealth := health.New(dataData)
+	health := server.NewHealthEngine(dataData)
 	int64Counter := opentelemetry.NewRequestCounter(serviceName)
 	float64Histogram := opentelemetry.NewSecondsHistogram(serviceName)
-	grpcServer := server.NewGRPCServer(confServer, auth, userService, logger, healthHealth, int64Counter, float64Histogram)
-	httpServer := server.NewHTTPServer(confServer, auth, userService, logger, healthHealth, int64Counter, float64Histogram)
+	grpcServer := server.NewGRPCServer(confServer, auth, userService, logger, health, int64Counter, float64Histogram)
+	httpServer := server.NewHTTPServer(confServer, auth, userService, logger, health, int64Counter, float64Histogram)
 	client, err := NewEtcdClient(registry)
 	if err != nil {
 		cleanup()
