@@ -39,10 +39,11 @@ func wireApp(confServer *conf.Server, confData *conf.Data, registry *conf.Regist
 	}
 	profileUsecase := biz.NewProfileUsecase(dataData, logger)
 	bffService := service.NewBffService(profileUsecase, logger)
+	health := server.NewHealthEngine(dataData)
 	int64Counter := opentelemetry.NewRequestCounter(serviceName)
 	float64Histogram := opentelemetry.NewSecondsHistogram(serviceName)
-	grpcServer := server.NewGRPCServer(confServer, bffService, logger, int64Counter, float64Histogram)
-	httpServer := server.NewHTTPServer(confServer, bffService, logger, int64Counter, float64Histogram)
+	grpcServer := server.NewGRPCServer(confServer, bffService, logger, health, int64Counter, float64Histogram)
+	httpServer := server.NewHTTPServer(confServer, bffService, logger, health, int64Counter, float64Histogram)
 	app := newApp(logger, grpcServer, httpServer, etcdRegistry)
 	return app, func() {
 		cleanup()

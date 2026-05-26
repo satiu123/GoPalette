@@ -16,6 +16,12 @@ func (h *Health) RegisterHTTP(srv *khttp.Server) {
 	srv.HandleFunc("/health/startup", h.Startup)
 }
 
+func (h *Health) RegisterMux(mux *http.ServeMux) {
+	mux.HandleFunc("/health/live", h.Live)
+	mux.HandleFunc("/health/ready", h.Ready)
+	mux.HandleFunc("/health/startup", h.Startup)
+}
+
 func (h *Health) Live(w khttp.ResponseWriter, r *khttp.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("ok"))

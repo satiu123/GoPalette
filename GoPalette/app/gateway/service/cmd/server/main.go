@@ -29,6 +29,7 @@ import (
 	_ "github.com/go-kratos/gateway/middleware/tracing"
 	_ "github.com/go-kratos/gateway/middleware/transcoder"
 	_ "github.com/satiu123/GoPalette/app/gateway/service/internal/middleware/authmetadata"
+	"github.com/satiu123/GoPalette/pkg/health"
 	_ "go.uber.org/automaxprocs"
 
 	"github.com/go-kratos/kratos/contrib/registry/etcd/v2"
@@ -161,6 +162,15 @@ func main() {
 		}
 		serverHandler = debug.MashupWithDebugHandler(p)
 	}
+
+	// 设置健康检查
+	h := health.New()
+	mux := http.NewServeMux()
+	h.RegisterMux(mux)
+	mux.Handle("/", serverHandler)
+
+	serverHandler = mux
+
 	servers := make([]transport.Server, 0, len(proxyAddrs.Get()))
 	for _, addr := range proxyAddrs.Get() {
 		servers = append(servers, server.NewProxy(serverHandler, addr))

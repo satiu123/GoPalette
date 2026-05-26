@@ -7,7 +7,13 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/health/grpc_health_v1"
+)
+
+const (
+	LoopInterval = time.Second * 2
+	CheckTimeout = time.Second * 3
 )
 
 type Health struct {
@@ -36,22 +42,28 @@ func New(checkers ...Checker) *Health {
 }
 
 func (h *Health) Check(ctx context.Context) error {
-	var errs []error
-
-	for _, c := range h.checkers {
-		if err := c.Check(ctx); err != nil {
-			errs = append(
-				errs,
-				fmt.Errorf("%s: %w", c.Name(), err),
-			)
-		}
+	if len(h.checkers) == 0 {
+		return nil
 	}
 
-	return errors.Join(errs...)
+	var eg errgroup.Group
+	checkErrs := make([]error, len(h.checkers))
+
+	for i, c := range h.checkers {
+		eg.Go(func() error {
+			if err := c.Check(ctx); err != nil {
+				checkErrs[i] = fmt.Errorf("%s: %w", c.Name(), err)
+			}
+			return nil
+		})
+	}
+	_ = eg.Wait()
+
+	return errors.Join(checkErrs...)
 }
 
 func (h *Health) loop() {
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(LoopInterval)
 
 	for range ticker.C {
 
@@ -59,7 +71,7 @@ func (h *Health) loop() {
 
 		ctx, cancel := context.WithTimeout(
 			context.Background(),
-			3*time.Second,
+			CheckTimeout,
 		)
 
 		if err := h.Check(ctx); err != nil {
@@ -86,8 +98,8 @@ func (h *Health) setStatus(service string, status grpc_health_v1.HealthCheckResp
 
 	for _, ch := range h.watchers[service] {
 		select {
-			case ch <- status:
-			default:
+		case ch <- status:
+		default:
 		}
 	}
 

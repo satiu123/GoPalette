@@ -19,7 +19,7 @@ type grpcServer struct {
 	h *Health
 }
 
-func RegisterGRPC(srv grpc.ServiceRegistrar, h *Health) {
+func (h *Health) RegisterGRPC(srv grpc.ServiceRegistrar) {
 	grpc_health_v1.RegisterHealthServer(
 		srv,
 		&grpcServer{

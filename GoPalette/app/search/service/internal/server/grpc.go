@@ -50,7 +50,7 @@ func NewGRPCServer(
 	srv := grpc.NewServer(opts...)
 
 	// 注册健康检查服务
-	health.RegisterGRPC(srv, h)
+	h.RegisterGRPC(srv)
 
 	// 注册搜索服务
 	v1.RegisterSearchServer(srv, search)
