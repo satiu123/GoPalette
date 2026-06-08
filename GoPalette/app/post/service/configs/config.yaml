@@ -8,24 +8,24 @@ server:
 data:
   database:
     driver: mysql
-    source: root:${MYSQL_ROOT_PASSWORD:GP123}@tcp(${MYSQL_HOST:mariadb}:${MYSQL_PORT:3306})/${MYSQL_DATABASE:gopalette}?parseTime=True&loc=Local
+    source: root:${MYSQL_ROOT_PASSWORD:GP123}@tcp(${MYSQL_HOST:mariadb}:${MYSQL_PORT:3306})/${MYSQL_DATABASE:gopalette_post}?parseTime=True&loc=Local
   redis:
     addr: ${REDIS_ADDR:redis:6379}
     password: "${REDIS_PASSWORD:GP123}"
+    db: 2
+    dial_timeout: 0.2s
     read_timeout: 0.2s
     write_timeout: 0.2s
-  clients:
-    user_endpoint: discovery:///user.service
-    search_endpoint: discovery:///search.service
-    timeout: 5s
+  event_redis:
+    addr: ${REDIS_ADDR:redis:6379}
+    password: "${REDIS_PASSWORD:GP123}"
+    db: 0
+    dial_timeout: 0.2s
+    read_timeout: 0.2s
+    write_timeout: 0.2s
 registry:
   etcd:
     endpoints:
       - "${ETCD_ENDPOINT:etcd:2379}"
     timeout: 5s
-auth:
-  jwt_access_secret: "${JWT_ACCESS_SECRET:GPA}"
-  jwt_refresh_secret: "${JWT_REFRESH_SECRET:GPR}"
-  jwt_access_expire: 900s
-  jwt_refresh_expire: 604800s
-  issuer: "GoPalette"
+auth: {}

@@ -68,6 +68,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "gopalette_user"
       REDIS_PASSWORD: "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
       JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:?请设置 JWT_ACCESS_SECRET}"
       JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:?请设置 JWT_REFRESH_SECRET}"
@@ -89,9 +90,8 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "gopalette_post"
       REDIS_PASSWORD: "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
-      JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:?请设置 JWT_ACCESS_SECRET}"
-      JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:?请设置 JWT_REFRESH_SECRET}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
     depends_on:
       - mariadb
@@ -110,8 +110,8 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "gopalette_comment"
       REDIS_PASSWORD: "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
-      JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:?请设置 JWT_ACCESS_SECRET}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
     depends_on:
       - mariadb
@@ -128,10 +128,12 @@ services:
         - APP_RELATIVE_PATH=app/search/service
     restart: unless-stopped
     environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
       MEILISEARCH_MASTER_KEY: "${MEILISEARCH_MASTER_KEY:?请设置 MEILISEARCH_MASTER_KEY}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
     depends_on:
       - meilisearch
+      - redis
     logging: *default-logging
     ports:
       - "8003:8003" # HTTP 端口
@@ -158,9 +160,10 @@ services:
     restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
-      MARIADB_DATABASE: "gopalette"
+      MARIADB_DATABASE: "gopalette_user"
     volumes:
       - mariadb_data:/var/lib/mysql
+      - ./deploy/mariadb/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: [ "CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}" ]
       interval: 10s

@@ -66,7 +66,7 @@ services:
     restart: "no"
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
-      MYSQL_DATABASE: "${MYSQL_DATABASE:-gopalette_k6}"
+      MYSQL_DATABASE: "gopalette_user_k6"
       MYSQL_MAX_OPEN_CONNS: "${MYSQL_MAX_OPEN_CONNS:-80}"
       MYSQL_MAX_IDLE_CONNS: "${MYSQL_MAX_IDLE_CONNS:-40}"
 
@@ -90,14 +90,11 @@ services:
     restart: "no"
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
-      MYSQL_DATABASE: "${MYSQL_DATABASE:-gopalette_k6}"
+      MYSQL_DATABASE: "gopalette_post_k6"
       MYSQL_MAX_OPEN_CONNS: "${MYSQL_MAX_OPEN_CONNS:-80}"
       MYSQL_MAX_IDLE_CONNS: "${MYSQL_MAX_IDLE_CONNS:-40}"
 
       REDIS_PASSWORD: "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
-
-      JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:?请设置 JWT_ACCESS_SECRET}"
-      JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:?请设置 JWT_REFRESH_SECRET}"
 
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
     depends_on:
@@ -114,13 +111,11 @@ services:
     restart: "no"
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
-      MYSQL_DATABASE: "${MYSQL_DATABASE:-gopalette_k6}"
+      MYSQL_DATABASE: "gopalette_comment_k6"
       MYSQL_MAX_OPEN_CONNS: "${MYSQL_MAX_OPEN_CONNS:-80}"
       MYSQL_MAX_IDLE_CONNS: "${MYSQL_MAX_IDLE_CONNS:-40}"
 
       REDIS_PASSWORD: "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
-
-      JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:?请设置 JWT_ACCESS_SECRET}"
 
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
     depends_on:
@@ -136,10 +131,12 @@ services:
         - APP_RELATIVE_PATH=app/search/service
     restart: "no"
     environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}"
       MEILISEARCH_MASTER_KEY: "${MEILISEARCH_MASTER_KEY:?请设置 MEILISEARCH_MASTER_KEY}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
     depends_on:
       - meilisearch
+      - redis
     logging: *default-logging
 
   bff:
@@ -168,7 +165,7 @@ services:
         condition: service_started
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
-      MYSQL_DATABASE: "${MYSQL_DATABASE:-gopalette_k6}"
+      MYSQL_DATABASE: "gopalette_post_k6"
       K6_CATEGORY_NAME: "${K6_CATEGORY_NAME:-K6 Load Test}"
       K6_CATEGORY_SLUG: "${K6_CATEGORY_SLUG:-k6-load-test}"
     command:
@@ -205,9 +202,10 @@ services:
       - --skip-log-bin
     environment:
       MARIADB_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
-      MARIADB_DATABASE: "${MYSQL_DATABASE:-gopalette_k6}"
+      MARIADB_DATABASE: "gopalette_user_k6"
     volumes:
       - mariadb_k6_data:/var/lib/mysql
+      - ./deploy/mariadb/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: [ "CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}" ]
       interval: 10s

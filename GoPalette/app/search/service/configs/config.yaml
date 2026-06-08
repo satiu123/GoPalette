@@ -10,6 +10,20 @@ data:
     endpoint: ${MEILISEARCH_ENDPOINT:http://meilisearch:7700}
     api_key: "${MEILISEARCH_MASTER_KEY:BCSk29xyDFe0-Oa5g0SrqJWfAFbeRK36LVymcHin_fg}"
     index_name: ${MEILISEARCH_INDEX_NAME:posts}
+  redis:
+    addr: ${REDIS_ADDR:redis:6379}
+    password: "${REDIS_PASSWORD:GP123}"
+    db: 4
+    dial_timeout: 0.2s
+    read_timeout: 0.2s
+    write_timeout: 0.2s
+  event_redis:
+    addr: ${REDIS_ADDR:redis:6379}
+    password: "${REDIS_PASSWORD:GP123}"
+    db: 0
+    dial_timeout: 0.2s
+    read_timeout: 0.2s
+    write_timeout: 0.2s
   clients:
     post_endpoint: discovery:///post.service
     timeout: 30s

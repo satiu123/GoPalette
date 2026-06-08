@@ -8,10 +8,12 @@ server:
 data:
   database:
     driver: mysql
-    source: root:${MYSQL_ROOT_PASSWORD:GP123}@tcp(${MYSQL_HOST:mariadb}:${MYSQL_PORT:3306})/${MYSQL_DATABASE:gopalette}?parseTime=True&loc=Local
+    source: root:${MYSQL_ROOT_PASSWORD:GP123}@tcp(${MYSQL_HOST:mariadb}:${MYSQL_PORT:3306})/${MYSQL_DATABASE:gopalette_user}?parseTime=True&loc=Local
   redis:
     addr: ${REDIS_ADDR:redis:6379}
     password: "${REDIS_PASSWORD:GP123}"
+    db: 1
+    dial_timeout: 0.2s
     read_timeout: 0.2s
     write_timeout: 0.2s
 registry:
