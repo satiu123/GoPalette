@@ -103,3 +103,9 @@ endpoints:
     protocol: HTTP
     backends:
       - target: 'discovery:///bff.service'
+
+  - path: /v1/blog/posts/*
+    timeout: 3s
+    protocol: HTTP
+    backends:
+      - target: 'discovery:///bff.service'

@@ -10,6 +10,7 @@ import (
 	context "context"
 	http "github.com/go-kratos/kratos/v2/transport/http"
 	binding "github.com/go-kratos/kratos/v2/transport/http/binding"
+	v11 "github.com/satiu123/GoPalette/api/comment/v1"
 	v1 "github.com/satiu123/GoPalette/api/post/v1"
 )
 
@@ -21,11 +22,17 @@ var _ = binding.EncodeURL
 const _ = http.SupportPackageIsVersion1
 
 const OperationBlogBffGetFullUserProfile = "/api.bff.v1.BlogBff/GetFullUserProfile"
+const OperationBlogBffGetPost = "/api.bff.v1.BlogBff/GetPost"
+const OperationBlogBffListPostComments = "/api.bff.v1.BlogBff/ListPostComments"
 const OperationBlogBffListPosts = "/api.bff.v1.BlogBff/ListPosts"
 
 type BlogBffHTTPServer interface {
 	// GetFullUserProfile 获取完整的用户个人主页数据
 	GetFullUserProfile(context.Context, *GetFullUserProfileRequest) (*GetFullUserProfileReply, error)
+	// GetPost 获取带作者信息的帖子详情
+	GetPost(context.Context, *v1.GetPostRequest) (*v1.GetPostReply, error)
+	// ListPostComments 获取带作者信息的文章评论树
+	ListPostComments(context.Context, *v11.ListCommentsRequest) (*ListPostCommentsReply, error)
 	// ListPosts 获取带作者信息的帖子列表
 	ListPosts(context.Context, *v1.ListPostsRequest) (*v1.ListPostsReply, error)
 }
@@ -34,6 +41,9 @@ func RegisterBlogBffHTTPServer(s *http.Server, srv BlogBffHTTPServer) {
 	r := s.Route("/")
 	r.GET("/v1/blog/posts", _BlogBff_ListPosts1_HTTP_Handler(srv))
 	r.GET("/v1/profiles/{user_id}", _BlogBff_GetFullUserProfile0_HTTP_Handler(srv))
+	r.GET("/v1/blog/posts/slug/{slug}", _BlogBff_GetPost2_HTTP_Handler(srv))
+	r.GET("/v1/blog/posts/{id}", _BlogBff_GetPost3_HTTP_Handler(srv))
+	r.GET("/v1/blog/posts/{post_id}/comments", _BlogBff_ListPostComments0_HTTP_Handler(srv))
 }
 
 func _BlogBff_ListPosts1_HTTP_Handler(srv BlogBffHTTPServer) func(ctx http.Context) error {
@@ -77,9 +87,79 @@ func _BlogBff_GetFullUserProfile0_HTTP_Handler(srv BlogBffHTTPServer) func(ctx h
 	}
 }
 
+func _BlogBff_GetPost2_HTTP_Handler(srv BlogBffHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetPostRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationBlogBffGetPost)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetPost(ctx, req.(*v1.GetPostRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.GetPostReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _BlogBff_GetPost3_HTTP_Handler(srv BlogBffHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetPostRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationBlogBffGetPost)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetPost(ctx, req.(*v1.GetPostRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.GetPostReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _BlogBff_ListPostComments0_HTTP_Handler(srv BlogBffHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v11.ListCommentsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationBlogBffListPostComments)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListPostComments(ctx, req.(*v11.ListCommentsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListPostCommentsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type BlogBffHTTPClient interface {
 	// GetFullUserProfile 获取完整的用户个人主页数据
 	GetFullUserProfile(ctx context.Context, req *GetFullUserProfileRequest, opts ...http.CallOption) (rsp *GetFullUserProfileReply, err error)
+	// GetPost 获取带作者信息的帖子详情
+	GetPost(ctx context.Context, req *v1.GetPostRequest, opts ...http.CallOption) (rsp *v1.GetPostReply, err error)
+	// ListPostComments 获取带作者信息的文章评论树
+	ListPostComments(ctx context.Context, req *v11.ListCommentsRequest, opts ...http.CallOption) (rsp *ListPostCommentsReply, err error)
 	// ListPosts 获取带作者信息的帖子列表
 	ListPosts(ctx context.Context, req *v1.ListPostsRequest, opts ...http.CallOption) (rsp *v1.ListPostsReply, err error)
 }
@@ -98,6 +178,34 @@ func (c *BlogBffHTTPClientImpl) GetFullUserProfile(ctx context.Context, in *GetF
 	pattern := "/v1/profiles/{user_id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationBlogBffGetFullUserProfile))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetPost 获取带作者信息的帖子详情
+func (c *BlogBffHTTPClientImpl) GetPost(ctx context.Context, in *v1.GetPostRequest, opts ...http.CallOption) (*v1.GetPostReply, error) {
+	var out v1.GetPostReply
+	pattern := "/v1/blog/posts/{id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationBlogBffGetPost))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListPostComments 获取带作者信息的文章评论树
+func (c *BlogBffHTTPClientImpl) ListPostComments(ctx context.Context, in *v11.ListCommentsRequest, opts ...http.CallOption) (*ListPostCommentsReply, error) {
+	var out ListPostCommentsReply
+	pattern := "/v1/blog/posts/{post_id}/comments"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationBlogBffListPostComments))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {

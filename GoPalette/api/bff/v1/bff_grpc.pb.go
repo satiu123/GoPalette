@@ -8,6 +8,7 @@ package v1
 
 import (
 	context "context"
+	v11 "github.com/satiu123/GoPalette/api/comment/v1"
 	v1 "github.com/satiu123/GoPalette/api/post/v1"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -22,6 +23,8 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	BlogBff_ListPosts_FullMethodName          = "/api.bff.v1.BlogBff/ListPosts"
 	BlogBff_GetFullUserProfile_FullMethodName = "/api.bff.v1.BlogBff/GetFullUserProfile"
+	BlogBff_GetPost_FullMethodName            = "/api.bff.v1.BlogBff/GetPost"
+	BlogBff_ListPostComments_FullMethodName   = "/api.bff.v1.BlogBff/ListPostComments"
 )
 
 // BlogBffClient is the client API for BlogBff service.
@@ -32,6 +35,10 @@ type BlogBffClient interface {
 	ListPosts(ctx context.Context, in *v1.ListPostsRequest, opts ...grpc.CallOption) (*v1.ListPostsReply, error)
 	// 获取完整的用户个人主页数据
 	GetFullUserProfile(ctx context.Context, in *GetFullUserProfileRequest, opts ...grpc.CallOption) (*GetFullUserProfileReply, error)
+	// 获取带作者信息的帖子详情
+	GetPost(ctx context.Context, in *v1.GetPostRequest, opts ...grpc.CallOption) (*v1.GetPostReply, error)
+	// 获取带作者信息的文章评论树
+	ListPostComments(ctx context.Context, in *v11.ListCommentsRequest, opts ...grpc.CallOption) (*ListPostCommentsReply, error)
 }
 
 type blogBffClient struct {
@@ -62,6 +69,26 @@ func (c *blogBffClient) GetFullUserProfile(ctx context.Context, in *GetFullUserP
 	return out, nil
 }
 
+func (c *blogBffClient) GetPost(ctx context.Context, in *v1.GetPostRequest, opts ...grpc.CallOption) (*v1.GetPostReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.GetPostReply)
+	err := c.cc.Invoke(ctx, BlogBff_GetPost_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *blogBffClient) ListPostComments(ctx context.Context, in *v11.ListCommentsRequest, opts ...grpc.CallOption) (*ListPostCommentsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPostCommentsReply)
+	err := c.cc.Invoke(ctx, BlogBff_ListPostComments_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BlogBffServer is the server API for BlogBff service.
 // All implementations must embed UnimplementedBlogBffServer
 // for forward compatibility.
@@ -70,6 +97,10 @@ type BlogBffServer interface {
 	ListPosts(context.Context, *v1.ListPostsRequest) (*v1.ListPostsReply, error)
 	// 获取完整的用户个人主页数据
 	GetFullUserProfile(context.Context, *GetFullUserProfileRequest) (*GetFullUserProfileReply, error)
+	// 获取带作者信息的帖子详情
+	GetPost(context.Context, *v1.GetPostRequest) (*v1.GetPostReply, error)
+	// 获取带作者信息的文章评论树
+	ListPostComments(context.Context, *v11.ListCommentsRequest) (*ListPostCommentsReply, error)
 	mustEmbedUnimplementedBlogBffServer()
 }
 
@@ -85,6 +116,12 @@ func (UnimplementedBlogBffServer) ListPosts(context.Context, *v1.ListPostsReques
 }
 func (UnimplementedBlogBffServer) GetFullUserProfile(context.Context, *GetFullUserProfileRequest) (*GetFullUserProfileReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetFullUserProfile not implemented")
+}
+func (UnimplementedBlogBffServer) GetPost(context.Context, *v1.GetPostRequest) (*v1.GetPostReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPost not implemented")
+}
+func (UnimplementedBlogBffServer) ListPostComments(context.Context, *v11.ListCommentsRequest) (*ListPostCommentsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPostComments not implemented")
 }
 func (UnimplementedBlogBffServer) mustEmbedUnimplementedBlogBffServer() {}
 func (UnimplementedBlogBffServer) testEmbeddedByValue()                 {}
@@ -143,6 +180,42 @@ func _BlogBff_GetFullUserProfile_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BlogBff_GetPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetPostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BlogBffServer).GetPost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BlogBff_GetPost_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BlogBffServer).GetPost(ctx, req.(*v1.GetPostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BlogBff_ListPostComments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v11.ListCommentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BlogBffServer).ListPostComments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BlogBff_ListPostComments_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BlogBffServer).ListPostComments(ctx, req.(*v11.ListCommentsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // BlogBff_ServiceDesc is the grpc.ServiceDesc for BlogBff service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -157,6 +230,14 @@ var BlogBff_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFullUserProfile",
 			Handler:    _BlogBff_GetFullUserProfile_Handler,
+		},
+		{
+			MethodName: "GetPost",
+			Handler:    _BlogBff_GetPost_Handler,
+		},
+		{
+			MethodName: "ListPostComments",
+			Handler:    _BlogBff_ListPostComments_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

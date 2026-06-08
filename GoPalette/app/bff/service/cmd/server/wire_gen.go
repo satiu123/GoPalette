@@ -38,7 +38,9 @@ func wireApp(confServer *conf.Server, confData *conf.Data, registry *conf.Regist
 		return nil, nil, err
 	}
 	profileUsecase := biz.NewProfileUsecase(dataData, logger)
-	bffService := service.NewBffService(profileUsecase, logger)
+	postUsecase := biz.NewPostUsecase(dataData, logger)
+	commentUsecase := biz.NewCommentUsecase(dataData, logger)
+	bffService := service.NewBffService(profileUsecase, postUsecase, commentUsecase, logger)
 	health := server.NewHealthEngine(dataData)
 	int64Counter := opentelemetry.NewRequestCounter(serviceName)
 	float64Histogram := opentelemetry.NewSecondsHistogram(serviceName)

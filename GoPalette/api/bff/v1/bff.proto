@@ -6,6 +6,7 @@ import "comment/v1/comment.proto";
 import "post/v1/post.proto";
 import "user/v1/user.proto";
 import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/satiu123/GoPalette/api/bff/v1;v1";
 option java_multiple_files = true;
@@ -24,6 +25,21 @@ service BlogBff {
       get: "/v1/profiles/{user_id}"
     };
   }
+  // 获取带作者信息的帖子详情
+  rpc GetPost (api.post.v1.GetPostRequest) returns (api.post.v1.GetPostReply) {
+    option (google.api.http) = {
+      get: "/v1/blog/posts/{id}"
+      additional_bindings {
+        get: "/v1/blog/posts/slug/{slug}"
+      }
+    };
+  }
+  // 获取带作者信息的文章评论树
+  rpc ListPostComments (api.comment.v1.ListCommentsRequest) returns (ListPostCommentsReply) {
+    option (google.api.http) = {
+      get: "/v1/blog/posts/{post_id}/comments"
+    };
+  }
 }
 
 message GetFullUserProfileRequest {
@@ -31,9 +47,31 @@ message GetFullUserProfileRequest {
 }
 
 message GetFullUserProfileReply {
-  api.user.v1.UserInfo user_info = 1;
-  api.post.v1.GetAuthorPostStatsReply post_stats = 2;
+  api.user.v1.UserInfo                user_info       = 1;
+  api.post.v1.GetAuthorPostStatsReply post_stats      = 2;
   repeated api.comment.v1.CommentInfo recent_comments = 3;
-  repeated api.post.v1.PostInfo top_posts = 4;
-  repeated api.post.v1.PostInfo author_posts = 5;
+  repeated api.post.v1.PostInfo       top_posts       = 4;
+  repeated api.post.v1.PostInfo       author_posts    = 5;
+}
+
+message AuthorInfo {
+  int64  id         = 1;
+  string name       = 2;
+  string avatar_url = 3;
+}
+
+message CommentView {
+  int64                     id              = 1;
+  int64                     post_id         = 2;
+  string                    content         = 3;
+  int64                     like_count      = 4;
+  AuthorInfo                author          = 5;
+  AuthorInfo                reply_to_author = 6;
+  google.protobuf.Timestamp created_at      = 7;
+  repeated CommentView      replies         = 8;
+}
+
+message ListPostCommentsReply {
+  repeated CommentView comments = 1;
+  int64                total    = 2;
 }

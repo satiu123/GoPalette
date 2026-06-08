@@ -28,6 +28,79 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.post.v1.ListPostsReply'
+    /v1/blog/posts/slug/{slug}:
+        get:
+            tags:
+                - BlogBff
+            description: 获取带作者信息的帖子详情
+            operationId: BlogBff_GetPost
+            parameters:
+                - name: slug
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: id
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.GetPostReply'
+    /v1/blog/posts/{id}:
+        get:
+            tags:
+                - BlogBff
+            description: 获取带作者信息的帖子详情
+            operationId: BlogBff_GetPost
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: slug
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.post.v1.GetPostReply'
+    /v1/blog/posts/{postId}/comments:
+        get:
+            tags:
+                - BlogBff
+            description: 获取带作者信息的文章评论树
+            operationId: BlogBff_ListPostComments
+            parameters:
+                - name: postId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.bff.v1.ListPostCommentsReply'
     /v1/categories:
         get:
             tags:
@@ -344,31 +417,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.post.v1.UpdatePostReply'
-    /v1/posts/{id}/comment-count:incr:
-        post:
-            tags:
-                - Post
-            description: IncrCommentCount 增减文章评论数（用于评论服务回写）
-            operationId: Post_IncrCommentCount
-            parameters:
-                - name: id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/api.post.v1.IncrCommentCountRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/api.post.v1.IncrCommentCountReply'
     /v1/posts/{id}/like:
         post:
             tags:
@@ -997,6 +1045,37 @@ paths:
                                 $ref: '#/components/schemas/api.user.v1.BatchGetUsersReply'
 components:
     schemas:
+        api.bff.v1.AuthorInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                avatarUrl:
+                    type: string
+        api.bff.v1.CommentView:
+            type: object
+            properties:
+                id:
+                    type: string
+                postId:
+                    type: string
+                content:
+                    type: string
+                likeCount:
+                    type: string
+                author:
+                    $ref: '#/components/schemas/api.bff.v1.AuthorInfo'
+                replyToAuthor:
+                    $ref: '#/components/schemas/api.bff.v1.AuthorInfo'
+                createdAt:
+                    type: string
+                    format: date-time
+                replies:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.bff.v1.CommentView'
         api.bff.v1.GetFullUserProfileReply:
             type: object
             properties:
@@ -1016,14 +1095,14 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/api.post.v1.PostInfo'
-        api.comment.v1.AuthorInfo:
+        api.bff.v1.ListPostCommentsReply:
             type: object
             properties:
-                id:
-                    type: string
-                name:
-                    type: string
-                avatarUrl:
+                comments:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.bff.v1.CommentView'
+                total:
                     type: string
         api.comment.v1.CommentInfo:
             type: object
@@ -1033,6 +1112,8 @@ components:
                 postId:
                     type: string
                 userId:
+                    type: string
+                replyToUserId:
                     type: string
                 content:
                     type: string
@@ -1045,10 +1126,6 @@ components:
                 status:
                     type: integer
                     format: enum
-                author:
-                    $ref: '#/components/schemas/api.comment.v1.AuthorInfo'
-                replyToAuthor:
-                    $ref: '#/components/schemas/api.comment.v1.AuthorInfo'
                 createdAt:
                     type: string
                     format: date-time
@@ -1240,18 +1317,6 @@ components:
             properties:
                 tag:
                     $ref: '#/components/schemas/api.post.v1.TagDetail'
-        api.post.v1.IncrCommentCountReply:
-            type: object
-            properties:
-                success:
-                    type: boolean
-        api.post.v1.IncrCommentCountRequest:
-            type: object
-            properties:
-                id:
-                    type: string
-                delta:
-                    type: string
         api.post.v1.ListAuthorPostsReply:
             type: object
             properties:

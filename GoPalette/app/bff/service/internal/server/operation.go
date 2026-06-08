@@ -9,7 +9,10 @@ var publicOperations = map[string]struct{}{
 
 	"/grpc.health.v1.Health/Check": {},
 
-	"/api.bff.v1.BlogBff/ListPosts": {},
+	"/api.bff.v1.BlogBff/ListPosts":          {},
+	"/api.bff.v1.BlogBff/GetFullUserProfile": {},
+	"/api.bff.v1.BlogBff/GetPost":            {},
+	"/api.bff.v1.BlogBff/ListPostComments":   {},
 }
 
 func IsPublicOperation(operation string) bool {

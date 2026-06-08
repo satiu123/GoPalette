@@ -13,6 +13,7 @@ import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -145,12 +146,224 @@ func (x *GetFullUserProfileReply) GetAuthorPosts() []*v11.PostInfo {
 	return nil
 }
 
+type AuthorInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	AvatarUrl     string                 `protobuf:"bytes,3,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AuthorInfo) Reset() {
+	*x = AuthorInfo{}
+	mi := &file_bff_v1_bff_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AuthorInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AuthorInfo) ProtoMessage() {}
+
+func (x *AuthorInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_bff_v1_bff_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AuthorInfo.ProtoReflect.Descriptor instead.
+func (*AuthorInfo) Descriptor() ([]byte, []int) {
+	return file_bff_v1_bff_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *AuthorInfo) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *AuthorInfo) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *AuthorInfo) GetAvatarUrl() string {
+	if x != nil {
+		return x.AvatarUrl
+	}
+	return ""
+}
+
+type CommentView struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	PostId        int64                  `protobuf:"varint,2,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	Content       string                 `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
+	LikeCount     int64                  `protobuf:"varint,4,opt,name=like_count,json=likeCount,proto3" json:"like_count,omitempty"`
+	Author        *AuthorInfo            `protobuf:"bytes,5,opt,name=author,proto3" json:"author,omitempty"`
+	ReplyToAuthor *AuthorInfo            `protobuf:"bytes,6,opt,name=reply_to_author,json=replyToAuthor,proto3" json:"reply_to_author,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Replies       []*CommentView         `protobuf:"bytes,8,rep,name=replies,proto3" json:"replies,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CommentView) Reset() {
+	*x = CommentView{}
+	mi := &file_bff_v1_bff_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CommentView) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CommentView) ProtoMessage() {}
+
+func (x *CommentView) ProtoReflect() protoreflect.Message {
+	mi := &file_bff_v1_bff_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CommentView.ProtoReflect.Descriptor instead.
+func (*CommentView) Descriptor() ([]byte, []int) {
+	return file_bff_v1_bff_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *CommentView) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *CommentView) GetPostId() int64 {
+	if x != nil {
+		return x.PostId
+	}
+	return 0
+}
+
+func (x *CommentView) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
+func (x *CommentView) GetLikeCount() int64 {
+	if x != nil {
+		return x.LikeCount
+	}
+	return 0
+}
+
+func (x *CommentView) GetAuthor() *AuthorInfo {
+	if x != nil {
+		return x.Author
+	}
+	return nil
+}
+
+func (x *CommentView) GetReplyToAuthor() *AuthorInfo {
+	if x != nil {
+		return x.ReplyToAuthor
+	}
+	return nil
+}
+
+func (x *CommentView) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *CommentView) GetReplies() []*CommentView {
+	if x != nil {
+		return x.Replies
+	}
+	return nil
+}
+
+type ListPostCommentsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Comments      []*CommentView         `protobuf:"bytes,1,rep,name=comments,proto3" json:"comments,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPostCommentsReply) Reset() {
+	*x = ListPostCommentsReply{}
+	mi := &file_bff_v1_bff_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPostCommentsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPostCommentsReply) ProtoMessage() {}
+
+func (x *ListPostCommentsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_bff_v1_bff_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPostCommentsReply.ProtoReflect.Descriptor instead.
+func (*ListPostCommentsReply) Descriptor() ([]byte, []int) {
+	return file_bff_v1_bff_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ListPostCommentsReply) GetComments() []*CommentView {
+	if x != nil {
+		return x.Comments
+	}
+	return nil
+}
+
+func (x *ListPostCommentsReply) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
 var File_bff_v1_bff_proto protoreflect.FileDescriptor
 
 const file_bff_v1_bff_proto_rawDesc = "" +
 	"\n" +
 	"\x10bff/v1/bff.proto\x12\n" +
-	"api.bff.v1\x1a\x18comment/v1/comment.proto\x1a\x12post/v1/post.proto\x1a\x12user/v1/user.proto\x1a\x1cgoogle/api/annotations.proto\"4\n" +
+	"api.bff.v1\x1a\x18comment/v1/comment.proto\x1a\x12post/v1/post.proto\x1a\x12user/v1/user.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"4\n" +
 	"\x19GetFullUserProfileRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"\xc6\x02\n" +
 	"\x17GetFullUserProfileReply\x122\n" +
@@ -159,10 +372,32 @@ const file_bff_v1_bff_proto_rawDesc = "" +
 	"post_stats\x18\x02 \x01(\v2$.api.post.v1.GetAuthorPostStatsReplyR\tpostStats\x12D\n" +
 	"\x0frecent_comments\x18\x03 \x03(\v2\x1b.api.comment.v1.CommentInfoR\x0erecentComments\x122\n" +
 	"\ttop_posts\x18\x04 \x03(\v2\x15.api.post.v1.PostInfoR\btopPosts\x128\n" +
-	"\fauthor_posts\x18\x05 \x03(\v2\x15.api.post.v1.PostInfoR\vauthorPosts2\xed\x01\n" +
+	"\fauthor_posts\x18\x05 \x03(\v2\x15.api.post.v1.PostInfoR\vauthorPosts\"O\n" +
+	"\n" +
+	"AuthorInfo\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
+	"\n" +
+	"avatar_url\x18\x03 \x01(\tR\tavatarUrl\"\xcd\x02\n" +
+	"\vCommentView\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
+	"\apost_id\x18\x02 \x01(\x03R\x06postId\x12\x18\n" +
+	"\acontent\x18\x03 \x01(\tR\acontent\x12\x1d\n" +
+	"\n" +
+	"like_count\x18\x04 \x01(\x03R\tlikeCount\x12.\n" +
+	"\x06author\x18\x05 \x01(\v2\x16.api.bff.v1.AuthorInfoR\x06author\x12>\n" +
+	"\x0freply_to_author\x18\x06 \x01(\v2\x16.api.bff.v1.AuthorInfoR\rreplyToAuthor\x129\n" +
+	"\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x121\n" +
+	"\areplies\x18\b \x03(\v2\x17.api.bff.v1.CommentViewR\areplies\"b\n" +
+	"\x15ListPostCommentsReply\x123\n" +
+	"\bcomments\x18\x01 \x03(\v2\x17.api.bff.v1.CommentViewR\bcomments\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total2\xf3\x03\n" +
 	"\aBlogBff\x12_\n" +
 	"\tListPosts\x12\x1d.api.post.v1.ListPostsRequest\x1a\x1b.api.post.v1.ListPostsReply\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/v1/blog/posts\x12\x80\x01\n" +
-	"\x12GetFullUserProfile\x12%.api.bff.v1.GetFullUserProfileRequest\x1a#.api.bff.v1.GetFullUserProfileReply\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/profiles/{user_id}B;\n" +
+	"\x12GetFullUserProfile\x12%.api.bff.v1.GetFullUserProfileRequest\x1a#.api.bff.v1.GetFullUserProfileReply\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/profiles/{user_id}\x12|\n" +
+	"\aGetPost\x12\x1b.api.post.v1.GetPostRequest\x1a\x19.api.post.v1.GetPostReply\"9\x82\xd3\xe4\x93\x023Z\x1c\x12\x1a/v1/blog/posts/slug/{slug}\x12\x13/v1/blog/posts/{id}\x12\x85\x01\n" +
+	"\x10ListPostComments\x12#.api.comment.v1.ListCommentsRequest\x1a!.api.bff.v1.ListPostCommentsReply\")\x82\xd3\xe4\x93\x02#\x12!/v1/blog/posts/{post_id}/commentsB;\n" +
 	"\n" +
 	"api.bff.v1P\x01Z+github.com/satiu123/GoPalette/api/bff/v1;v1b\x06proto3"
 
@@ -178,32 +413,48 @@ func file_bff_v1_bff_proto_rawDescGZIP() []byte {
 	return file_bff_v1_bff_proto_rawDescData
 }
 
-var file_bff_v1_bff_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_bff_v1_bff_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_bff_v1_bff_proto_goTypes = []any{
 	(*GetFullUserProfileRequest)(nil),   // 0: api.bff.v1.GetFullUserProfileRequest
 	(*GetFullUserProfileReply)(nil),     // 1: api.bff.v1.GetFullUserProfileReply
-	(*v1.UserInfo)(nil),                 // 2: api.user.v1.UserInfo
-	(*v11.GetAuthorPostStatsReply)(nil), // 3: api.post.v1.GetAuthorPostStatsReply
-	(*v12.CommentInfo)(nil),             // 4: api.comment.v1.CommentInfo
-	(*v11.PostInfo)(nil),                // 5: api.post.v1.PostInfo
-	(*v11.ListPostsRequest)(nil),        // 6: api.post.v1.ListPostsRequest
-	(*v11.ListPostsReply)(nil),          // 7: api.post.v1.ListPostsReply
+	(*AuthorInfo)(nil),                  // 2: api.bff.v1.AuthorInfo
+	(*CommentView)(nil),                 // 3: api.bff.v1.CommentView
+	(*ListPostCommentsReply)(nil),       // 4: api.bff.v1.ListPostCommentsReply
+	(*v1.UserInfo)(nil),                 // 5: api.user.v1.UserInfo
+	(*v11.GetAuthorPostStatsReply)(nil), // 6: api.post.v1.GetAuthorPostStatsReply
+	(*v12.CommentInfo)(nil),             // 7: api.comment.v1.CommentInfo
+	(*v11.PostInfo)(nil),                // 8: api.post.v1.PostInfo
+	(*timestamppb.Timestamp)(nil),       // 9: google.protobuf.Timestamp
+	(*v11.ListPostsRequest)(nil),        // 10: api.post.v1.ListPostsRequest
+	(*v11.GetPostRequest)(nil),          // 11: api.post.v1.GetPostRequest
+	(*v12.ListCommentsRequest)(nil),     // 12: api.comment.v1.ListCommentsRequest
+	(*v11.ListPostsReply)(nil),          // 13: api.post.v1.ListPostsReply
+	(*v11.GetPostReply)(nil),            // 14: api.post.v1.GetPostReply
 }
 var file_bff_v1_bff_proto_depIdxs = []int32{
-	2, // 0: api.bff.v1.GetFullUserProfileReply.user_info:type_name -> api.user.v1.UserInfo
-	3, // 1: api.bff.v1.GetFullUserProfileReply.post_stats:type_name -> api.post.v1.GetAuthorPostStatsReply
-	4, // 2: api.bff.v1.GetFullUserProfileReply.recent_comments:type_name -> api.comment.v1.CommentInfo
-	5, // 3: api.bff.v1.GetFullUserProfileReply.top_posts:type_name -> api.post.v1.PostInfo
-	5, // 4: api.bff.v1.GetFullUserProfileReply.author_posts:type_name -> api.post.v1.PostInfo
-	6, // 5: api.bff.v1.BlogBff.ListPosts:input_type -> api.post.v1.ListPostsRequest
-	0, // 6: api.bff.v1.BlogBff.GetFullUserProfile:input_type -> api.bff.v1.GetFullUserProfileRequest
-	7, // 7: api.bff.v1.BlogBff.ListPosts:output_type -> api.post.v1.ListPostsReply
-	1, // 8: api.bff.v1.BlogBff.GetFullUserProfile:output_type -> api.bff.v1.GetFullUserProfileReply
-	7, // [7:9] is the sub-list for method output_type
-	5, // [5:7] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	5,  // 0: api.bff.v1.GetFullUserProfileReply.user_info:type_name -> api.user.v1.UserInfo
+	6,  // 1: api.bff.v1.GetFullUserProfileReply.post_stats:type_name -> api.post.v1.GetAuthorPostStatsReply
+	7,  // 2: api.bff.v1.GetFullUserProfileReply.recent_comments:type_name -> api.comment.v1.CommentInfo
+	8,  // 3: api.bff.v1.GetFullUserProfileReply.top_posts:type_name -> api.post.v1.PostInfo
+	8,  // 4: api.bff.v1.GetFullUserProfileReply.author_posts:type_name -> api.post.v1.PostInfo
+	2,  // 5: api.bff.v1.CommentView.author:type_name -> api.bff.v1.AuthorInfo
+	2,  // 6: api.bff.v1.CommentView.reply_to_author:type_name -> api.bff.v1.AuthorInfo
+	9,  // 7: api.bff.v1.CommentView.created_at:type_name -> google.protobuf.Timestamp
+	3,  // 8: api.bff.v1.CommentView.replies:type_name -> api.bff.v1.CommentView
+	3,  // 9: api.bff.v1.ListPostCommentsReply.comments:type_name -> api.bff.v1.CommentView
+	10, // 10: api.bff.v1.BlogBff.ListPosts:input_type -> api.post.v1.ListPostsRequest
+	0,  // 11: api.bff.v1.BlogBff.GetFullUserProfile:input_type -> api.bff.v1.GetFullUserProfileRequest
+	11, // 12: api.bff.v1.BlogBff.GetPost:input_type -> api.post.v1.GetPostRequest
+	12, // 13: api.bff.v1.BlogBff.ListPostComments:input_type -> api.comment.v1.ListCommentsRequest
+	13, // 14: api.bff.v1.BlogBff.ListPosts:output_type -> api.post.v1.ListPostsReply
+	1,  // 15: api.bff.v1.BlogBff.GetFullUserProfile:output_type -> api.bff.v1.GetFullUserProfileReply
+	14, // 16: api.bff.v1.BlogBff.GetPost:output_type -> api.post.v1.GetPostReply
+	4,  // 17: api.bff.v1.BlogBff.ListPostComments:output_type -> api.bff.v1.ListPostCommentsReply
+	14, // [14:18] is the sub-list for method output_type
+	10, // [10:14] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_bff_v1_bff_proto_init() }
@@ -217,7 +468,7 @@ func file_bff_v1_bff_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_bff_v1_bff_proto_rawDesc), len(file_bff_v1_bff_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
