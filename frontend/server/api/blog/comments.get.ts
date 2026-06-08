@@ -1,8 +1,6 @@
-import { joinURL } from 'ufo'
 import { gatewayFetch } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig(event)
   const query = getQuery(event)
   const postId = String(query.postId || '').trim()
 
@@ -17,10 +15,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  return await $fetch(joinURL(config.gatewayBase, '/v1/comments'), {
+  return await gatewayFetch(event, `/v1/blog/posts/${encodeURIComponent(postId)}/comments`, {
     method: 'GET',
+    auth: 'optional',
     query: {
-      postId,
       page: query.page || '1',
       pageSize: query.pageSize || '50'
     }

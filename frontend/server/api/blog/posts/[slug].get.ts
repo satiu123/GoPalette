@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'slug is required' })
   }
 
-  return await gatewayFetch(event, `/v1/posts/slug/${slug}`, {
+  return await gatewayFetch(event, `/v1/blog/posts/slug/${slug}`, {
     method: 'GET',
     auth: 'optional'
   })

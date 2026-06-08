@@ -61,11 +61,12 @@ function normalizeComment(input: DataRecord): CommentInfo {
   const repliesRaw = Array.isArray(input?.replies) ? input.replies : []
   const author = input.author as DataRecord | undefined
   const replyToAuthor = (input.replyToAuthor || input.reply_to_author) as DataRecord | undefined
+  const authorId = String(author?.id || '')
 
   return {
     id: String(input?.id || ''),
     postId: String(input?.postId || input?.post_id || ''),
-    userId: String(input?.userId || input?.user_id || ''),
+    userId: String(input?.userId || input?.user_id || authorId),
     content: String(input?.content || ''),
     parentId: String(input?.parentId || input?.parent_id || ''),
     rootId: String(input?.rootId || input?.root_id || ''),
