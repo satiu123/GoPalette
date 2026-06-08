@@ -25,28 +25,26 @@ import (
 
 // wireApp init kratos application.
 func wireApp(confServer *conf.Server, confData *conf.Data, auth *conf.Auth, registry *conf.Registry, logger log.Logger, serviceName opentelemetry.ServiceName) (*kratos.App, func(), error) {
-	client, err := NewEtcdClient(registry)
-	if err != nil {
-		return nil, nil, err
-	}
-	etcdRegistry := NewRegistry(client)
-	postClient := data.NewPostClient(etcdRegistry, confData)
-	userClient := data.NewUserClient(etcdRegistry, confData)
-	dataData, cleanup, err := data.NewData(confData, logger, postClient, userClient)
+	dataData, cleanup, err := data.NewData(confData, logger)
 	if err != nil {
 		return nil, nil, err
 	}
 	commentRepo := data.NewCommentRepo(dataData, logger)
-	postRepo := data.NewPostRepo(dataData)
-	userRepo := data.NewUserRepo(dataData)
 	rateLimitRepo := data.NewRateLimitRepo(dataData)
-	commentUsecase := biz.NewCommentUsecase(commentRepo, postRepo, userRepo, rateLimitRepo, logger)
+	commentEventPublisher := data.NewCommentEventPublisher(dataData)
+	commentUsecase := biz.NewCommentUsecase(commentRepo, rateLimitRepo, commentEventPublisher, logger)
 	commentService := service.NewCommentService(commentUsecase, logger)
 	health := server.NewHealthEngine(dataData)
 	int64Counter := opentelemetry.NewRequestCounter(serviceName)
 	float64Histogram := opentelemetry.NewSecondsHistogram(serviceName)
 	grpcServer := server.NewGRPCServer(confServer, auth, commentService, logger, health, int64Counter, float64Histogram)
 	httpServer := server.NewHTTPServer(confServer, auth, commentService, logger, health, int64Counter, float64Histogram)
+	client, err := NewEtcdClient(registry)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	etcdRegistry := NewRegistry(client)
 	app := newApp(logger, grpcServer, httpServer, etcdRegistry)
 	return app, func() {
 		cleanup()

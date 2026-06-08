@@ -6,9 +6,8 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/satiu123/GoPalette/api/comment/v1"
-
 	"github.com/go-kratos/kratos/v2/log"
+	pb "github.com/satiu123/GoPalette/api/comment/v1"
 )
 
 const (
@@ -30,19 +29,6 @@ type Comment struct {
 	UpdatedAt time.Time
 }
 
-type UserProfile struct {
-	ID        int64
-	Name      string
-	AvatarURL string
-}
-
-type CommentView struct {
-	Comment       *Comment
-	Author        *UserProfile
-	ReplyToAuthor *UserProfile
-	Replies       []*CommentView
-}
-
 type CommentRepo interface {
 	Create(ctx context.Context, c *Comment) (*Comment, error)
 	GetByID(ctx context.Context, id int64) (*Comment, error)
@@ -56,34 +42,27 @@ type CommentRepo interface {
 	SoftDelete(ctx context.Context, id int64) error
 }
 
-type PostRepo interface {
-	Exists(ctx context.Context, postID int64) (bool, error)
-	IncrCommentCount(ctx context.Context, postID, delta int64) error
-}
-
-type UserRepo interface {
-	BatchGetProfiles(ctx context.Context, ids []int64) (map[int64]*UserProfile, error)
-}
-
 type RateLimitRepo interface {
 	AllowCreate(ctx context.Context, userID int64, limit int64, window time.Duration) (bool, error)
 }
 
-type CommentUsecase struct {
-	repo     CommentRepo
-	postRepo PostRepo
-	userRepo UserRepo
-	rateRepo RateLimitRepo
-	logger   *log.Helper
+type CommentEventPublisher interface {
+	PublishCommentCountChanged(ctx context.Context, postID, commentID, delta int64) error
 }
 
-func NewCommentUsecase(repo CommentRepo, postRepo PostRepo, userRepo UserRepo, rateRepo RateLimitRepo, logger log.Logger) *CommentUsecase {
+type CommentUsecase struct {
+	repo      CommentRepo
+	rateRepo  RateLimitRepo
+	publisher CommentEventPublisher
+	logger    *log.Helper
+}
+
+func NewCommentUsecase(repo CommentRepo, rateRepo RateLimitRepo, publisher CommentEventPublisher, logger log.Logger) *CommentUsecase {
 	return &CommentUsecase{
-		repo:     repo,
-		postRepo: postRepo,
-		userRepo: userRepo,
-		rateRepo: rateRepo,
-		logger:   log.NewHelper(log.With(logger, "module", "usecase/comment")),
+		repo:      repo,
+		rateRepo:  rateRepo,
+		publisher: publisher,
+		logger:    log.NewHelper(log.With(logger, "module", "usecase/comment")),
 	}
 }
 
@@ -102,14 +81,6 @@ func (uc *CommentUsecase) Create(ctx context.Context, c *Comment) (*Comment, err
 		uc.logger.WithContext(ctx).Warnf("rate limit check failed: %v", err)
 	} else if !ok {
 		return nil, pb.ErrorRateLimited("%s", "评论过于频繁，请稍后再试")
-	}
-
-	exists, err := uc.postRepo.Exists(ctx, c.PostID)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, pb.ErrorPostNotFound("%s", "文章不存在")
 	}
 
 	if c.ParentID > 0 {
@@ -144,8 +115,8 @@ func (uc *CommentUsecase) Create(ctx context.Context, c *Comment) (*Comment, err
 		}
 	}
 
-	if err := uc.postRepo.IncrCommentCount(ctx, created.PostID, 1); err != nil {
-		uc.logger.WithContext(ctx).Warnf("incr post comment_count failed, post_id=%d err=%v", created.PostID, err)
+	if err := uc.publisher.PublishCommentCountChanged(ctx, created.PostID, created.ID, 1); err != nil {
+		uc.logger.WithContext(ctx).Warnf("publish comment_count increment failed, post_id=%d comment_id=%d err=%v", created.PostID, created.ID, err)
 	}
 
 	return created, nil
@@ -168,8 +139,8 @@ func (uc *CommentUsecase) Delete(ctx context.Context, id int64) error {
 	if err := uc.repo.SoftDelete(ctx, id); err != nil {
 		return err
 	}
-	if err := uc.postRepo.IncrCommentCount(ctx, comment.PostID, -1); err != nil {
-		uc.logger.WithContext(ctx).Warnf("decr post comment_count failed, post_id=%d err=%v", comment.PostID, err)
+	if err := uc.publisher.PublishCommentCountChanged(ctx, comment.PostID, comment.ID, -1); err != nil {
+		uc.logger.WithContext(ctx).Warnf("publish comment_count decrement failed, post_id=%d comment_id=%d err=%v", comment.PostID, comment.ID, err)
 	}
 	return nil
 }
@@ -198,8 +169,8 @@ func (uc *CommentUsecase) Review(ctx context.Context, id int64, status int32) (*
 			return nil, err
 		}
 		if comment.Status != CommentStatusDeleted {
-			if err := uc.postRepo.IncrCommentCount(ctx, comment.PostID, -1); err != nil {
-				uc.logger.WithContext(ctx).Warnf("decr post comment_count failed, post_id=%d err=%v", comment.PostID, err)
+			if err := uc.publisher.PublishCommentCountChanged(ctx, comment.PostID, comment.ID, -1); err != nil {
+				uc.logger.WithContext(ctx).Warnf("publish comment_count decrement failed, post_id=%d comment_id=%d err=%v", comment.PostID, comment.ID, err)
 			}
 		}
 		return uc.repo.GetByID(ctx, id)
@@ -211,9 +182,10 @@ func (uc *CommentUsecase) Review(ctx context.Context, id int64, status int32) (*
 	return uc.repo.GetByID(ctx, id)
 }
 
-func (uc *CommentUsecase) ListByPost(ctx context.Context, postID, page, pageSize int64) ([]*CommentView, int64, error) {
+// ListByPost 返回当前页的根评论及它们对应的子评论
+func (uc *CommentUsecase) ListByPost(ctx context.Context, postID, page, pageSize int64) (roots []*Comment, replies []*Comment, total int64, err error) {
 	if postID <= 0 {
-		return nil, 0, pb.ErrorInvalidArgument("%s", "post_id 无效")
+		return nil, nil, 0, pb.ErrorInvalidArgument("%s", "post_id 无效")
 	}
 	if page <= 0 {
 		page = 1
@@ -222,78 +194,33 @@ func (uc *CommentUsecase) ListByPost(ctx context.Context, postID, page, pageSize
 		pageSize = 10
 	}
 
-	roots, total, err := uc.repo.ListRootByPost(ctx, postID, page, pageSize)
+	roots, total, err = uc.repo.ListRootByPost(ctx, postID, page, pageSize)
 	if err != nil {
-		return nil, 0, err
+		return nil, nil, 0, err
 	}
 	if len(roots) == 0 {
-		return []*CommentView{}, total, nil
+		return []*Comment{}, []*Comment{}, total, nil
 	}
 
 	rootIDs := make([]int64, 0, len(roots))
-	userIDSet := make(map[int64]struct{})
-	commentMap := make(map[int64]*Comment)
 	for _, c := range roots {
 		rootID := c.RootID
 		if rootID == 0 {
 			rootID = c.ID
 		}
 		rootIDs = append(rootIDs, rootID)
-		userIDSet[c.UserID] = struct{}{}
-		commentMap[c.ID] = c
 	}
 
-	replies, err := uc.repo.ListRepliesByRootIDs(ctx, rootIDs)
+	replies, err = uc.repo.ListRepliesByRootIDs(ctx, rootIDs)
 	if err != nil {
-		return nil, 0, err
-	}
-	for _, c := range replies {
-		userIDSet[c.UserID] = struct{}{}
-		commentMap[c.ID] = c
+		return nil, nil, 0, err
 	}
 
-	userIDs := make([]int64, 0, len(userIDSet))
-	for id := range userIDSet {
-		userIDs = append(userIDs, id)
-	}
-	profiles, err := uc.userRepo.BatchGetProfiles(ctx, userIDs)
-	if err != nil {
-		uc.logger.WithContext(ctx).Warnf("batch get users failed: %v", err)
-		profiles = map[int64]*UserProfile{}
-	}
-
-	rootViews := make([]*CommentView, 0, len(roots))
-	rootMap := make(map[int64]*CommentView, len(roots))
-	for _, c := range roots {
-		v := &CommentView{Comment: c, Author: profiles[c.UserID], Replies: []*CommentView{}}
-		rootViews = append(rootViews, v)
-		rootMap[c.ID] = v
-	}
-
-	for _, r := range replies {
-		rootID := r.RootID
-		if rootID == 0 {
-			rootID = r.ParentID
-		}
-		target := rootMap[rootID]
-		if target == nil {
-			continue
-		}
-		var replyTo *UserProfile
-		if parent, ok := commentMap[r.ParentID]; ok {
-			replyTo = profiles[parent.UserID]
-		}
-		target.Replies = append(target.Replies, &CommentView{
-			Comment:       r,
-			Author:        profiles[r.UserID],
-			ReplyToAuthor: replyTo,
-		})
-	}
-
-	return rootViews, total, nil
+	return roots, replies, total, nil
 }
 
-func (uc *CommentUsecase) ListAll(ctx context.Context, page, pageSize int64) ([]*CommentView, int64, error) {
+// ListAll 仅返回纯评论数据列表
+func (uc *CommentUsecase) ListAll(ctx context.Context, page, pageSize int64) ([]*Comment, int64, error) {
 	if err := CheckAdmin(ctx); err != nil {
 		return nil, 0, err
 	}
@@ -307,35 +234,7 @@ func (uc *CommentUsecase) ListAll(ctx context.Context, page, pageSize int64) ([]
 		pageSize = 100
 	}
 
-	comments, total, err := uc.repo.ListAll(ctx, page, pageSize)
-	if err != nil {
-		return nil, 0, err
-	}
-	if len(comments) == 0 {
-		return []*CommentView{}, total, nil
-	}
-
-	userIDSet := make(map[int64]struct{})
-	for _, c := range comments {
-		userIDSet[c.UserID] = struct{}{}
-	}
-
-	userIDs := make([]int64, 0, len(userIDSet))
-	for id := range userIDSet {
-		userIDs = append(userIDs, id)
-	}
-	profiles, err := uc.userRepo.BatchGetProfiles(ctx, userIDs)
-	if err != nil {
-		uc.logger.WithContext(ctx).Warnf("batch get users failed: %v", err)
-		profiles = map[int64]*UserProfile{}
-	}
-
-	views := make([]*CommentView, 0, len(comments))
-	for _, c := range comments {
-		views = append(views, &CommentView{Comment: c, Author: profiles[c.UserID], Replies: []*CommentView{}})
-	}
-
-	return views, total, nil
+	return uc.repo.ListAll(ctx, page, pageSize)
 }
 
 func (uc *CommentUsecase) GetUserCommentStats(ctx context.Context, userID int64) (int64, error) {
@@ -345,7 +244,8 @@ func (uc *CommentUsecase) GetUserCommentStats(ctx context.Context, userID int64)
 	return uc.repo.CountByUser(ctx, userID)
 }
 
-func (uc *CommentUsecase) ListUserRecentComments(ctx context.Context, userID, limit int64) ([]*CommentView, error) {
+// ListUserRecentComments 仅返回纯评论数据列表
+func (uc *CommentUsecase) ListUserRecentComments(ctx context.Context, userID, limit int64) ([]*Comment, error) {
 	if userID <= 0 {
 		return nil, pb.ErrorInvalidArgument("%s", "user_id 无效")
 	}
@@ -356,39 +256,7 @@ func (uc *CommentUsecase) ListUserRecentComments(ctx context.Context, userID, li
 		limit = 50
 	}
 
-	comments, err := uc.repo.ListRecentByUser(ctx, userID, limit)
-	if err != nil {
-		return nil, err
-	}
-	if len(comments) == 0 {
-		return []*CommentView{}, nil
-	}
-
-	userIDSet := make(map[int64]struct{})
-	for _, c := range comments {
-		userIDSet[c.UserID] = struct{}{}
-	}
-
-	userIDs := make([]int64, 0, len(userIDSet))
-	for id := range userIDSet {
-		userIDs = append(userIDs, id)
-	}
-	profiles, err := uc.userRepo.BatchGetProfiles(ctx, userIDs)
-	if err != nil {
-		uc.logger.WithContext(ctx).Warnf("batch get users failed: %v", err)
-		profiles = map[int64]*UserProfile{}
-	}
-
-	views := make([]*CommentView, 0, len(comments))
-	for _, c := range comments {
-		views = append(views, &CommentView{
-			Comment: c,
-			Author:  profiles[c.UserID],
-			Replies: []*CommentView{},
-		})
-	}
-
-	return views, nil
+	return uc.repo.ListRecentByUser(ctx, userID, limit)
 }
 
 func hasSensitiveWord(content string) bool {

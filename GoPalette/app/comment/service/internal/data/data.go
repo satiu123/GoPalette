@@ -1,21 +1,15 @@
 package data
 
 import (
-	"context"
 	"errors"
 
-	postv1 "github.com/satiu123/GoPalette/api/post/v1"
-	userv1 "github.com/satiu123/GoPalette/api/user/v1"
 	"github.com/satiu123/GoPalette/app/comment/service/internal/conf"
 	dbpool "github.com/satiu123/GoPalette/pkg/db"
 	gormtracing "gorm.io/plugin/opentelemetry/tracing"
 
 	"github.com/euskadi31/wire"
 
-	"github.com/go-kratos/kratos/contrib/registry/etcd/v2"
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware/tracing"
-	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
 	"github.com/redis/go-redis/v9/maintnotifications"
@@ -24,14 +18,13 @@ import (
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewCommentRepo, NewPostRepo, NewUserRepo, NewRateLimitRepo, NewUserClient, NewPostClient)
+var ProviderSet = wire.NewSet(NewData, NewCommentRepo, NewRateLimitRepo, NewCommentEventPublisher)
 
 // Data .
 type Data struct {
-	db         *gorm.DB
-	rdb        *redis.Client
-	postClient postv1.PostClient
-	userClient userv1.UserClient
+	db       *gorm.DB
+	rdb      *redis.Client
+	eventRDB *redis.Client
 }
 
 func (d *Data) DB() *gorm.DB {
@@ -42,36 +35,12 @@ func (d *Data) Redis() *redis.Client {
 	return d.rdb
 }
 
-func NewPostClient(reg *etcd.Registry, c *conf.Data) postv1.PostClient {
-	conn, err := grpc.DialInsecure(
-		context.Background(),
-		grpc.WithEndpoint(c.Clients.PostEndpoint),
-		grpc.WithTimeout(c.Clients.Timeout.AsDuration()),
-		grpc.WithDiscovery(reg),
-		grpc.WithMiddleware(tracing.Client()),
-	)
-	if err != nil {
-		panic(err)
-	}
-	return postv1.NewPostClient(conn)
-}
-
-func NewUserClient(reg *etcd.Registry, c *conf.Data) userv1.UserClient {
-	conn, err := grpc.DialInsecure(
-		context.Background(),
-		grpc.WithEndpoint(c.Clients.UserEndpoint),
-		grpc.WithTimeout(c.Clients.Timeout.AsDuration()),
-		grpc.WithDiscovery(reg),
-		grpc.WithMiddleware(tracing.Client()),
-	)
-	if err != nil {
-		panic(err)
-	}
-	return userv1.NewUserClient(conn)
+func (d *Data) EventRedis() *redis.Client {
+	return d.eventRDB
 }
 
 // NewData .
-func NewData(c *conf.Data, logger log.Logger, pc postv1.PostClient, uc userv1.UserClient) (*Data, func(), error) {
+func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 	helper := log.NewHelper(log.With(logger, "module", "comment-service/data"))
 	if c == nil {
 		return nil, nil, errors.New("缺少 data 配置")
@@ -114,6 +83,28 @@ func NewData(c *conf.Data, logger log.Logger, pc postv1.PostClient, uc userv1.Us
 			Mode: maintnotifications.ModeDisabled,
 		},
 	})
+	eventRedisConf := c.EventRedis
+	if eventRedisConf == nil {
+		eventRedisConf = &conf.Data_Redis{
+			Addr:         c.Redis.Addr,
+			Password:     c.Redis.Password,
+			Db:           0,
+			DialTimeout:  c.Redis.DialTimeout,
+			ReadTimeout:  c.Redis.ReadTimeout,
+			WriteTimeout: c.Redis.WriteTimeout,
+		}
+	}
+	eventRDB := redis.NewClient(&redis.Options{
+		Addr:         eventRedisConf.Addr,
+		Password:     eventRedisConf.Password,
+		DB:           int(eventRedisConf.Db),
+		DialTimeout:  eventRedisConf.DialTimeout.AsDuration(),
+		ReadTimeout:  eventRedisConf.ReadTimeout.AsDuration(),
+		WriteTimeout: eventRedisConf.WriteTimeout.AsDuration(),
+		MaintNotificationsConfig: &maintnotifications.Config{
+			Mode: maintnotifications.ModeDisabled,
+		},
+	})
 
 	if err := redisotel.InstrumentTracing(rdb, redisotel.WithDialFilter(true), redisotel.WithCommandFilter(
 		func(cmd redis.Cmder) bool {
@@ -129,12 +120,7 @@ func NewData(c *conf.Data, logger log.Logger, pc postv1.PostClient, uc userv1.Us
 
 	helper.Info("数据库和Redis连接成功")
 
-	d := &Data{
-		db:         db,
-		rdb:        rdb,
-		postClient: pc,
-		userClient: uc,
-	}
+	d := &Data{db: db, rdb: rdb, eventRDB: eventRDB}
 
 	cleanup := func() {
 		helper.Info("message", "close the data resource")
@@ -142,6 +128,7 @@ func NewData(c *conf.Data, logger log.Logger, pc postv1.PostClient, uc userv1.Us
 			_ = sqlDB.Close()
 		}
 		_ = rdb.Close()
+		_ = eventRDB.Close()
 	}
 	return d, cleanup, nil
 }

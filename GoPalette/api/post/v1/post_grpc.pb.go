@@ -59,7 +59,7 @@ type PostClient interface {
 	ListTopAuthorPosts(ctx context.Context, in *ListTopAuthorPostsRequest, opts ...grpc.CallOption) (*ListTopAuthorPostsReply, error)
 	// ListPostsForIndex 仅供搜索服务使用，返回索引所需字段
 	ListPostsForIndex(ctx context.Context, in *ListPostsForIndexRequest, opts ...grpc.CallOption) (*ListPostsForIndexReply, error)
-	// IncrCommentCount 增减文章评论数（用于评论服务回写）
+	// IncrCommentCount 增减文章评论数（内部异步消费者使用）
 	IncrCommentCount(ctx context.Context, in *IncrCommentCountRequest, opts ...grpc.CallOption) (*IncrCommentCountReply, error)
 	// RecordPostView 记录文章浏览，服务端按 viewer_key 去重后自增浏览量
 	RecordPostView(ctx context.Context, in *RecordPostViewRequest, opts ...grpc.CallOption) (*RecordPostViewReply, error)
@@ -243,7 +243,7 @@ type PostServer interface {
 	ListTopAuthorPosts(context.Context, *ListTopAuthorPostsRequest) (*ListTopAuthorPostsReply, error)
 	// ListPostsForIndex 仅供搜索服务使用，返回索引所需字段
 	ListPostsForIndex(context.Context, *ListPostsForIndexRequest) (*ListPostsForIndexReply, error)
-	// IncrCommentCount 增减文章评论数（用于评论服务回写）
+	// IncrCommentCount 增减文章评论数（内部异步消费者使用）
 	IncrCommentCount(context.Context, *IncrCommentCountRequest) (*IncrCommentCountReply, error)
 	// RecordPostView 记录文章浏览，服务端按 viewer_key 去重后自增浏览量
 	RecordPostView(context.Context, *RecordPostViewRequest) (*RecordPostViewReply, error)

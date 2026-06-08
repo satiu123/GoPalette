@@ -3578,7 +3578,7 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\tPUBLISHED\x10\x01\x12\f\n" +
 	"\bARCHIVED\x10\x02\x12\v\n" +
 	"\aPRIVATE\x10\x03\x12\v\n" +
-	"\aOFFLINE\x10\x042\x88\r\n" +
+	"\aOFFLINE\x10\x042\xd9\f\n" +
 	"\x04Post\x12`\n" +
 	"\n" +
 	"CreatePost\x12\x1e.api.post.v1.CreatePostRequest\x1a\x1c.api.post.v1.CreatePostReply\"\x14\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/posts\x12e\n" +
@@ -3591,8 +3591,8 @@ const file_post_v1_post_proto_rawDesc = "" +
 	"\x0fListAuthorPosts\x12#.api.post.v1.ListAuthorPostsRequest\x1a!.api.post.v1.ListAuthorPostsReply\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v1/users/{author_id}/posts\x12\x8d\x01\n" +
 	"\x12GetAuthorPostStats\x12&.api.post.v1.GetAuthorPostStatsRequest\x1a$.api.post.v1.GetAuthorPostStatsReply\")\x82\xd3\xe4\x93\x02#\x12!/v1/users/{author_id}/posts/stats\x12\x8b\x01\n" +
 	"\x12ListTopAuthorPosts\x12&.api.post.v1.ListTopAuthorPostsRequest\x1a$.api.post.v1.ListTopAuthorPostsReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/users/{author_id}/posts/top\x12_\n" +
-	"\x11ListPostsForIndex\x12%.api.post.v1.ListPostsForIndexRequest\x1a#.api.post.v1.ListPostsForIndexReply\x12\x8a\x01\n" +
-	"\x10IncrCommentCount\x12$.api.post.v1.IncrCommentCountRequest\x1a\".api.post.v1.IncrCommentCountReply\",\x82\xd3\xe4\x93\x02&:\x01*\"!/v1/posts/{id}/comment-count:incr\x12v\n" +
+	"\x11ListPostsForIndex\x12%.api.post.v1.ListPostsForIndexRequest\x1a#.api.post.v1.ListPostsForIndexReply\x12\\\n" +
+	"\x10IncrCommentCount\x12$.api.post.v1.IncrCommentCountRequest\x1a\".api.post.v1.IncrCommentCountReply\x12v\n" +
 	"\x0eRecordPostView\x12\".api.post.v1.RecordPostViewRequest\x1a .api.post.v1.RecordPostViewReply\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/posts/{id}/view\x12v\n" +
 	"\x0eTogglePostLike\x12\".api.post.v1.TogglePostLikeRequest\x1a .api.post.v1.TogglePostLikeReply\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/posts/{id}/like\x12\x7f\n" +
 	"\x10GetPostLikeState\x12$.api.post.v1.GetPostLikeStateRequest\x1a\".api.post.v1.GetPostLikeStateReply\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/posts/{id}/like-state\x12\x85\x01\n" +

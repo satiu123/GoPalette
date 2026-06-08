@@ -146,7 +146,7 @@ type Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Database      *Data_Database         `protobuf:"bytes,1,opt,name=database,proto3" json:"database,omitempty"`
 	Redis         *Data_Redis            `protobuf:"bytes,2,opt,name=redis,proto3" json:"redis,omitempty"`
-	Clients       *Data_Clients          `protobuf:"bytes,3,opt,name=clients,proto3" json:"clients,omitempty"`
+	EventRedis    *Data_Redis            `protobuf:"bytes,4,opt,name=event_redis,json=eventRedis,proto3" json:"event_redis,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -195,18 +195,17 @@ func (x *Data) GetRedis() *Data_Redis {
 	return nil
 }
 
-func (x *Data) GetClients() *Data_Clients {
+func (x *Data) GetEventRedis() *Data_Redis {
 	if x != nil {
-		return x.Clients
+		return x.EventRedis
 	}
 	return nil
 }
 
 type Auth struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	JwtAccessSecret string                 `protobuf:"bytes,1,opt,name=jwt_access_secret,json=jwtAccessSecret,proto3" json:"jwt_access_secret,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Auth) Reset() {
@@ -237,13 +236,6 @@ func (x *Auth) ProtoReflect() protoreflect.Message {
 // Deprecated: Use Auth.ProtoReflect.Descriptor instead.
 func (*Auth) Descriptor() ([]byte, []int) {
 	return file_app_comment_service_internal_conf_conf_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *Auth) GetJwtAccessSecret() string {
-	if x != nil {
-		return x.JwtAccessSecret
-	}
-	return ""
 }
 
 type Registry struct {
@@ -554,66 +546,6 @@ func (x *Data_Redis) GetWriteTimeout() *durationpb.Duration {
 	return nil
 }
 
-type Data_Clients struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PostEndpoint  string                 `protobuf:"bytes,1,opt,name=post_endpoint,json=postEndpoint,proto3" json:"post_endpoint,omitempty"`
-	UserEndpoint  string                 `protobuf:"bytes,2,opt,name=user_endpoint,json=userEndpoint,proto3" json:"user_endpoint,omitempty"`
-	Timeout       *durationpb.Duration   `protobuf:"bytes,3,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Data_Clients) Reset() {
-	*x = Data_Clients{}
-	mi := &file_app_comment_service_internal_conf_conf_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Data_Clients) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Data_Clients) ProtoMessage() {}
-
-func (x *Data_Clients) ProtoReflect() protoreflect.Message {
-	mi := &file_app_comment_service_internal_conf_conf_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Data_Clients.ProtoReflect.Descriptor instead.
-func (*Data_Clients) Descriptor() ([]byte, []int) {
-	return file_app_comment_service_internal_conf_conf_proto_rawDescGZIP(), []int{2, 2}
-}
-
-func (x *Data_Clients) GetPostEndpoint() string {
-	if x != nil {
-		return x.PostEndpoint
-	}
-	return ""
-}
-
-func (x *Data_Clients) GetUserEndpoint() string {
-	if x != nil {
-		return x.UserEndpoint
-	}
-	return ""
-}
-
-func (x *Data_Clients) GetTimeout() *durationpb.Duration {
-	if x != nil {
-		return x.Timeout
-	}
-	return nil
-}
-
 type Registry_Etcd struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Endpoints     []string               `protobuf:"bytes,1,rep,name=endpoints,proto3" json:"endpoints,omitempty"`
@@ -624,7 +556,7 @@ type Registry_Etcd struct {
 
 func (x *Registry_Etcd) Reset() {
 	*x = Registry_Etcd{}
-	mi := &file_app_comment_service_internal_conf_conf_proto_msgTypes[10]
+	mi := &file_app_comment_service_internal_conf_conf_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -636,7 +568,7 @@ func (x *Registry_Etcd) String() string {
 func (*Registry_Etcd) ProtoMessage() {}
 
 func (x *Registry_Etcd) ProtoReflect() protoreflect.Message {
-	mi := &file_app_comment_service_internal_conf_conf_proto_msgTypes[10]
+	mi := &file_app_comment_service_internal_conf_conf_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -686,11 +618,12 @@ const file_app_comment_service_internal_conf_conf_proto_rawDesc = "" +
 	"\x04GRPC\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x123\n" +
-	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\x9e\x05\n" +
+	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\x98\x04\n" +
 	"\x04Data\x12=\n" +
 	"\bdatabase\x18\x01 \x01(\v2!.kratos.api.comment.Data.DatabaseR\bdatabase\x124\n" +
-	"\x05redis\x18\x02 \x01(\v2\x1e.kratos.api.comment.Data.RedisR\x05redis\x12:\n" +
-	"\aclients\x18\x03 \x01(\v2 .kratos.api.comment.Data.ClientsR\aclients\x1a:\n" +
+	"\x05redis\x18\x02 \x01(\v2\x1e.kratos.api.comment.Data.RedisR\x05redis\x12?\n" +
+	"\vevent_redis\x18\x04 \x01(\v2\x1e.kratos.api.comment.Data.RedisR\n" +
+	"eventRedis\x1a:\n" +
 	"\bDatabase\x12\x16\n" +
 	"\x06driver\x18\x01 \x01(\tR\x06driver\x12\x16\n" +
 	"\x06source\x18\x02 \x01(\tR\x06source\x1a\x9d\x02\n" +
@@ -701,13 +634,8 @@ const file_app_comment_service_internal_conf_conf_proto_rawDesc = "" +
 	"\x02db\x18\x04 \x01(\x05R\x02db\x12<\n" +
 	"\fdial_timeout\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\vdialTimeout\x12<\n" +
 	"\fread_timeout\x18\x06 \x01(\v2\x19.google.protobuf.DurationR\vreadTimeout\x12>\n" +
-	"\rwrite_timeout\x18\a \x01(\v2\x19.google.protobuf.DurationR\fwriteTimeout\x1a\x88\x01\n" +
-	"\aClients\x12#\n" +
-	"\rpost_endpoint\x18\x01 \x01(\tR\fpostEndpoint\x12#\n" +
-	"\ruser_endpoint\x18\x02 \x01(\tR\fuserEndpoint\x123\n" +
-	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"2\n" +
-	"\x04Auth\x12*\n" +
-	"\x11jwt_access_secret\x18\x01 \x01(\tR\x0fjwtAccessSecret\"\x9c\x01\n" +
+	"\rwrite_timeout\x18\a \x01(\v2\x19.google.protobuf.DurationR\fwriteTimeout\"\x06\n" +
+	"\x04Auth\"\x9c\x01\n" +
 	"\bRegistry\x125\n" +
 	"\x04etcd\x18\x01 \x01(\v2!.kratos.api.comment.Registry.EtcdR\x04etcd\x1aY\n" +
 	"\x04Etcd\x12\x1c\n" +
@@ -726,7 +654,7 @@ func file_app_comment_service_internal_conf_conf_proto_rawDescGZIP() []byte {
 	return file_app_comment_service_internal_conf_conf_proto_rawDescData
 }
 
-var file_app_comment_service_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_app_comment_service_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_app_comment_service_internal_conf_conf_proto_goTypes = []any{
 	(*Bootstrap)(nil),           // 0: kratos.api.comment.Bootstrap
 	(*Server)(nil),              // 1: kratos.api.comment.Server
@@ -737,9 +665,8 @@ var file_app_comment_service_internal_conf_conf_proto_goTypes = []any{
 	(*Server_GRPC)(nil),         // 6: kratos.api.comment.Server.GRPC
 	(*Data_Database)(nil),       // 7: kratos.api.comment.Data.Database
 	(*Data_Redis)(nil),          // 8: kratos.api.comment.Data.Redis
-	(*Data_Clients)(nil),        // 9: kratos.api.comment.Data.Clients
-	(*Registry_Etcd)(nil),       // 10: kratos.api.comment.Registry.Etcd
-	(*durationpb.Duration)(nil), // 11: google.protobuf.Duration
+	(*Registry_Etcd)(nil),       // 9: kratos.api.comment.Registry.Etcd
+	(*durationpb.Duration)(nil), // 10: google.protobuf.Duration
 }
 var file_app_comment_service_internal_conf_conf_proto_depIdxs = []int32{
 	1,  // 0: kratos.api.comment.Bootstrap.server:type_name -> kratos.api.comment.Server
@@ -750,20 +677,19 @@ var file_app_comment_service_internal_conf_conf_proto_depIdxs = []int32{
 	6,  // 5: kratos.api.comment.Server.grpc:type_name -> kratos.api.comment.Server.GRPC
 	7,  // 6: kratos.api.comment.Data.database:type_name -> kratos.api.comment.Data.Database
 	8,  // 7: kratos.api.comment.Data.redis:type_name -> kratos.api.comment.Data.Redis
-	9,  // 8: kratos.api.comment.Data.clients:type_name -> kratos.api.comment.Data.Clients
-	10, // 9: kratos.api.comment.Registry.etcd:type_name -> kratos.api.comment.Registry.Etcd
-	11, // 10: kratos.api.comment.Server.HTTP.timeout:type_name -> google.protobuf.Duration
-	11, // 11: kratos.api.comment.Server.GRPC.timeout:type_name -> google.protobuf.Duration
-	11, // 12: kratos.api.comment.Data.Redis.dial_timeout:type_name -> google.protobuf.Duration
-	11, // 13: kratos.api.comment.Data.Redis.read_timeout:type_name -> google.protobuf.Duration
-	11, // 14: kratos.api.comment.Data.Redis.write_timeout:type_name -> google.protobuf.Duration
-	11, // 15: kratos.api.comment.Data.Clients.timeout:type_name -> google.protobuf.Duration
-	11, // 16: kratos.api.comment.Registry.Etcd.timeout:type_name -> google.protobuf.Duration
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	8,  // 8: kratos.api.comment.Data.event_redis:type_name -> kratos.api.comment.Data.Redis
+	9,  // 9: kratos.api.comment.Registry.etcd:type_name -> kratos.api.comment.Registry.Etcd
+	10, // 10: kratos.api.comment.Server.HTTP.timeout:type_name -> google.protobuf.Duration
+	10, // 11: kratos.api.comment.Server.GRPC.timeout:type_name -> google.protobuf.Duration
+	10, // 12: kratos.api.comment.Data.Redis.dial_timeout:type_name -> google.protobuf.Duration
+	10, // 13: kratos.api.comment.Data.Redis.read_timeout:type_name -> google.protobuf.Duration
+	10, // 14: kratos.api.comment.Data.Redis.write_timeout:type_name -> google.protobuf.Duration
+	10, // 15: kratos.api.comment.Registry.Etcd.timeout:type_name -> google.protobuf.Duration
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_app_comment_service_internal_conf_conf_proto_init() }
@@ -777,7 +703,7 @@ func file_app_comment_service_internal_conf_conf_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_app_comment_service_internal_conf_conf_proto_rawDesc), len(file_app_comment_service_internal_conf_conf_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

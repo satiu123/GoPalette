@@ -11,6 +11,7 @@ import (
 	pb "github.com/satiu123/GoPalette/api/search/v1"
 
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/satiu123/GoPalette/pkg/events"
 )
 
 type PostSearch struct {
@@ -46,6 +47,18 @@ type RebuildTask struct {
 	FinishedAt          time.Time
 }
 
+type PostIndexEvent struct {
+	Type         string
+	PostID       int64
+	Title        string
+	Summary      string
+	Content      string
+	Slug         string
+	CategoryName string
+	Tags         []string
+	CreatedAt    time.Time
+}
+
 const (
 	RebuildStatusRunning   = "RUNNING"
 	RebuildStatusSucceeded = "SUCCEEDED"
@@ -63,6 +76,10 @@ type SearchRepo interface {
 
 type PostSourceRepo interface {
 	ListPostsByCursor(ctx context.Context, cursorID, pageSize int64, includeNonPublished bool) ([]*SyncPost, int64, int64, bool, error)
+}
+
+type PostIndexConsumer interface {
+	Start(ctx context.Context, handler func(context.Context, *PostIndexEvent) error) error
 }
 
 type SearchUsecase struct {
@@ -123,6 +140,30 @@ func (uc *SearchUsecase) DeleteIndex(ctx context.Context, postID int64) error {
 		return pb.ErrorInvalidArgument("%s", "post_id 无效")
 	}
 	return uc.repo.DeletePost(ctx, postID)
+}
+
+func (uc *SearchUsecase) ApplyPostIndexEvent(ctx context.Context, event *PostIndexEvent) error {
+	if event == nil || event.PostID <= 0 {
+		return pb.ErrorInvalidArgument("%s", "post event 数据无效")
+	}
+	switch event.Type {
+	case events.PostDeleteEvent:
+		return uc.DeleteIndex(ctx, event.PostID)
+	case events.PostUpsertEvent, "":
+		return uc.SyncPost(ctx, &SyncPost{
+			ID:           event.PostID,
+			Title:        event.Title,
+			Summary:      event.Summary,
+			Content:      event.Content,
+			Slug:         event.Slug,
+			CategoryName: event.CategoryName,
+			Tags:         event.Tags,
+			CreatedAt:    event.CreatedAt,
+		})
+	default:
+		uc.logger.WithContext(ctx).Warnf("忽略未知文章索引事件: type=%s post_id=%d", event.Type, event.PostID)
+		return nil
+	}
 }
 
 func (uc *SearchUsecase) StartRebuildIndex(resetFirst bool, includeNonPublished bool) (*RebuildTask, error) {

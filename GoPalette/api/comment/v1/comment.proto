@@ -11,9 +11,9 @@ option java_package = "api.comment.v1";
 
 enum CommentStatus {
   COMMENT_STATUS_UNSPECIFIED = 0;
-  COMMENT_STATUS_NORMAL = 1;
-  COMMENT_STATUS_PENDING = 2;
-  COMMENT_STATUS_DELETED = 3;
+  COMMENT_STATUS_NORMAL      = 1;
+  COMMENT_STATUS_PENDING     = 2;
+  COMMENT_STATUS_DELETED     = 3;
 }
 
 // 评论管理服务
@@ -44,7 +44,7 @@ service Comment {
   rpc ReviewComment (ReviewCommentRequest) returns (CommentInfo) {
     option (google.api.http) = {
       patch: "/v1/comments/{id}"
-      body: "*"
+      body : "*"
     };
   }
 
@@ -63,26 +63,22 @@ service Comment {
   }
 }
 
-message AuthorInfo {
-  int64  id         = 1;
-  string name       = 2;
-  string avatar_url = 3;
-}
-
 message CommentInfo {
-  int64                     id              = 1;
-  int64                     post_id         = 2;
-  int64                     user_id         = 3;
-  string                    content         = 4;
-  int64                     parent_id       = 5;
-  int64                     root_id         = 6;
-  int64                     like_count      = 7;
-  CommentStatus             status          = 8;
-  AuthorInfo                author          = 9;
-  AuthorInfo                reply_to_author = 10;
-  google.protobuf.Timestamp created_at      = 11;
-  google.protobuf.Timestamp updated_at      = 12;
-  repeated CommentInfo      replies         = 13;
+  int64 id      = 1;
+  int64 post_id = 2;
+  int64 user_id = 3;
+  int64 reply_to_user_id = 4;
+  string content = 5;
+  int64 parent_id = 6;
+  int64 root_id   = 7;
+  int64 like_count = 8;
+
+  CommentStatus status = 9;
+
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+
+  repeated CommentInfo replies = 12;
 }
 
 message CreateCommentRequest {
@@ -125,7 +121,7 @@ message GetUserCommentStatsReply {
 
 message ListUserRecentCommentsRequest {
   int64 user_id = 1;
-  int64 limit = 2;
+  int64 limit   = 2;
 }
 
 message ListUserRecentCommentsReply {

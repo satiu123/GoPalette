@@ -3,13 +3,10 @@ package service
 import (
 	"context"
 	"strings"
-	"time"
 
 	"github.com/satiu123/GoPalette/pkg/auth"
 
 	pb "github.com/satiu123/GoPalette/api/post/v1"
-	searchpb "github.com/satiu123/GoPalette/api/search/v1"
-	userpb "github.com/satiu123/GoPalette/api/user/v1"
 
 	"github.com/satiu123/GoPalette/app/post/service/internal/biz"
 
@@ -20,19 +17,21 @@ import (
 type PostService struct {
 	pb.UnimplementedPostServer
 
-	uc      *biz.PostUsecase
-	userc   userpb.UserClient
-	searchc searchpb.SearchClient
-	logger  *log.Helper
+	uc                   *biz.PostUsecase
+	postEvents           biz.PostEventPublisher
+	commentCountConsumer biz.CommentCountConsumer
+	logger               *log.Helper
 }
 
-func NewPostService(uc *biz.PostUsecase, userc userpb.UserClient, searchc searchpb.SearchClient, logger log.Logger) *PostService {
-	return &PostService{
-		uc:      uc,
-		userc:   userc,
-		searchc: searchc,
-		logger:  log.NewHelper(log.With(logger, "module", "service/post")),
+func NewPostService(uc *biz.PostUsecase, postEvents biz.PostEventPublisher, commentCountConsumer biz.CommentCountConsumer, logger log.Logger) *PostService {
+	s := &PostService{
+		uc:                   uc,
+		postEvents:           postEvents,
+		commentCountConsumer: commentCountConsumer,
+		logger:               log.NewHelper(log.With(logger, "module", "service/post")),
 	}
+	s.startCommentCountConsumer()
+	return s
 }
 
 func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb.CreatePostReply, error) {
@@ -108,13 +107,6 @@ func (s *PostService) GetPost(ctx context.Context, req *pb.GetPostRequest) (*pb.
 		return nil, err
 	}
 	pbDetail := s.toPBDetail(post)
-	authorsResp, err := s.userc.BatchGetUsers(ctx, &userpb.BatchGetUsersRequest{Ids: []int64{post.AuthorID}})
-	if err != nil {
-		s.logger.WithContext(ctx).Warnf("批量获取用户信息失败: %v", err)
-	} else if len(authorsResp.Users) > 0 {
-		pbDetail.Info.Author.Name = authorsResp.Users[0].Username
-		pbDetail.Info.Author.AvatarUrl = authorsResp.Users[0].AvatarUrl
-	}
 
 	return &pb.GetPostReply{
 		Post: pbDetail,
@@ -276,33 +268,9 @@ func (s *PostService) ListUserLikedPosts(ctx context.Context, req *pb.ListUserLi
 		return nil, err
 	}
 
-	authorSet := make(map[int64]struct{})
-	for _, p := range res {
-		authorSet[p.AuthorID] = struct{}{}
-	}
-	authorIDs := make([]int64, 0, len(authorSet))
-	for id := range authorSet {
-		authorIDs = append(authorIDs, id)
-	}
-	authors := make(map[int64]*userpb.UserProfile)
-	if len(authorIDs) > 0 {
-		usersResp, userErr := s.userc.BatchGetUsers(ctx, &userpb.BatchGetUsersRequest{Ids: authorIDs})
-		if userErr != nil {
-			s.logger.WithContext(ctx).Warnf("批量获取用户信息失败: %v", userErr)
-		} else {
-			for _, u := range usersResp.Users {
-				authors[u.Id] = u
-			}
-		}
-	}
-
 	posts := make([]*pb.PostInfo, len(res))
 	for i, p := range res {
 		posts[i] = s.toPBInfo(p)
-		if u, ok := authors[p.AuthorID]; ok {
-			posts[i].Author.Name = u.Username
-			posts[i].Author.AvatarUrl = u.AvatarUrl
-		}
 	}
 	return &pb.ListUserLikedPostsReply{Posts: posts, Total: total}, nil
 }
@@ -341,20 +309,6 @@ func (s *PostService) toPBDetail(p *biz.Post) *pb.PostDetail {
 	}
 }
 
-func (s *PostService) toSearchSyncReq(p *biz.Post) *searchpb.SyncPostRequest {
-	content := truncateRunes(strings.ToValidUTF8(p.Content, ""), 500)
-	return &searchpb.SyncPostRequest{
-		Id:           p.ID,
-		Title:        strings.ToValidUTF8(p.Title, ""),
-		Summary:      strings.ToValidUTF8(p.Summary, ""),
-		Content:      content,
-		Slug:         strings.ToValidUTF8(p.Slug, ""),
-		CategoryName: strings.ToValidUTF8(p.CategoryName, ""),
-		Tags:         sanitizeStrings(p.Tags),
-		CreatedAt:    timestamppb.New(p.CreatedAt),
-	}
-}
-
 func (s *PostService) enqueueSearchIndexUpdate(action string, p *biz.Post) {
 	if p == nil {
 		return
@@ -367,15 +321,9 @@ func (s *PostService) enqueueSearchIndexUpdate(action string, p *biz.Post) {
 		return
 	}
 
-	req := s.toSearchSyncReq(p)
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		if _, err := s.searchc.SyncPost(ctx, req); err != nil {
-			s.logger.WithContext(ctx).Warnf("异步更新搜索索引失败(%s): post_id=%d err=%v", action, req.Id, err)
-		}
-	}()
+	if err := s.postEvents.PublishPostUpsert(context.Background(), p); err != nil {
+		s.logger.Warnf("发布搜索索引事件失败(%s): post_id=%d err=%v", action, p.ID, err)
+	}
 }
 
 func (s *PostService) enqueueSearchIndexDelete(action string, postID int64) {
@@ -383,12 +331,20 @@ func (s *PostService) enqueueSearchIndexDelete(action string, postID int64) {
 		return
 	}
 
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+	if err := s.postEvents.PublishPostDelete(context.Background(), postID); err != nil {
+		s.logger.Warnf("发布搜索索引删除事件失败(%s): post_id=%d err=%v", action, postID, err)
+	}
+}
 
-		if _, err := s.searchc.DeleteIndex(ctx, &searchpb.DeleteIndexRequest{PostId: postID}); err != nil {
-			s.logger.WithContext(ctx).Warnf("异步删除搜索索引失败(%s): post_id=%d err=%v", action, postID, err)
+func (s *PostService) startCommentCountConsumer() {
+	if s.commentCountConsumer == nil {
+		return
+	}
+	go func() {
+		if err := s.commentCountConsumer.Start(context.Background(), func(ctx context.Context, postID, delta int64) error {
+			return s.uc.IncrCommentCount(ctx, postID, delta)
+		}); err != nil {
+			s.logger.Warnf("评论数事件消费者退出: %v", err)
 		}
 	}()
 }

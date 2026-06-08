@@ -32,12 +32,23 @@ message Data {
     string api_key = 2;
     string index_name = 3;
   }
+  message Redis {
+    string                   network       = 1;
+    string                   addr          = 2;
+    string                   password      = 3;
+    int32                    db            = 4;
+    google.protobuf.Duration dial_timeout  = 5;
+    google.protobuf.Duration read_timeout  = 6;
+    google.protobuf.Duration write_timeout = 7;
+  }
   message Clients {
     string post_endpoint = 1;
     google.protobuf.Duration timeout = 2;
   }
   Meilisearch meilisearch = 1;
   Clients clients = 2;
+  Redis redis = 3;
+  Redis event_redis = 4;
 }
 
 message Registry {

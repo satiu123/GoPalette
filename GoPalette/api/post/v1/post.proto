@@ -75,13 +75,8 @@ service Post {
   };
   // ListPostsForIndex 仅供搜索服务使用，返回索引所需字段
   rpc ListPostsForIndex (ListPostsForIndexRequest) returns (ListPostsForIndexReply);
-  // IncrCommentCount 增减文章评论数（用于评论服务回写）
-  rpc IncrCommentCount (IncrCommentCountRequest) returns (IncrCommentCountReply){
-    option (google.api.http) = {
-      post: "/v1/posts/{id}/comment-count:incr"
-      body: "*"
-    };
-  };
+  // IncrCommentCount 增减文章评论数（内部异步消费者使用）
+  rpc IncrCommentCount (IncrCommentCountRequest) returns (IncrCommentCountReply);
   // RecordPostView 记录文章浏览，服务端按 viewer_key 去重后自增浏览量
   rpc RecordPostView (RecordPostViewRequest) returns (RecordPostViewReply){
     option (google.api.http) = {

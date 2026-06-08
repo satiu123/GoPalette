@@ -24,7 +24,6 @@ const OperationPostDeletePost = "/api.post.v1.Post/DeletePost"
 const OperationPostGetAuthorPostStats = "/api.post.v1.Post/GetAuthorPostStats"
 const OperationPostGetPost = "/api.post.v1.Post/GetPost"
 const OperationPostGetPostLikeState = "/api.post.v1.Post/GetPostLikeState"
-const OperationPostIncrCommentCount = "/api.post.v1.Post/IncrCommentCount"
 const OperationPostListAuthorPosts = "/api.post.v1.Post/ListAuthorPosts"
 const OperationPostListPosts = "/api.post.v1.Post/ListPosts"
 const OperationPostListTopAuthorPosts = "/api.post.v1.Post/ListTopAuthorPosts"
@@ -44,8 +43,6 @@ type PostHTTPServer interface {
 	GetPost(context.Context, *GetPostRequest) (*GetPostReply, error)
 	// GetPostLikeState GetPostLikeState 获取当前用户对文章的点赞状态
 	GetPostLikeState(context.Context, *GetPostLikeStateRequest) (*GetPostLikeStateReply, error)
-	// IncrCommentCount IncrCommentCount 增减文章评论数（用于评论服务回写）
-	IncrCommentCount(context.Context, *IncrCommentCountRequest) (*IncrCommentCountReply, error)
 	// ListAuthorPosts ListAuthorPosts 按作者列出帖子（用于个人主页）
 	ListAuthorPosts(context.Context, *ListAuthorPostsRequest) (*ListAuthorPostsReply, error)
 	// ListPosts ListPosts 列出帖子，输入分页参数，返回帖子列表
@@ -73,7 +70,6 @@ func RegisterPostHTTPServer(s *http.Server, srv PostHTTPServer) {
 	r.GET("/v1/users/{author_id}/posts", _Post_ListAuthorPosts0_HTTP_Handler(srv))
 	r.GET("/v1/users/{author_id}/posts/stats", _Post_GetAuthorPostStats0_HTTP_Handler(srv))
 	r.GET("/v1/users/{author_id}/posts/top", _Post_ListTopAuthorPosts0_HTTP_Handler(srv))
-	r.POST("/v1/posts/{id}/comment-count:incr", _Post_IncrCommentCount0_HTTP_Handler(srv))
 	r.POST("/v1/posts/{id}/view", _Post_RecordPostView0_HTTP_Handler(srv))
 	r.POST("/v1/posts/{id}/like", _Post_TogglePostLike0_HTTP_Handler(srv))
 	r.GET("/v1/posts/{id}/like-state", _Post_GetPostLikeState0_HTTP_Handler(srv))
@@ -278,31 +274,6 @@ func _Post_ListTopAuthorPosts0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Co
 	}
 }
 
-func _Post_IncrCommentCount0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
-	return func(ctx http.Context) error {
-		var in IncrCommentCountRequest
-		if err := ctx.Bind(&in); err != nil {
-			return err
-		}
-		if err := ctx.BindQuery(&in); err != nil {
-			return err
-		}
-		if err := ctx.BindVars(&in); err != nil {
-			return err
-		}
-		http.SetOperation(ctx, OperationPostIncrCommentCount)
-		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.IncrCommentCount(ctx, req.(*IncrCommentCountRequest))
-		})
-		out, err := h(ctx, &in)
-		if err != nil {
-			return err
-		}
-		reply := out.(*IncrCommentCountReply)
-		return ctx.Result(200, reply)
-	}
-}
-
 func _Post_RecordPostView0_HTTP_Handler(srv PostHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in RecordPostViewRequest
@@ -408,8 +379,6 @@ type PostHTTPClient interface {
 	GetPost(ctx context.Context, req *GetPostRequest, opts ...http.CallOption) (rsp *GetPostReply, err error)
 	// GetPostLikeState GetPostLikeState 获取当前用户对文章的点赞状态
 	GetPostLikeState(ctx context.Context, req *GetPostLikeStateRequest, opts ...http.CallOption) (rsp *GetPostLikeStateReply, err error)
-	// IncrCommentCount IncrCommentCount 增减文章评论数（用于评论服务回写）
-	IncrCommentCount(ctx context.Context, req *IncrCommentCountRequest, opts ...http.CallOption) (rsp *IncrCommentCountReply, err error)
 	// ListAuthorPosts ListAuthorPosts 按作者列出帖子（用于个人主页）
 	ListAuthorPosts(ctx context.Context, req *ListAuthorPostsRequest, opts ...http.CallOption) (rsp *ListAuthorPostsReply, err error)
 	// ListPosts ListPosts 列出帖子，输入分页参数，返回帖子列表
@@ -498,20 +467,6 @@ func (c *PostHTTPClientImpl) GetPostLikeState(ctx context.Context, in *GetPostLi
 	opts = append(opts, http.Operation(OperationPostGetPostLikeState))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-// IncrCommentCount IncrCommentCount 增减文章评论数（用于评论服务回写）
-func (c *PostHTTPClientImpl) IncrCommentCount(ctx context.Context, in *IncrCommentCountRequest, opts ...http.CallOption) (*IncrCommentCountReply, error) {
-	var out IncrCommentCountReply
-	pattern := "/v1/posts/{id}/comment-count:incr"
-	path := binding.EncodeURL(pattern, in, false)
-	opts = append(opts, http.Operation(OperationPostIncrCommentCount))
-	opts = append(opts, http.PathTemplate(pattern))
-	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

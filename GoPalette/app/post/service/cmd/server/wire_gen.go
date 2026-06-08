@@ -25,20 +25,15 @@ import (
 
 // wireApp init kratos application.
 func wireApp(confServer *conf.Server, confData *conf.Data, auth *conf.Auth, registry *conf.Registry, logger log.Logger, serviceName opentelemetry.ServiceName) (*kratos.App, func(), error) {
-	client, err := NewEtcdClient(registry)
-	if err != nil {
-		return nil, nil, err
-	}
-	etcdRegistry := NewRegistry(client)
-	userClient := data.NewUserClient(etcdRegistry, confData)
-	searchClient := data.NewSearchClient(etcdRegistry, confData)
-	dataData, cleanup, err := data.NewData(confData, logger, userClient, searchClient)
+	dataData, cleanup, err := data.NewData(confData, logger)
 	if err != nil {
 		return nil, nil, err
 	}
 	postRepo := data.NewPostRepo(dataData, logger)
 	postUsecase := biz.NewPostUsecase(postRepo, logger)
-	postService := service.NewPostService(postUsecase, userClient, searchClient, logger)
+	postEventPublisher := data.NewPostEventPublisher(dataData)
+	commentCountConsumer := data.NewCommentCountConsumer(dataData)
+	postService := service.NewPostService(postUsecase, postEventPublisher, commentCountConsumer, logger)
 	categoryRepo := data.NewCategoryRepo(dataData, logger)
 	categoryUsecase := biz.NewCategoryUsecase(categoryRepo, logger)
 	categoryService := service.NewCategoryService(categoryUsecase, logger)
@@ -50,6 +45,12 @@ func wireApp(confServer *conf.Server, confData *conf.Data, auth *conf.Auth, regi
 	float64Histogram := opentelemetry.NewSecondsHistogram(serviceName)
 	grpcServer := server.NewGRPCServer(confServer, auth, postService, categoryService, tagService, logger, health, int64Counter, float64Histogram)
 	httpServer := server.NewHTTPServer(confServer, auth, postService, categoryService, tagService, logger, health, int64Counter, float64Histogram)
+	client, err := NewEtcdClient(registry)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	etcdRegistry := NewRegistry(client)
 	app := newApp(logger, grpcServer, httpServer, etcdRegistry)
 	return app, func() {
 		cleanup()

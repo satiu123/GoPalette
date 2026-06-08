@@ -42,33 +42,58 @@ func (s *CommentService) CreateComment(ctx context.Context, req *pb.CreateCommen
 	if err != nil {
 		return nil, err
 	}
-	return s.toPB(created, nil, nil), nil
+	return s.toPB(created), nil
 }
 
 func (s *CommentService) ListComments(ctx context.Context, req *pb.ListCommentsRequest) (*pb.ListCommentsReply, error) {
-	var (
-		views []*biz.CommentView
-		total int64
-		err   error
-	)
 	if req.PostId > 0 {
-		views, total, err = s.uc.ListByPost(ctx, req.PostId, req.Page, req.PageSize)
-	} else {
-		views, total, err = s.uc.ListAll(ctx, req.Page, req.PageSize)
+
+		// 获取根评论列表和对应的子评论列表
+		roots, replies, total, err := s.uc.ListByPost(ctx, req.PostId, req.Page, req.PageSize)
+		if err != nil {
+			return nil, err
+		}
+
+		// 映射根评论到 PB 结构体，并建立 ID 索引
+		rootMap := make(map[int64]*pb.CommentInfo, len(roots))
+		commentMap := make(map[int64]*biz.Comment, len(roots)+len(replies))
+		items := make([]*pb.CommentInfo, 0, len(roots))
+		for _, r := range roots {
+			pbRoot := s.toPB(r)
+			items = append(items, pbRoot)
+			rootMap[r.ID] = pbRoot
+			commentMap[r.ID] = r
+		}
+		for _, rep := range replies {
+			commentMap[rep.ID] = rep
+		}
+
+		// 将子评论根据 RootID 分组归档到对应的根评论下
+		for _, rep := range replies {
+			rootID := rep.RootID
+			if rootID == 0 {
+				rootID = rep.ParentID
+			}
+			if pbRoot, ok := rootMap[rootID]; ok {
+				pbReply := s.toPB(rep)
+				if parent, ok := commentMap[rep.ParentID]; ok && parent != nil {
+					pbReply.ReplyToUserId = parent.UserID
+				}
+				pbRoot.Replies = append(pbRoot.Replies, pbReply)
+			}
+		}
+
+		return &pb.ListCommentsReply{Comments: items, Total: total}, nil
 	}
+	// 全量后台列表查询
+	comments, total, err := s.uc.ListAll(ctx, req.Page, req.PageSize)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]*pb.CommentInfo, 0, len(views))
-	for _, v := range views {
-		root := s.toPB(v.Comment, v.Author, v.ReplyToAuthor)
-		replies := make([]*pb.CommentInfo, 0, len(v.Replies))
-		for _, rv := range v.Replies {
-			replies = append(replies, s.toPB(rv.Comment, rv.Author, rv.ReplyToAuthor))
-		}
-		root.Replies = replies
-		items = append(items, root)
+	items := make([]*pb.CommentInfo, 0, len(comments))
+	for _, c := range comments {
+		items = append(items, s.toPB(c))
 	}
 
 	return &pb.ListCommentsReply{Comments: items, Total: total}, nil
@@ -86,7 +111,7 @@ func (s *CommentService) ReviewComment(ctx context.Context, req *pb.ReviewCommen
 	if err != nil {
 		return nil, err
 	}
-	return s.toPB(comment, nil, nil), nil
+	return s.toPB(comment), nil
 }
 
 func (s *CommentService) GetUserCommentStats(ctx context.Context, req *pb.GetUserCommentStatsRequest) (*pb.GetUserCommentStatsReply, error) {
@@ -98,20 +123,20 @@ func (s *CommentService) GetUserCommentStats(ctx context.Context, req *pb.GetUse
 }
 
 func (s *CommentService) ListUserRecentComments(ctx context.Context, req *pb.ListUserRecentCommentsRequest) (*pb.ListUserRecentCommentsReply, error) {
-	views, err := s.uc.ListUserRecentComments(ctx, req.UserId, req.Limit)
+	comments, err := s.uc.ListUserRecentComments(ctx, req.UserId, req.Limit)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]*pb.CommentInfo, 0, len(views))
-	for _, item := range views {
-		items = append(items, s.toPB(item.Comment, item.Author, item.ReplyToAuthor))
+	items := make([]*pb.CommentInfo, 0, len(comments))
+	for _, item := range comments {
+		items = append(items, s.toPB(item))
 	}
 
 	return &pb.ListUserRecentCommentsReply{Comments: items}, nil
 }
 
-func (s *CommentService) toPB(c *biz.Comment, author *biz.UserProfile, replyTo *biz.UserProfile) *pb.CommentInfo {
+func (s *CommentService) toPB(c *biz.Comment) *pb.CommentInfo {
 	if c == nil {
 		return nil
 	}
@@ -126,12 +151,6 @@ func (s *CommentService) toPB(c *biz.Comment, author *biz.UserProfile, replyTo *
 		Status:    pb.CommentStatus(c.Status),
 		CreatedAt: timestamppb.New(c.CreatedAt),
 		UpdatedAt: timestamppb.New(c.UpdatedAt),
-	}
-	if author != nil {
-		res.Author = &pb.AuthorInfo{Id: author.ID, Name: author.Name, AvatarUrl: author.AvatarURL}
-	}
-	if replyTo != nil {
-		res.ReplyToAuthor = &pb.AuthorInfo{Id: replyTo.ID, Name: replyTo.Name, AvatarUrl: replyTo.AvatarURL}
 	}
 	return res
 }

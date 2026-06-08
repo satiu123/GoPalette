@@ -1,23 +1,17 @@
 package data
 
 import (
-	"context"
 	"errors"
 	stdlog "log"
 	"os"
 	"time"
 
 	"github.com/euskadi31/wire"
-	searchv1 "github.com/satiu123/GoPalette/api/search/v1"
-	userv1 "github.com/satiu123/GoPalette/api/user/v1"
 	dbpool "github.com/satiu123/GoPalette/pkg/db"
 
 	"github.com/satiu123/GoPalette/app/post/service/internal/conf"
 
-	"github.com/go-kratos/kratos/contrib/registry/etcd/v2"
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware/tracing"
-	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
 	"github.com/redis/go-redis/v9/maintnotifications"
@@ -28,14 +22,13 @@ import (
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewPostRepo, NewCategoryRepo, NewTagRepo, NewUserClient, NewSearchClient)
+var ProviderSet = wire.NewSet(NewData, NewPostRepo, NewCategoryRepo, NewTagRepo, NewPostEventPublisher, NewCommentCountConsumer)
 
 // Data .
 type Data struct {
-	db           *gorm.DB
-	rdb          *redis.Client
-	userClient   userv1.UserClient
-	searchClient searchv1.SearchClient
+	db       *gorm.DB
+	rdb      *redis.Client
+	eventRDB *redis.Client
 }
 
 func (d *Data) DB() *gorm.DB {
@@ -46,36 +39,12 @@ func (d *Data) Redis() *redis.Client {
 	return d.rdb
 }
 
-func NewUserClient(reg *etcd.Registry, c *conf.Data) userv1.UserClient {
-	conn, err := grpc.DialInsecure(
-		context.Background(),
-		grpc.WithEndpoint(c.Clients.UserEndpoint),
-		grpc.WithTimeout(c.Clients.Timeout.AsDuration()),
-		grpc.WithDiscovery(reg),
-		grpc.WithMiddleware(tracing.Client()),
-	)
-	if err != nil {
-		panic(err)
-	}
-	return userv1.NewUserClient(conn)
-}
-
-func NewSearchClient(reg *etcd.Registry, c *conf.Data) searchv1.SearchClient {
-	conn, err := grpc.DialInsecure(
-		context.Background(),
-		grpc.WithEndpoint(c.Clients.SearchEndpoint),
-		grpc.WithTimeout(c.Clients.Timeout.AsDuration()),
-		grpc.WithDiscovery(reg),
-		grpc.WithMiddleware(tracing.Client()),
-	)
-	if err != nil {
-		panic(err)
-	}
-	return searchv1.NewSearchClient(conn)
+func (d *Data) EventRedis() *redis.Client {
+	return d.eventRDB
 }
 
 // NewData .
-func NewData(c *conf.Data, logger log.Logger, uc userv1.UserClient, sc searchv1.SearchClient) (*Data, func(), error) {
+func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 	helper := log.NewHelper(log.With(logger, "module", "post-service/data"))
 	if c == nil {
 		return nil, nil, errors.New("缺少 data 配置")
@@ -131,6 +100,28 @@ func NewData(c *conf.Data, logger log.Logger, uc userv1.UserClient, sc searchv1.
 			Mode: maintnotifications.ModeDisabled,
 		},
 	})
+	eventRedisConf := c.EventRedis
+	if eventRedisConf == nil {
+		eventRedisConf = &conf.Data_Redis{
+			Addr:         c.Redis.Addr,
+			Password:     c.Redis.Password,
+			Db:           0,
+			DialTimeout:  c.Redis.DialTimeout,
+			ReadTimeout:  c.Redis.ReadTimeout,
+			WriteTimeout: c.Redis.WriteTimeout,
+		}
+	}
+	eventRDB := redis.NewClient(&redis.Options{
+		Addr:         eventRedisConf.Addr,
+		Password:     eventRedisConf.Password,
+		DB:           int(eventRedisConf.Db),
+		DialTimeout:  eventRedisConf.DialTimeout.AsDuration(),
+		ReadTimeout:  eventRedisConf.ReadTimeout.AsDuration(),
+		WriteTimeout: eventRedisConf.WriteTimeout.AsDuration(),
+		MaintNotificationsConfig: &maintnotifications.Config{
+			Mode: maintnotifications.ModeDisabled,
+		},
+	})
 
 	if err := redisotel.InstrumentTracing(rdb, redisotel.WithDialFilter(true), redisotel.WithCommandFilter(
 		func(cmd redis.Cmder) bool {
@@ -144,12 +135,7 @@ func NewData(c *conf.Data, logger log.Logger, uc userv1.UserClient, sc searchv1.
 		return nil, nil, err
 	}
 
-	d := &Data{
-		db:           db,
-		rdb:          rdb,
-		userClient:   uc,
-		searchClient: sc,
-	}
+	d := &Data{db: db, rdb: rdb, eventRDB: eventRDB}
 
 	return d, func() {
 		helper.Info("message", "close the data resource")
@@ -162,6 +148,9 @@ func NewData(c *conf.Data, logger log.Logger, uc userv1.UserClient, sc searchv1.
 		}
 		if err := d.rdb.Close(); err != nil {
 			helper.Errorf("failed to close redis: %v", err)
+		}
+		if err := d.eventRDB.Close(); err != nil {
+			helper.Errorf("failed to close event redis: %v", err)
 		}
 
 	}, nil

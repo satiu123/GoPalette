@@ -15,7 +15,6 @@ var publicOperations = map[string]struct{}{
 	"/api.post.v1.Post/ListAuthorPosts":    {},
 	"/api.post.v1.Post/GetAuthorPostStats": {},
 	"/api.post.v1.Post/ListTopAuthorPosts": {},
-	"/api.post.v1.Post/IncrCommentCount":   {},
 	"/api.post.v1.Post/RecordPostView":     {},
 	"/api.post.v1.Category/GetCategory":    {},
 	"/api.post.v1.Category/ListCategories": {},

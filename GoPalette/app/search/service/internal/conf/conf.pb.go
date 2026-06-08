@@ -138,6 +138,8 @@ type Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Meilisearch   *Data_Meilisearch      `protobuf:"bytes,1,opt,name=meilisearch,proto3" json:"meilisearch,omitempty"`
 	Clients       *Data_Clients          `protobuf:"bytes,2,opt,name=clients,proto3" json:"clients,omitempty"`
+	Redis         *Data_Redis            `protobuf:"bytes,3,opt,name=redis,proto3" json:"redis,omitempty"`
+	EventRedis    *Data_Redis            `protobuf:"bytes,4,opt,name=event_redis,json=eventRedis,proto3" json:"event_redis,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -182,6 +184,20 @@ func (x *Data) GetMeilisearch() *Data_Meilisearch {
 func (x *Data) GetClients() *Data_Clients {
 	if x != nil {
 		return x.Clients
+	}
+	return nil
+}
+
+func (x *Data) GetRedis() *Data_Redis {
+	if x != nil {
+		return x.Redis
+	}
+	return nil
+}
+
+func (x *Data) GetEventRedis() *Data_Redis {
+	if x != nil {
+		return x.EventRedis
 	}
 	return nil
 }
@@ -410,6 +426,98 @@ func (x *Data_Meilisearch) GetIndexName() string {
 	return ""
 }
 
+type Data_Redis struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Network       string                 `protobuf:"bytes,1,opt,name=network,proto3" json:"network,omitempty"`
+	Addr          string                 `protobuf:"bytes,2,opt,name=addr,proto3" json:"addr,omitempty"`
+	Password      string                 `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty"`
+	Db            int32                  `protobuf:"varint,4,opt,name=db,proto3" json:"db,omitempty"`
+	DialTimeout   *durationpb.Duration   `protobuf:"bytes,5,opt,name=dial_timeout,json=dialTimeout,proto3" json:"dial_timeout,omitempty"`
+	ReadTimeout   *durationpb.Duration   `protobuf:"bytes,6,opt,name=read_timeout,json=readTimeout,proto3" json:"read_timeout,omitempty"`
+	WriteTimeout  *durationpb.Duration   `protobuf:"bytes,7,opt,name=write_timeout,json=writeTimeout,proto3" json:"write_timeout,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Data_Redis) Reset() {
+	*x = Data_Redis{}
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Data_Redis) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Data_Redis) ProtoMessage() {}
+
+func (x *Data_Redis) ProtoReflect() protoreflect.Message {
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Data_Redis.ProtoReflect.Descriptor instead.
+func (*Data_Redis) Descriptor() ([]byte, []int) {
+	return file_app_search_service_internal_conf_conf_proto_rawDescGZIP(), []int{2, 1}
+}
+
+func (x *Data_Redis) GetNetwork() string {
+	if x != nil {
+		return x.Network
+	}
+	return ""
+}
+
+func (x *Data_Redis) GetAddr() string {
+	if x != nil {
+		return x.Addr
+	}
+	return ""
+}
+
+func (x *Data_Redis) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+func (x *Data_Redis) GetDb() int32 {
+	if x != nil {
+		return x.Db
+	}
+	return 0
+}
+
+func (x *Data_Redis) GetDialTimeout() *durationpb.Duration {
+	if x != nil {
+		return x.DialTimeout
+	}
+	return nil
+}
+
+func (x *Data_Redis) GetReadTimeout() *durationpb.Duration {
+	if x != nil {
+		return x.ReadTimeout
+	}
+	return nil
+}
+
+func (x *Data_Redis) GetWriteTimeout() *durationpb.Duration {
+	if x != nil {
+		return x.WriteTimeout
+	}
+	return nil
+}
+
 type Data_Clients struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PostEndpoint  string                 `protobuf:"bytes,1,opt,name=post_endpoint,json=postEndpoint,proto3" json:"post_endpoint,omitempty"`
@@ -420,7 +528,7 @@ type Data_Clients struct {
 
 func (x *Data_Clients) Reset() {
 	*x = Data_Clients{}
-	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[7]
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -432,7 +540,7 @@ func (x *Data_Clients) String() string {
 func (*Data_Clients) ProtoMessage() {}
 
 func (x *Data_Clients) ProtoReflect() protoreflect.Message {
-	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[7]
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -445,7 +553,7 @@ func (x *Data_Clients) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Data_Clients.ProtoReflect.Descriptor instead.
 func (*Data_Clients) Descriptor() ([]byte, []int) {
-	return file_app_search_service_internal_conf_conf_proto_rawDescGZIP(), []int{2, 1}
+	return file_app_search_service_internal_conf_conf_proto_rawDescGZIP(), []int{2, 2}
 }
 
 func (x *Data_Clients) GetPostEndpoint() string {
@@ -472,7 +580,7 @@ type Registry_Etcd struct {
 
 func (x *Registry_Etcd) Reset() {
 	*x = Registry_Etcd{}
-	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[8]
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -484,7 +592,7 @@ func (x *Registry_Etcd) String() string {
 func (*Registry_Etcd) ProtoMessage() {}
 
 func (x *Registry_Etcd) ProtoReflect() protoreflect.Message {
-	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[8]
+	mi := &file_app_search_service_internal_conf_conf_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -533,15 +641,26 @@ const file_app_search_service_internal_conf_conf_proto_rawDesc = "" +
 	"\x04GRPC\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x123\n" +
-	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\xd0\x02\n" +
+	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\xe5\x05\n" +
 	"\x04Data\x12E\n" +
 	"\vmeilisearch\x18\x01 \x01(\v2#.kratos.api.search.Data.MeilisearchR\vmeilisearch\x129\n" +
-	"\aclients\x18\x02 \x01(\v2\x1f.kratos.api.search.Data.ClientsR\aclients\x1aa\n" +
+	"\aclients\x18\x02 \x01(\v2\x1f.kratos.api.search.Data.ClientsR\aclients\x123\n" +
+	"\x05redis\x18\x03 \x01(\v2\x1d.kratos.api.search.Data.RedisR\x05redis\x12>\n" +
+	"\vevent_redis\x18\x04 \x01(\v2\x1d.kratos.api.search.Data.RedisR\n" +
+	"eventRedis\x1aa\n" +
 	"\vMeilisearch\x12\x1a\n" +
 	"\bendpoint\x18\x01 \x01(\tR\bendpoint\x12\x17\n" +
 	"\aapi_key\x18\x02 \x01(\tR\x06apiKey\x12\x1d\n" +
 	"\n" +
-	"index_name\x18\x03 \x01(\tR\tindexName\x1ac\n" +
+	"index_name\x18\x03 \x01(\tR\tindexName\x1a\x9d\x02\n" +
+	"\x05Redis\x12\x18\n" +
+	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
+	"\x04addr\x18\x02 \x01(\tR\x04addr\x12\x1a\n" +
+	"\bpassword\x18\x03 \x01(\tR\bpassword\x12\x0e\n" +
+	"\x02db\x18\x04 \x01(\x05R\x02db\x12<\n" +
+	"\fdial_timeout\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\vdialTimeout\x12<\n" +
+	"\fread_timeout\x18\x06 \x01(\v2\x19.google.protobuf.DurationR\vreadTimeout\x12>\n" +
+	"\rwrite_timeout\x18\a \x01(\v2\x19.google.protobuf.DurationR\fwriteTimeout\x1ac\n" +
 	"\aClients\x12#\n" +
 	"\rpost_endpoint\x18\x01 \x01(\tR\fpostEndpoint\x123\n" +
 	"\atimeout\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\x9b\x01\n" +
@@ -563,7 +682,7 @@ func file_app_search_service_internal_conf_conf_proto_rawDescGZIP() []byte {
 	return file_app_search_service_internal_conf_conf_proto_rawDescData
 }
 
-var file_app_search_service_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_app_search_service_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_app_search_service_internal_conf_conf_proto_goTypes = []any{
 	(*Bootstrap)(nil),           // 0: kratos.api.search.Bootstrap
 	(*Server)(nil),              // 1: kratos.api.search.Server
@@ -572,9 +691,10 @@ var file_app_search_service_internal_conf_conf_proto_goTypes = []any{
 	(*Server_HTTP)(nil),         // 4: kratos.api.search.Server.HTTP
 	(*Server_GRPC)(nil),         // 5: kratos.api.search.Server.GRPC
 	(*Data_Meilisearch)(nil),    // 6: kratos.api.search.Data.Meilisearch
-	(*Data_Clients)(nil),        // 7: kratos.api.search.Data.Clients
-	(*Registry_Etcd)(nil),       // 8: kratos.api.search.Registry.Etcd
-	(*durationpb.Duration)(nil), // 9: google.protobuf.Duration
+	(*Data_Redis)(nil),          // 7: kratos.api.search.Data.Redis
+	(*Data_Clients)(nil),        // 8: kratos.api.search.Data.Clients
+	(*Registry_Etcd)(nil),       // 9: kratos.api.search.Registry.Etcd
+	(*durationpb.Duration)(nil), // 10: google.protobuf.Duration
 }
 var file_app_search_service_internal_conf_conf_proto_depIdxs = []int32{
 	1,  // 0: kratos.api.search.Bootstrap.server:type_name -> kratos.api.search.Server
@@ -583,17 +703,22 @@ var file_app_search_service_internal_conf_conf_proto_depIdxs = []int32{
 	4,  // 3: kratos.api.search.Server.http:type_name -> kratos.api.search.Server.HTTP
 	5,  // 4: kratos.api.search.Server.grpc:type_name -> kratos.api.search.Server.GRPC
 	6,  // 5: kratos.api.search.Data.meilisearch:type_name -> kratos.api.search.Data.Meilisearch
-	7,  // 6: kratos.api.search.Data.clients:type_name -> kratos.api.search.Data.Clients
-	8,  // 7: kratos.api.search.Registry.etcd:type_name -> kratos.api.search.Registry.Etcd
-	9,  // 8: kratos.api.search.Server.HTTP.timeout:type_name -> google.protobuf.Duration
-	9,  // 9: kratos.api.search.Server.GRPC.timeout:type_name -> google.protobuf.Duration
-	9,  // 10: kratos.api.search.Data.Clients.timeout:type_name -> google.protobuf.Duration
-	9,  // 11: kratos.api.search.Registry.Etcd.timeout:type_name -> google.protobuf.Duration
-	12, // [12:12] is the sub-list for method output_type
-	12, // [12:12] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	8,  // 6: kratos.api.search.Data.clients:type_name -> kratos.api.search.Data.Clients
+	7,  // 7: kratos.api.search.Data.redis:type_name -> kratos.api.search.Data.Redis
+	7,  // 8: kratos.api.search.Data.event_redis:type_name -> kratos.api.search.Data.Redis
+	9,  // 9: kratos.api.search.Registry.etcd:type_name -> kratos.api.search.Registry.Etcd
+	10, // 10: kratos.api.search.Server.HTTP.timeout:type_name -> google.protobuf.Duration
+	10, // 11: kratos.api.search.Server.GRPC.timeout:type_name -> google.protobuf.Duration
+	10, // 12: kratos.api.search.Data.Redis.dial_timeout:type_name -> google.protobuf.Duration
+	10, // 13: kratos.api.search.Data.Redis.read_timeout:type_name -> google.protobuf.Duration
+	10, // 14: kratos.api.search.Data.Redis.write_timeout:type_name -> google.protobuf.Duration
+	10, // 15: kratos.api.search.Data.Clients.timeout:type_name -> google.protobuf.Duration
+	10, // 16: kratos.api.search.Registry.Etcd.timeout:type_name -> google.protobuf.Duration
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_app_search_service_internal_conf_conf_proto_init() }
@@ -607,7 +732,7 @@ func file_app_search_service_internal_conf_conf_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_app_search_service_internal_conf_conf_proto_rawDesc), len(file_app_search_service_internal_conf_conf_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

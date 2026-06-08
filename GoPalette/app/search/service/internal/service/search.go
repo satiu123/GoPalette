@@ -14,12 +14,19 @@ import (
 type SearchService struct {
 	pb.UnimplementedSearchServer
 
-	uc  *biz.SearchUsecase
-	log *log.Helper
+	uc       *biz.SearchUsecase
+	consumer biz.PostIndexConsumer
+	log      *log.Helper
 }
 
-func NewSearchService(uc *biz.SearchUsecase, logger log.Logger) *SearchService {
-	return &SearchService{uc: uc, log: log.NewHelper(log.With(logger, "module", "service/search"))}
+func NewSearchService(uc *biz.SearchUsecase, consumer biz.PostIndexConsumer, logger log.Logger) *SearchService {
+	s := &SearchService{
+		uc:       uc,
+		consumer: consumer,
+		log:      log.NewHelper(log.With(logger, "module", "service/search")),
+	}
+	s.startPostIndexConsumer()
+	return s
 }
 
 func (s *SearchService) SearchPosts(ctx context.Context, req *pb.SearchPostsRequest) (*pb.SearchPostsReply, error) {
@@ -107,4 +114,15 @@ func toPBRebuildTask(task *biz.RebuildTask) *pb.RebuildTaskInfo {
 		out.FinishedAt = timestamppb.New(task.FinishedAt)
 	}
 	return out
+}
+
+func (s *SearchService) startPostIndexConsumer() {
+	if s.consumer == nil {
+		return
+	}
+	go func() {
+		if err := s.consumer.Start(context.Background(), s.uc.ApplyPostIndexEvent); err != nil {
+			s.log.Warnf("文章索引事件消费者退出: %v", err)
+		}
+	}()
 }
