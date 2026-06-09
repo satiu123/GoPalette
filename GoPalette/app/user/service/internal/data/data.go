@@ -47,6 +47,11 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 		return nil, nil, errors.New("缺少 data.redis 配置")
 	}
 
+	if err := dbpool.EnsureMySQLDatabase(c.Database.Source); err != nil {
+		helper.Errorf("确保数据库存在失败: %v", err)
+		return nil, nil, err
+	}
+
 	db, err := gorm.Open(mysql.Open(c.Database.Source), &gorm.Config{})
 	if err != nil {
 		helper.Errorf("无法连接数据库: %v", err)

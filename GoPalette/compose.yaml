@@ -163,7 +163,6 @@ services:
       MARIADB_DATABASE: "gopalette_user"
     volumes:
       - mariadb_data:/var/lib/mysql
-      - ./deploy/mariadb/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: [ "CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}" ]
       interval: 10s
