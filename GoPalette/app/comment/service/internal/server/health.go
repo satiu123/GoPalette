@@ -10,5 +10,6 @@ func NewHealthEngine(d *data.Data) *health.Health {
 	return health.New(
 		health.NewMySQLChecker(d.DB()),
 		health.NewRedisChecker(d.Redis()),
+		health.NewNamedRedisChecker("event_redis", d.EventRedis()),
 	)
 }

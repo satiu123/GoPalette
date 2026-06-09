@@ -7,17 +7,26 @@ import (
 )
 
 type RedisChecker struct {
-	rdb *redis.Client
+	name string
+	rdb  *redis.Client
 }
 
 func NewRedisChecker(rdb *redis.Client) *RedisChecker {
+	return NewNamedRedisChecker("redis", rdb)
+}
+
+func NewNamedRedisChecker(name string, rdb *redis.Client) *RedisChecker {
+	if name == "" {
+		name = "redis"
+	}
 	return &RedisChecker{
-		rdb: rdb,
+		name: name,
+		rdb:  rdb,
 	}
 }
 
 func (c *RedisChecker) Name() string {
-	return "redis"
+	return c.name
 }
 
 func (c *RedisChecker) Check(ctx context.Context) error {

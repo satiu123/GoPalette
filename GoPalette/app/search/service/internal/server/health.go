@@ -9,5 +9,7 @@ import (
 func NewHealthEngine(d *data.Data) *health.Health {
 	return health.New(
 		health.NewMeilisearchChecker(d.Meili()),
+		health.NewRedisChecker(d.Redis()),
+		health.NewNamedRedisChecker("event_redis", d.EventRedis()),
 	)
 }
