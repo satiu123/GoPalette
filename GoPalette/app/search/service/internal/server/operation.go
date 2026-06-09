@@ -8,6 +8,7 @@ var publicOperations = map[string]struct{}{
 	"/health/startup": {},
 
 	"/grpc.health.v1.Health/Check": {},
+	"/grpc.health.v1.Health/Watch": {},
 
 	"/api.search.v1.Search/SearchPosts": {},
 }
@@ -25,5 +26,5 @@ func IsHealthOperation(operation string) bool {
 		return true
 	}
 
-	return operation == "/grpc.health.v1.Health/Check"
+	return strings.HasPrefix(operation, "/grpc.health.v1.Health/")
 }
