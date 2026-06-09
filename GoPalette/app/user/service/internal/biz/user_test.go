@@ -506,12 +506,11 @@ func TestUserUsecase_Register(t *testing.T) {
 			},
 			setupMock: func(repo *MockUserRepo, input *User) {
 				repo.EXPECT().FindByEmail(mock.Anything, input.Email).Return(nil, errors.New("db timeout")).Once()
-				repo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*biz.User")).Return(&User{ID: 11, Email: input.Email}, nil).Once()
 			},
-			assertResult: func(t *testing.T, got *User, input *User) {
-				require.NotNil(t, got)
-				assert.Equal(t, int64(11), got.ID)
-				assert.Equal(t, input.Email, got.Email)
+			wantErr: true,
+			assertErr: func(t *testing.T, err error) {
+				require.Error(t, err)
+				assert.True(t, pb.IsDatabaseError(err))
 			},
 		},
 		{

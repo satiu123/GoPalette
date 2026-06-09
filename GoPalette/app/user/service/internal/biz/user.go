@@ -58,9 +58,8 @@ func (uc *UserUsecase) CreateUser(ctx context.Context, u *User) (*User, error) {
 		return nil, err
 	}
 
-	exist, _ := uc.repo.FindByEmail(ctx, u.Email)
-	if exist != nil {
-		return nil, pb.ErrorEmailConflict("邮箱 %s 已存在", u.Email)
+	if err := uc.ensureEmailAvailable(ctx, u.Email); err != nil {
+		return nil, err
 	}
 
 	// 密码加密
@@ -74,9 +73,8 @@ func (uc *UserUsecase) CreateUser(ctx context.Context, u *User) (*User, error) {
 }
 
 func (uc *UserUsecase) Register(ctx context.Context, u *User) (*User, error) {
-	exist, _ := uc.repo.FindByEmail(ctx, u.Email)
-	if exist != nil {
-		return nil, pb.ErrorEmailConflict("邮箱 %s 已存在", u.Email)
+	if err := uc.ensureEmailAvailable(ctx, u.Email); err != nil {
+		return nil, err
 	}
 
 	// 密码加密
@@ -152,6 +150,18 @@ func (uc *UserUsecase) ListUsersByIDs(ctx context.Context, ids []int64) ([]*User
 		return []*User{}, nil
 	}
 	return uc.repo.ListByIDs(ctx, ids)
+}
+
+func (uc *UserUsecase) ensureEmailAvailable(ctx context.Context, email string) error {
+	exist, err := uc.repo.FindByEmail(ctx, email)
+	if err != nil {
+		uc.logger.WithContext(ctx).Errorf("邮箱查重失败: email=%s err=%v", email, err)
+		return pb.ErrorDatabaseError("%s", "邮箱查重失败，请稍后再试")
+	}
+	if exist != nil {
+		return pb.ErrorEmailConflict("邮箱 %s 已存在", email)
+	}
+	return nil
 }
 
 func filterSensitiveFields(fields []string) []string {

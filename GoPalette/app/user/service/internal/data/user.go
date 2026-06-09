@@ -4,18 +4,21 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 
+	pb "github.com/satiu123/GoPalette/api/user/v1"
 	"github.com/satiu123/GoPalette/pkg/pagination"
 
 	"github.com/satiu123/GoPalette/app/user/service/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 )
 
 type User struct {
 	gorm.Model
-	Username    string `gorm:"type:varchar(50);uniqueIndex;not null"`
+	Username    string `gorm:"type:varchar(50);index;not null"`
 	Email       string `gorm:"type:varchar(100);uniqueIndex;not null"`
 	Password    string `gorm:"type:varchar(255);not null"`
 	Role        int32  `gorm:"type:int;default:0"` // 0: user, 1: admin
@@ -58,6 +61,9 @@ func (r *userRepo) Create(ctx context.Context, u *biz.User) (*biz.User, error) {
 	}
 
 	if err := r.data.db.WithContext(ctx).Create(po).Error; err != nil {
+		if isDuplicateEmailError(err) {
+			return nil, pb.ErrorEmailConflict("邮箱 %s 已存在", u.Email)
+		}
 		return nil, err
 	}
 	return r.Get(ctx, int64(po.ID))
@@ -95,6 +101,9 @@ func (r *userRepo) Update(ctx context.Context, u *biz.User, fields []string) (*b
 	}
 
 	if err := r.data.db.WithContext(ctx).Model(&User{}).Where("id = ?", u.ID).Updates(updates).Error; err != nil {
+		if isDuplicateEmailError(err) {
+			return nil, pb.ErrorEmailConflict("邮箱 %s 已存在", u.Email)
+		}
 		return nil, err
 	}
 	return r.Get(ctx, u.ID)
@@ -209,4 +218,14 @@ func unmarshalSocialLinks(raw string) (map[string]string, error) {
 		return map[string]string{}, err
 	}
 	return links, nil
+}
+
+func isDuplicateEmailError(err error) bool {
+	var mysqlErr *mysql.MySQLError
+	if !errors.As(err, &mysqlErr) || mysqlErr.Number != 1062 {
+		return false
+	}
+
+	msg := strings.ToLower(mysqlErr.Message)
+	return strings.Contains(msg, "email")
 }
