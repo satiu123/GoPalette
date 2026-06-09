@@ -555,16 +555,6 @@ function removeTag(tag: string) {
   postMeta.tagsText = merged.join(', ')
 }
 
-function getErrorMessage(error: unknown) {
-  if (error && typeof error === 'object') {
-    const data = 'data' in error ? (error as { data?: { message?: unknown } }).data : undefined
-    if (typeof data?.message === 'string') return data.message
-    if ('message' in error && typeof (error as { message?: unknown }).message === 'string') return (error as { message: string }).message
-  }
-
-  return '请稍后重试'
-}
-
 function withCsrfHeaders(headers?: Record<string, string>) {
   const token = unref(csrf)
   const name = unref(headerName)
@@ -668,7 +658,7 @@ async function onCoverChange() {
   } catch (error: unknown) {
     toast.add({
       title: '封面图上传失败',
-      description: getErrorMessage(error),
+      description: getRequestErrorMessage(error, '请确认图片格式和大小后重试'),
       color: 'error'
     })
   } finally {
@@ -748,7 +738,7 @@ async function savePost(status: number) {
   } catch (error: unknown) {
     toast.add({
       title: '保存失败',
-      description: getErrorMessage(error),
+      description: getRequestErrorMessage(error, '请检查文章标题、正文、分类和路径后重试'),
       color: 'error'
     })
   } finally {
@@ -781,10 +771,9 @@ async function removeCurrentPost() {
     })
     await navigateTo('/admin')
   } catch (error: unknown) {
-    const typed = error as { message?: string, data?: { message?: string } }
     toast.add({
       title: '删除失败',
-      description: typed?.data?.message || typed?.message || '请稍后重试',
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {

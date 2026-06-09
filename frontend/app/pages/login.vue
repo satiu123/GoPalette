@@ -40,15 +40,10 @@ async function onSubmit() {
 
     await router.push(redirect)
   } catch (error: unknown) {
-    const typed = error as { message?: unknown, data?: { message?: unknown } }
     toast.add({
       color: 'error',
       title: '登录失败',
-      description: typeof typed.data?.message === 'string'
-        ? typed.data.message
-        : typeof typed.message === 'string'
-          ? typed.message
-          : '请检查邮箱和密码'
+      description: getRequestErrorMessage(error, '请检查邮箱和密码')
     })
   } finally {
     submitting.value = false
@@ -68,14 +63,9 @@ useSeoMeta({
     <main class="mx-auto flex w-full max-w-md px-4 pb-20 pt-12 sm:px-0">
       <UCard class="motion-fade-up motion-panel w-full">
         <template #header>
-          <div class="space-y-1">
-            <h1 class="text-xl font-semibold text-highlighted">
-              登录账号
-            </h1>
-            <p class="text-sm text-toned">
-              使用邮箱密码登录后可进入写作与个人信息管理。
-            </p>
-          </div>
+          <h1 class="text-xl font-semibold text-highlighted">
+            登录账号
+          </h1>
         </template>
 
         <form

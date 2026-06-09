@@ -7,7 +7,7 @@ export default defineEventHandler(async (event): Promise<unknown> => {
   const slug = params.slug || decodeURIComponent(tail)
 
   if (!slug) {
-    throw createError({ statusCode: 400, statusMessage: 'slug is required' })
+    throw createError({ statusCode: 400, statusMessage: '缺少文章路径' })
   }
 
   return await gatewayFetch(event, `/v1/posts/slug/${slug}`, {

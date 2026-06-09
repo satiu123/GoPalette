@@ -1,11 +1,11 @@
-import { joinURL } from 'ufo'
+import { gatewayFetch } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig(event)
   const body = await readBody(event)
 
-  return await $fetch(joinURL(config.gatewayBase, '/v1/users/register'), {
+  return await gatewayFetch(event, '/v1/users/register', {
     method: 'POST',
+    auth: 'none',
     body
   })
 })

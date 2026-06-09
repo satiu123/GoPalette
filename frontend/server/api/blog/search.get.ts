@@ -1,11 +1,11 @@
-import { joinURL } from 'ufo'
+import { gatewayFetch } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig(event)
   const query = getQuery(event)
 
-  return await $fetch(joinURL(config.gatewayBase, '/v1/search/posts'), {
+  return await gatewayFetch(event, '/v1/search/posts', {
     method: 'GET',
+    auth: 'none',
     query: {
       query: query.query || '',
       page: query.page || '1',

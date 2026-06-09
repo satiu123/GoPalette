@@ -36,13 +36,13 @@ export default defineEventHandler(async (event) => {
   const model = 'deepseek-v4-flash'
 
   if (!title) {
-    throw createError({ statusCode: 400, message: 'Title is required' })
+    throw createError({ statusCode: 400, message: '标题不能为空' })
   }
 
   if (!deepseekApiKey) {
     throw createError({
       statusCode: 500,
-      message: 'DeepSeek API key is not configured'
+      message: 'AI 服务未配置，请联系管理员'
     })
   }
 
@@ -81,7 +81,7 @@ export default defineEventHandler(async (event) => {
 
     const slug = normalizeSlug(result.text)
     if (!slug) {
-      throw createError({ statusCode: 502, message: 'Slug generation returned empty result' })
+      throw createError({ statusCode: 502, message: '未能生成有效的文章路径，请手动填写' })
     }
 
     console.info('[ai:slug] finish', {

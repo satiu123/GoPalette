@@ -12,11 +12,97 @@ interface TokenPair {
   refreshToken: string
 }
 
-function extractErrorStatus(error: unknown) {
-  if (!error || typeof error !== 'object') return 0
+type ErrorRecord = Record<string, unknown>
 
-  const typed = error as { status?: unknown, statusCode?: unknown, response?: { status?: unknown } }
-  return Number(typed.status ?? typed.statusCode ?? typed.response?.status ?? 0)
+function isRecord(value: unknown): value is ErrorRecord {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value))
+}
+
+function cleanText(value: unknown) {
+  if (value === undefined || value === null) return ''
+  const text = String(value).trim()
+  return text && text !== '[object Object]' ? text : ''
+}
+
+function collectErrorRecords(error: unknown) {
+  const records: ErrorRecord[] = []
+  const seen = new Set<ErrorRecord>()
+
+  const add = (value: unknown) => {
+    if (!isRecord(value) || seen.has(value)) return
+    seen.add(value)
+    records.push(value)
+  }
+
+  if (!isRecord(error)) return records
+
+  const response = isRecord(error.response) ? error.response : undefined
+  add(error.data)
+  add(response?._data)
+  add(response?.data)
+  add(response)
+  add(error)
+  add(error.cause)
+
+  for (let i = 0; i < records.length; i += 1) {
+    const record = records[i]
+    if (!record) continue
+    add(record.data)
+    add(record._data)
+    add(record.cause)
+  }
+
+  return records
+}
+
+function extractErrorStatus(error: unknown) {
+  const records = collectErrorRecords(error)
+  for (const record of records) {
+    const status = Number(record.statusCode ?? record.status ?? record.code ?? 0)
+    if (Number.isFinite(status) && status >= 400 && status <= 599) {
+      return status
+    }
+  }
+
+  return 0
+}
+
+function extractGatewayReason(records: ErrorRecord[]) {
+  for (const record of records) {
+    const reason = cleanText(record.reason ?? record.errorReason ?? record.error_reason)
+    if (reason) return reason
+  }
+  return ''
+}
+
+function extractGatewayMessage(records: ErrorRecord[]) {
+  for (const record of records) {
+    const message = cleanText(record.message ?? record.statusMessage ?? record.statusText ?? record.detail ?? record.error_description ?? record.error)
+    if (message) return message
+  }
+  return ''
+}
+
+function createGatewayError(error: unknown, fallback = '上游服务暂时不可用，请稍后再试') {
+  const records = collectErrorRecords(error)
+  const statusCode = extractErrorStatus(error) || 502
+  const reason = extractGatewayReason(records)
+  const message = extractGatewayMessage(records) || reason || fallback
+
+  const upstream = records.find(record => cleanText(record.reason) || cleanText(record.message) || cleanText(record.error))
+  const data = {
+    ...(upstream || {}),
+    code: statusCode,
+    reason,
+    message
+  }
+
+  return createError({
+    statusCode,
+    statusMessage: message,
+    message,
+    data
+  })
 }
 
 function isProd() {
@@ -182,7 +268,7 @@ export async function refreshServerSession(event: H3Event) {
     if (status === 401) {
       throw createError({ statusCode: 401, statusMessage: 'Session expired' })
     }
-    throw error
+    throw createGatewayError(error)
   }
 }
 
@@ -258,7 +344,7 @@ export async function gatewayFetch<T>(
   } catch (error: unknown) {
     const status = extractErrorStatus(error)
     if (status !== 401 || authMode === 'none') {
-      throw error
+      throw createGatewayError(error)
     }
 
     const refreshedToken = await ensureAccessToken(event, {
@@ -267,9 +353,17 @@ export async function gatewayFetch<T>(
     })
 
     if (!refreshedToken && authMode === 'optional') {
-      return await execute('')
+      try {
+        return await execute('')
+      } catch (retryError: unknown) {
+        throw createGatewayError(retryError)
+      }
     }
 
-    return await execute(refreshedToken ? `Bearer ${refreshedToken}` : '')
+    try {
+      return await execute(refreshedToken ? `Bearer ${refreshedToken}` : '')
+    } catch (retryError: unknown) {
+      throw createGatewayError(retryError)
+    }
   }
 }

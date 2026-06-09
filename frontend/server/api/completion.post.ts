@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
       requestId,
       reason: 'missing_prompt'
     })
-    throw createError({ statusCode: 400, message: 'Prompt is required' })
+    throw createError({ statusCode: 400, message: '请输入要补全的内容' })
   }
   if (!deepseekApiKey) {
     console.error('[ai:completion] rejected', {
@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
     })
     throw createError({
       statusCode: 500,
-      message: 'DeepSeek API key is not configured'
+      message: 'AI 服务未配置，请联系管理员'
     })
   }
 

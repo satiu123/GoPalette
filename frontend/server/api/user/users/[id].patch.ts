@@ -6,7 +6,7 @@ export default defineEventHandler(async (event): Promise<unknown> => {
   const query = getQuery(event)
 
   if (!id) {
-    throw createError({ statusCode: 400, statusMessage: 'id is required' })
+    throw createError({ statusCode: 400, statusMessage: '缺少用户 ID' })
   }
 
   return await gatewayFetch(event, `/v1/users/${id}`, {

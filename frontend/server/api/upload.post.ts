@@ -9,7 +9,7 @@ export default eventHandler(async (event) => {
   if (Number.isFinite(contentLength) && contentLength > STRICT_IMAGE_MAX_BYTES) {
     throw createError({
       statusCode: 413,
-      statusMessage: 'Image Too Large',
+      statusMessage: '图片过大',
       message: '图片大小不能超过 5MB'
     })
   }

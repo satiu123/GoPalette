@@ -39,8 +39,8 @@ async function onFileChange() {
       .deleteRange({ from: pos, to: pos + 1 })
       .setImage({ src: result.url || `/images/${result.pathname}` })
       .run()
-  } catch (e) {
-    error.value = (e as Error & { data: { message: string } }).data.message || 'An unknown error occurred'
+  } catch (e: unknown) {
+    error.value = getRequestErrorMessage(e, '图片上传失败，请确认文件类型和大小')
   } finally {
     loading.value = false
   }

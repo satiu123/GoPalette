@@ -139,13 +139,6 @@ function clearSuspiciousFilterAutofill() {
   }
 }
 
-function getErrorMessage(error: unknown, fallback: string) {
-  if (!error || typeof error !== 'object') return fallback
-  const typed = error as { message?: unknown, data?: { message?: unknown } }
-  const value = typed.data?.message ?? typed.message
-  return typeof value === 'string' && value.trim() ? value : fallback
-}
-
 function askConfirm(message: string) {
   if (!import.meta.client) return true
   return window.confirm(message)
@@ -344,7 +337,7 @@ async function loadPosts() {
   } catch (error: unknown) {
     toast.add({
       title: '加载文章失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -366,7 +359,7 @@ async function loadComments() {
   } catch (error: unknown) {
     toast.add({
       title: '加载评论失败',
-      description: getErrorMessage(error, postId ? '请检查文章 ID 是否正确' : '请确认当前账号有管理员权限'),
+      description: getRequestErrorMessage(error, postId ? '请检查文章 ID 是否正确' : '请确认当前账号有管理员权限'),
       color: 'error'
     })
   } finally {
@@ -404,7 +397,7 @@ async function removeComment(id: string) {
   } catch (error: unknown) {
     toast.add({
       title: '删除评论失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -426,7 +419,7 @@ async function removeSelectedComments() {
   } catch (error: unknown) {
     toast.add({
       title: '批量删除评论失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -445,7 +438,7 @@ async function setCommentReviewStatus(id: string, status: number) {
   } catch (error: unknown) {
     toast.add({
       title: '审核评论失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -468,7 +461,7 @@ async function reviewSelectedComments(status: number) {
   } catch (error: unknown) {
     toast.add({
       title: '批量审核评论失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -486,7 +479,7 @@ async function loadUsers() {
   } catch (error: unknown) {
     toast.add({
       title: '加载用户失败',
-      description: getErrorMessage(error, '请确认当前账号有管理员权限'),
+      description: getRequestErrorMessage(error, '请确认当前账号有管理员权限'),
       color: 'error'
     })
   } finally {
@@ -514,7 +507,7 @@ async function createUserEntry() {
   } catch (error: unknown) {
     toast.add({
       title: '创建用户失败',
-      description: getErrorMessage(error, '请检查邮箱是否已存在'),
+      description: getRequestErrorMessage(error, '请检查邮箱是否已存在'),
       color: 'error'
     })
   } finally {
@@ -542,7 +535,7 @@ async function setUserStatus(item: AdminUserItem, status: number) {
   } catch (error: unknown) {
     toast.add({
       title: '更新用户失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -570,7 +563,7 @@ async function setUserRole(item: AdminUserItem, role: number) {
   } catch (error: unknown) {
     toast.add({
       title: '更新角色失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -590,7 +583,7 @@ async function removeUser(id: string) {
   } catch (error: unknown) {
     toast.add({
       title: '删除用户失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -620,7 +613,7 @@ async function setPostStatus(item: BlogPostItem, status: number) {
   } catch (error: unknown) {
     toast.add({
       title: '更新文章状态失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -662,7 +655,7 @@ async function setSelectedPostStatus(status: number) {
   } catch (error: unknown) {
     toast.add({
       title: '批量更新文章失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -682,7 +675,7 @@ async function removePost(id: string) {
   } catch (error: unknown) {
     toast.add({
       title: '删除文章失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -704,7 +697,7 @@ async function removeSelectedPosts() {
   } catch (error: unknown) {
     toast.add({
       title: '批量删除文章失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -840,7 +833,7 @@ async function createCategoryEntry() {
   } catch (error: unknown) {
     toast.add({
       title: '创建分类失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -860,7 +853,7 @@ async function renameCategory(id: string) {
   } catch (error: unknown) {
     toast.add({
       title: '更新分类失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -880,7 +873,7 @@ async function removeCategory(id: string) {
   } catch (error: unknown) {
     toast.add({
       title: '删除分类失败',
-      description: getErrorMessage(error, '请先清空该分类下文章后重试'),
+      description: getRequestErrorMessage(error, '请先清空该分类下文章后重试'),
       color: 'error'
     })
   } finally {
@@ -902,7 +895,7 @@ async function removeSelectedCategories() {
   } catch (error: unknown) {
     toast.add({
       title: '批量删除分类失败',
-      description: getErrorMessage(error, '请先清空分类下文章后重试'),
+      description: getRequestErrorMessage(error, '请先清空分类下文章后重试'),
       color: 'error'
     })
   } finally {
@@ -927,7 +920,7 @@ async function createTagEntry() {
   } catch (error: unknown) {
     toast.add({
       title: '创建标签失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -947,7 +940,7 @@ async function renameTag(id: string) {
   } catch (error: unknown) {
     toast.add({
       title: '更新标签失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -967,7 +960,7 @@ async function removeTag(id: string) {
   } catch (error: unknown) {
     toast.add({
       title: '删除标签失败',
-      description: getErrorMessage(error, '请先取消文章与该标签关联后重试'),
+      description: getRequestErrorMessage(error, '请先取消文章与该标签关联后重试'),
       color: 'error'
     })
   } finally {
@@ -989,7 +982,7 @@ async function removeSelectedTags() {
   } catch (error: unknown) {
     toast.add({
       title: '批量删除标签失败',
-      description: getErrorMessage(error, '请先取消文章与标签关联后重试'),
+      description: getRequestErrorMessage(error, '请先取消文章与标签关联后重试'),
       color: 'error'
     })
   } finally {

@@ -4,7 +4,7 @@ export default defineEventHandler(async (event): Promise<unknown> => {
   const { id } = getRouterParams(event)
 
   if (!id) {
-    throw createError({ statusCode: 400, statusMessage: 'id is required' })
+    throw createError({ statusCode: 400, statusMessage: '缺少标签 ID' })
   }
 
   return await gatewayFetch(event, `/v1/tags/${id}`, {

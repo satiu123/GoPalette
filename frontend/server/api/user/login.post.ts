@@ -1,5 +1,4 @@
-import { joinURL } from 'ufo'
-import { setAuthCookies } from '../../utils/auth'
+import { gatewayFetch, setAuthCookies } from '../../utils/auth'
 
 function decodeJwtPayload(token: string) {
   try {
@@ -27,11 +26,11 @@ function extractUserId(token: string) {
 }
 
 export default defineEventHandler(async (event): Promise<{ success: true, userId: string }> => {
-  const config = useRuntimeConfig(event)
   const body = await readBody(event)
 
-  const response = await $fetch<Record<string, unknown>>(joinURL(config.gatewayBase, '/v1/users/login'), {
+  const response = await gatewayFetch<Record<string, unknown>>(event, '/v1/users/login', {
     method: 'POST',
+    auth: 'none',
     body
   })
 
@@ -40,7 +39,7 @@ export default defineEventHandler(async (event): Promise<{ success: true, userId
   if (!accessToken || !refreshToken) {
     throw createError({
       statusCode: 502,
-      statusMessage: 'login token response is invalid'
+      statusMessage: '登录服务返回异常，请稍后再试'
     })
   }
 

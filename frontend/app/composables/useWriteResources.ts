@@ -35,8 +35,7 @@ export function useWriteResources() {
         return true
       } catch (error: unknown) {
         status.value = 'error'
-        const typed = error as { message?: unknown, data?: { message?: unknown } }
-        errorMessage.value = String(typed?.data?.message || typed?.message || '写作资源加载失败')
+        errorMessage.value = getRequestErrorMessage(error, '写作资源加载失败')
         return false
       } finally {
         pendingLoad = null

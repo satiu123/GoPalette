@@ -139,15 +139,13 @@ export function formatDashboardCount(value: number) {
 }
 
 export function getErrorMessage(error: unknown, fallback: string) {
-  if (!error || typeof error !== 'object') return fallback
-  const typed = error as { message?: unknown, data?: { message?: unknown } }
-  return toText(typed.data?.message ?? typed.message, fallback)
+  return getRequestErrorMessage(error, fallback)
 }
 
 export function toPostStatusText(value: number) {
   if (value === POST_STATUS_PUBLISHED) return '已发布'
   if (value === POST_STATUS_ARCHIVED) return '已归档'
-  if (value === POST_STATUS_PRIVATE) return '已发布'
+  if (value === POST_STATUS_PRIVATE) return '私密'
   if (value === POST_STATUS_OFFLINE) return '已下线'
   return '草稿'
 }

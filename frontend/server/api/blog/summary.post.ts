@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
       requestId,
       reason: 'missing_content'
     })
-    throw createError({ statusCode: 400, message: 'Content is required' })
+    throw createError({ statusCode: 400, message: '正文不能为空' })
   }
 
   if (!deepseekApiKey) {
@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
     })
     throw createError({
       statusCode: 500,
-      message: 'DeepSeek API key is not configured'
+      message: 'AI 服务未配置，请联系管理员'
     })
   }
 
@@ -90,7 +90,7 @@ export default defineEventHandler(async (event) => {
         requestId,
         elapsedMs: Date.now() - startedAt
       })
-      throw createError({ statusCode: 502, message: 'Summary generation returned empty result' })
+      throw createError({ statusCode: 502, message: '未能生成摘要，请手动填写' })
     }
 
     console.info('[ai:summary] finish', {

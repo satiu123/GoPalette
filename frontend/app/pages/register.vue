@@ -39,15 +39,10 @@ async function onSubmit() {
 
     await router.push('/login')
   } catch (error: unknown) {
-    const typed = error as { message?: unknown, data?: { message?: unknown } }
     toast.add({
       color: 'error',
       title: '注册失败',
-      description: typeof typed.data?.message === 'string'
-        ? typed.data.message
-        : typeof typed.message === 'string'
-          ? typed.message
-          : '请稍后重试'
+      description: getRequestErrorMessage(error, '请检查用户名、邮箱和密码后重试')
     })
   } finally {
     submitting.value = false
@@ -67,14 +62,9 @@ useSeoMeta({
     <main class="mx-auto flex w-full max-w-md px-4 pb-20 pt-12 sm:px-0">
       <UCard class="motion-fade-up motion-panel w-full">
         <template #header>
-          <div class="space-y-1">
-            <h1 class="text-xl font-semibold text-highlighted">
-              创建账号
-            </h1>
-            <p class="text-sm text-toned">
-              注册后即可使用博客发布、编辑和个人信息管理功能。
-            </p>
-          </div>
+          <h1 class="text-xl font-semibold text-highlighted">
+            创建账号
+          </h1>
         </template>
 
         <form

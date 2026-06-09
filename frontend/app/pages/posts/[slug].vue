@@ -340,14 +340,6 @@ function commentInitial(item?: CommentInfo | null) {
   return name.trim().slice(0, 1).toUpperCase() || 'U'
 }
 
-function getErrorMessage(error: unknown, fallback: string) {
-  if (!error || typeof error !== 'object') return fallback
-  const typed = error as { message?: unknown, data?: { message?: unknown } }
-  if (typeof typed.data?.message === 'string') return typed.data.message
-  if (typeof typed.message === 'string') return typed.message
-  return fallback
-}
-
 async function loadComments() {
   if (!post.value?.id) return
 
@@ -422,7 +414,7 @@ async function handleToggleLike() {
   } catch (error: unknown) {
     toast.add({
       title: '操作失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -461,7 +453,7 @@ async function submitComment() {
   } catch (error: unknown) {
     toast.add({
       title: '评论发布失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -520,7 +512,7 @@ async function submitReply() {
   } catch (error: unknown) {
     toast.add({
       title: '回复发布失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
@@ -539,7 +531,7 @@ async function removeComment(id: string) {
   } catch (error: unknown) {
     toast.add({
       title: '删除评论失败',
-      description: getErrorMessage(error, '请稍后重试'),
+      description: getRequestErrorMessage(error, '请稍后重试'),
       color: 'error'
     })
   } finally {
