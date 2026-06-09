@@ -255,6 +255,39 @@ services:
       - "14318:4318"
     logging: *default-logging
 
+  loki:
+    image: grafana/loki:3.7.2
+    restart: "no"
+    command: [ "-config.file=/etc/loki/config.yaml" ]
+    volumes:
+      - ./loki/config.yaml:/etc/loki/config.yaml:ro
+      - loki_k6_data:/loki
+    ports:
+      - "13100:3100"
+    logging: *default-logging
+
+  alloy:
+    image: grafana/alloy:v1.16.3
+    restart: "no"
+    user: "0:0"
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+    environment:
+      GOPALETTE_LOGS_PROJECT: "${GOPALETTE_LOGS_PROJECT:-gopalette-k6}"
+      GOPALETTE_LOGS_ENVIRONMENT: "${GOPALETTE_LOGS_ENVIRONMENT:-k6}"
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - alloy_k6_data:/var/lib/alloy/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - loki
+    ports:
+      - "12346:12345"
+    logging: *default-logging
+
   meilisearch:
     image: getmeili/meilisearch:v1.42.1
     restart: "no"
@@ -311,6 +344,8 @@ services:
       - cadvisor
       - node-exporter
       - mariadb-exporter
+      - loki
+      - alloy
     ports:
       - "19091:9090"
     logging: *default-logging
@@ -328,6 +363,7 @@ services:
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
+      - loki
     ports:
       - "13000:3000"
     logging: *default-logging
@@ -339,6 +375,7 @@ services:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
       - /sys:/sys:ro
+      - /dev:/dev:ro
       - /var/lib/docker:/var/lib/docker:ro
     ports:
       - "18081:8080"
@@ -363,3 +400,5 @@ volumes:
   etcd_k6_data:
   prometheus_k6_data:
   grafana_k6_data:
+  loki_k6_data:
+  alloy_k6_data:

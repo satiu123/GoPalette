@@ -17,12 +17,15 @@ docker compose --env-file .env.k6 -p gopalette-k6 -f compose.k6.yaml up -d --bui
 | Frontend | `13001` |
 | Grafana | `13000` |
 | Prometheus | `19091` |
+| Loki | `13100` |
+| Alloy | `12346` |
 | MariaDB | `13306` |
 | Redis | `16379` |
 | Meilisearch | `17700` |
 
 启动后 `seed-k6-data` 会自动等待 `post` 服务完成表迁移，并预置一个 `K6 Load Test` 分类。写文章和写评论脚本默认会读取这个分类 ID；如果你想用别的分类，可以在运行 k6 时显式设置 `CATEGORY_ID`。
 压测环境默认把 MariaDB `max_connections` 设为 `600`，并把每个 Go 服务的 MySQL 连接池限制为 `MYSQL_MAX_OPEN_CONNS=80`，避免阶梯加压时服务无限开连接把数据库提前打爆。
+压测环境同时启动 Loki 和 Alloy，Grafana 会自动注册 Loki 数据源。服务日志可以在 Grafana Explore 里用 `{compose_project="gopalette-k6"}` 查询；Alloy 调试界面在 `http://localhost:12346`。
 
 压测脚本请指向隔离网关：
 

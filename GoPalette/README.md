@@ -49,3 +49,16 @@ docker build -t <your-docker-image-name> .
 docker run --rm -p 8000:8000 -p 9000:9000 -v </path/to/your/configs>:/data/conf <your-docker-image-name>
 ```
 
+## Observability
+
+The local and production Compose stacks include Prometheus, Grafana, Jaeger, Loki, and Alloy.
+
+| Component | Local port |
+| --- | --- |
+| Grafana | `3000` |
+| Prometheus | `9091` |
+| Loki | `3100` |
+| Alloy | `12345` |
+| Jaeger | `16686` |
+
+Grafana provisions Prometheus and Loki automatically. Use Explore with Loki query `{compose_project="gopalette"}` to inspect aggregated container logs. If you start Compose with a custom project name, set `GOPALETTE_LOGS_PROJECT` to the same value so Alloy filters the right containers.
